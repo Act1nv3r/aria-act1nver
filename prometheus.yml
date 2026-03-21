@@ -1,0 +1,17 @@
+# Sprint 9-10 — Prometheus config para observabilidad
+# Uso con docker-compose.monitoring.yml
+
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+scrape_configs:
+  - job_name: "prometheus"
+    static_configs:
+      - targets: ["localhost:9090"]
+
+  # Aria API (descomentar cuando api exponga /metrics)
+  # - job_name: "aria-api"
+  #   metrics_path: /metrics
+  #   static_configs:
+  #     - targets: ["api:8000"]

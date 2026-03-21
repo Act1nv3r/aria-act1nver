@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Patrimonio - ArIA</title>
+  <style>
+    body { font-family: 'Open Sans', sans-serif; background: #F5F2EB; color: #0A0E12; padding: 40px; }
+    .header { display: flex; justify-content: space-between; margin-bottom: 24px; padding-bottom: 16px; border-bottom: 2px solid #314566; }
+    .brand { font-family: Poppins, sans-serif; font-size: 20px; font-weight: 700; color: #0A0E12; }
+    .brand span { color: #E6C78A; }
+    .meta { text-align: right; font-size: 12px; color: #5A6A85; }
+    h2 { font-family: Poppins, sans-serif; font-size: 18px; color: #314566; margin-top: 24px; }
+    table { width: 100%; border-collapse: collapse; margin: 12px 0; }
+    th, td { padding: 8px 12px; text-align: left; border-bottom: 1px solid #ddd; }
+    th { background: #314566; color: white; font-weight: 600; }
+    .footer { margin-top: 32px; padding-top: 16px; border-top: 1px solid #ccc; font-size: 10px; color: #999; text-align: center; }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div class="brand">Actinver<span>·</span> ArIA</div>
+    <div class="meta">
+      <div>{{ nombre }}</div>
+      <div>{{ fecha }}</div>
+    </div>
+  </div>
+  <h2>Patrimonio</h2>
+  {% if patrimonio %}
+  <table>
+    <tr><th>Concepto</th><th>Monto (MXN)</th></tr>
+    <tr><td>Liquidez</td><td>{{ "{:,.0f}".format(patrimonio.liquidez or 0) }}</td></tr>
+    <tr><td>Inversiones</td><td>{{ "{:,.0f}".format(patrimonio.inversiones or 0) }}</td></tr>
+    <tr><td>Dotales</td><td>{{ "{:,.0f}".format(patrimonio.dotales or 0) }}</td></tr>
+    <tr><td>Afore</td><td>{{ "{:,.0f}".format(patrimonio.afore or 0) }}</td></tr>
+    <tr><td>PPR</td><td>{{ "{:,.0f}".format(patrimonio.ppr or 0) }}</td></tr>
+    <tr><td>Casa</td><td>{{ "{:,.0f}".format(patrimonio.casa or 0) }}</td></tr>
+    <tr><td>Inmuebles renta</td><td>{{ "{:,.0f}".format(patrimonio.inmuebles_renta or 0) }}</td></tr>
+    <tr><td>Negocio</td><td>{{ "{:,.0f}".format(patrimonio.negocio or 0) }}</td></tr>
+    <tr><td>Hipoteca</td><td>{{ "{:,.0f}".format(patrimonio.hipoteca or 0) }}</td></tr>
+  </table>
+  {% else %}
+  <p>Sin datos de patrimonio.</p>
+  {% endif %}
+  <div class="footer">Este documento es informativo y no constituye una recomendación, consejo o sugerencia para la toma de decisiones de inversión. ArIA by Actinver.</div>
+</body>
+</html>

@@ -1,0 +1,12 @@
+export { calcularMotorA } from "./motor-a";
+export type { MotorAInput, MotorAOutput } from "./motor-a";
+export { calcularMotorB } from "./motor-b";
+export type { MotorBInput, MotorBOutput } from "./motor-b";
+export { calcularMotorC } from "./motor-c";
+export type { MotorCInput, MotorCOutput } from "./motor-c";
+export { calcularMotorD } from "./motor-d";
+export type { MotorDInput, MotorDOutput } from "./motor-d";
+export { calcularMotorE } from "./motor-e";
+export type { MotorEInput, MotorEOutput } from "./motor-e";
+export { calcularMotorF } from "./motor-f";
+export type { MotorFInput, MotorFOutput } from "./motor-f";

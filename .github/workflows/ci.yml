@@ -1,0 +1,157 @@
+name: CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+      - run: npm ci
+      - run: npm run build
+        env:
+          NEXT_PUBLIC_API_URL: http://localhost:8000
+
+  lighthouse:
+    needs: lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+      - run: npm ci
+      - run: npm run build
+        env:
+          NEXT_PUBLIC_API_URL: http://localhost:8000
+      - run: npm install -g @lhci/cli@0.13.x
+      - name: Lighthouse CI (Performance, Accessibility, Best Practices, SEO > 90)
+        run: lhci autorun --config=lighthouserc.js
+
+  a11y:
+    needs: lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+      - run: npm ci
+      - run: npm install -D @playwright/test @axe-core/playwright
+      - run: npm run build
+        env:
+          NEXT_PUBLIC_API_URL: http://localhost:8000
+      - run: npx playwright install chromium --with-deps
+      - name: Start app
+        run: npm run start &
+      - run: sleep 10
+      - name: WCAG accessibility tests (axe-core)
+        run: npx playwright test scripts/axe-a11y.spec.ts --project=chromium
+
+  backend:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: aria
+          POSTGRES_PASSWORD: aria
+          POSTGRES_DB: aria
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+      - run: pip install -r backend/requirements.txt
+      - run: pip install pytest pytest-asyncio httpx email-validator
+      - name: Seed database
+        working-directory: backend
+        env:
+          DATABASE_URL: postgresql+asyncpg://aria:aria@localhost:5432/aria
+        run: python seed.py
+      - name: Run backend tests (incl. security OWASP, SQL injection, auth - BLOQUEANTES)
+        working-directory: backend
+        env:
+          DATABASE_URL: postgresql+asyncpg://aria:aria@localhost:5432/aria
+          REDIS_URL: redis://localhost:6379/0
+        run: python -m pytest tests/ -v --tb=short
+
+  load-test:
+    needs: backend
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: aria
+          POSTGRES_PASSWORD: aria
+          POSTGRES_DB: aria
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+      - run: pip install -r backend/requirements.txt locust
+      - name: Seed database
+        working-directory: backend
+        env:
+          DATABASE_URL: postgresql+asyncpg://aria:aria@localhost:5432/aria
+        run: python seed.py
+      - name: Start API
+        working-directory: backend
+        env:
+          DATABASE_URL: postgresql+asyncpg://aria:aria@localhost:5432/aria
+          REDIS_URL: redis://localhost:6379/0
+        run: |
+          uvicorn app.main:app --host 0.0.0.0 --port 8000 &
+          sleep 5
+          for i in {1..30}; do curl -s http://localhost:8000/api/v1/health && break || sleep 2; done
+      - name: Run load test (10 users, 30s)
+        working-directory: backend
+        run: |
+          locust -f tests/locustfile.py --headless -u 10 -r 2 -t 30s --host http://localhost:8000
+
