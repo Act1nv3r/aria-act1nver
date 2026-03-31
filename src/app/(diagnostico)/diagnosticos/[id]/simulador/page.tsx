@@ -10,7 +10,7 @@ import { Card } from "@/components/ui/card";
 import { Slider } from "@/components/ui/slider";
 import { GradoAvanceBar } from "@/components/outputs/grado-avance-bar";
 import { DeficitCard } from "@/components/outputs/deficit-card";
-import { CurvaDesacumulacion } from "@/components/outputs/curva-desacumulacion";
+import { FinancialTimeline, type EventoVida } from "@/components/outputs/financial-timeline";
 import { TrayectoriaRetiroChart } from "@/components/outputs/trayectoria-retiro-chart";
 import { formatMXN } from "@/lib/format-currency";
 
@@ -45,6 +45,8 @@ export default function SimuladorPage() {
     mensualidad_deseada: retiroBase.mensualidad_deseada,
     tasa_real: PARAMS.TASA_REAL_ANUAL * 100,
     aportacion_extra: 0,
+    venta_activo_edad: 0,
+    venta_activo_monto: 0,
   });
 
   const motorCInput = {
@@ -60,6 +62,7 @@ export default function SimuladorPage() {
 
   const resultadoBase = useMemo(
     () => calcularMotorC(motorCInput),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     []
   );
 
@@ -72,6 +75,7 @@ export default function SimuladorPage() {
       mensualidad_deseada: sliderValues.mensualidad_deseada,
       tasa_real_anual: sliderValues.tasa_real / 100,
     });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sliderValues, patrimonioFin]);
 
   const resetValues = () => {
@@ -81,11 +85,34 @@ export default function SimuladorPage() {
       mensualidad_deseada: retiroBase.mensualidad_deseada,
       tasa_real: PARAMS.TASA_REAL_ANUAL * 100,
       aportacion_extra: 0,
+      venta_activo_edad: 0,
+      venta_activo_monto: 0,
     });
   };
 
   const diffGrado =
     (resultadoSimulado.grado_avance - resultadoBase.grado_avance) * 100;
+
+  const eventos: EventoVida[] = useMemo(() => {
+    const evts: EventoVida[] = [];
+    if (sliderValues.venta_activo_edad > 0 && sliderValues.venta_activo_monto > 0) {
+      evts.push({
+        edad: sliderValues.venta_activo_edad,
+        monto: sliderValues.venta_activo_monto,
+        label: "Venta activo",
+        tipo: "positivo",
+      });
+    }
+    if (sliderValues.aportacion_extra > 0) {
+      evts.push({
+        edad,
+        monto: sliderValues.aportacion_extra,
+        label: "Aportación extra",
+        tipo: "positivo",
+      });
+    }
+    return evts;
+  }, [sliderValues.venta_activo_edad, sliderValues.venta_activo_monto, sliderValues.aportacion_extra, edad]);
 
   return (
     <div className="max-w-7xl mx-auto p-6">
@@ -98,8 +125,47 @@ export default function SimuladorPage() {
         </p>
       </div>
 
+      {/* Financial Timeline Hero — full width */}
+      <div className="mb-8">
+        <Card>
+          <FinancialTimeline
+            edadActual={edad}
+            edadRetiro={sliderValues.edad_retiro}
+            edadDefuncion={retiroBase.edad_defuncion}
+            patrimonioActual={patrimonioFin + sliderValues.aportacion_extra}
+            ahorroMensual={sliderValues.ahorro}
+            tasaReal={sliderValues.tasa_real / 100}
+            pensionMensual={patrimonio?.ley_73 ?? 35000}
+            rentasMensuales={flujoBase.rentas}
+            mensualidadDeseada={sliderValues.mensualidad_deseada}
+            eventos={eventos}
+            modo="simulador"
+            showMetrics={true}
+            animate={false}
+          />
+        </Card>
+      </div>
+
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        {/* Left: Sliders */}
         <div className="space-y-6">
+          <Card>
+            <Slider
+              label="Ahorro mensual"
+              min={0}
+              max={Math.max(flujoBase.ahorro * 3, 200000)}
+              step={5000}
+              value={[sliderValues.ahorro]}
+              onChange={(v) =>
+                setSliderValues((s) => ({ ...s, ahorro: v[0] }))
+              }
+              formatValue={(v) => formatMXN(v) + "/mes"}
+            />
+            <p className="mt-1 font-[family-name:var(--font-open-sans)] text-[11px] text-[#5A6A85]">
+              Base: {formatMXN(flujoBase.ahorro)}/mes
+            </p>
+          </Card>
+
           <Card>
             <Slider
               label="Edad de retiro"
@@ -114,23 +180,6 @@ export default function SimuladorPage() {
             />
             <p className="mt-1 font-[family-name:var(--font-open-sans)] text-[11px] text-[#5A6A85]">
               Base: {retiroBase.edad_retiro} años
-            </p>
-          </Card>
-
-          <Card>
-            <Slider
-              label="Capacidad de ahorro mensual"
-              min={0}
-              max={flujoBase.ahorro * 3}
-              step={5000}
-              value={[sliderValues.ahorro]}
-              onChange={(v) =>
-                setSliderValues((s) => ({ ...s, ahorro: v[0] }))
-              }
-              formatValue={(v) => formatMXN(v) + "/mes"}
-            />
-            <p className="mt-1 font-[family-name:var(--font-open-sans)] text-[11px] text-[#5A6A85]">
-              Base: {formatMXN(flujoBase.ahorro)}/mes
             </p>
           </Card>
 
@@ -181,8 +230,38 @@ export default function SimuladorPage() {
               Un monto adicional que podrías invertir hoy
             </p>
           </Card>
+
+          <Card>
+            <Slider
+              label="Venta de activo — Edad"
+              min={0}
+              max={retiroBase.edad_defuncion}
+              step={1}
+              value={[sliderValues.venta_activo_edad]}
+              onChange={(v) =>
+                setSliderValues((s) => ({ ...s, venta_activo_edad: v[0] }))
+              }
+              formatValue={(v) => (v === 0 ? "Sin evento" : `${v} años`)}
+            />
+            {sliderValues.venta_activo_edad > 0 && (
+              <div className="mt-3">
+                <Slider
+                  label="Venta de activo — Monto"
+                  min={0}
+                  max={10000000}
+                  step={100000}
+                  value={[sliderValues.venta_activo_monto]}
+                  onChange={(v) =>
+                    setSliderValues((s) => ({ ...s, venta_activo_monto: v[0] }))
+                  }
+                  formatValue={(v) => formatMXN(v)}
+                />
+              </div>
+            )}
+          </Card>
         </div>
 
+        {/* Right: Results */}
         <div className="space-y-6">
           <Card>
             <GradoAvanceBar porcentaje={resultadoSimulado.grado_avance} />
@@ -207,15 +286,6 @@ export default function SimuladorPage() {
 
           <Card>
             <DeficitCard deficit={resultadoSimulado.deficit_mensual} />
-          </Card>
-
-          <Card>
-            <CurvaDesacumulacion
-              key={JSON.stringify(sliderValues)}
-              curva={resultadoSimulado.curva}
-              edadRetiro={sliderValues.edad_retiro}
-              edadDefuncion={retiroBase.edad_defuncion}
-            />
           </Card>
 
           <Card>

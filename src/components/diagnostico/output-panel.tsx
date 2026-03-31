@@ -31,6 +31,7 @@ import {
 } from "@/lib/motors";
 import { consolidar } from "@/lib/motors/consolidacion";
 import { formatMXN } from "@/lib/format-currency";
+import { FinancialTimeline } from "@/components/outputs/financial-timeline";
 
 type MotorOutputs = {
   motorA: Awaited<ReturnType<typeof calcularMotorA>> | null;
@@ -364,7 +365,29 @@ export function OutputPanel({ variant = "sidebar" }: OutputPanelProps) {
         </div>
       )}
 
-      {/* Orden según Excel: Cálculos Edo.Res → Desacumulación → Objetivos → Balance → Potencial → Patrimonio Financiero → Esquemas → Output 7 */}
+      {/* Financial Timeline — Hero Visual */}
+      {motorC && perfilActivo && retiroActivo && (
+        <FadeIn>
+          <Card className={isFull ? "md:col-span-2 lg:col-span-3 xl:col-span-4" : ""}>
+            <FinancialTimeline
+              edadActual={perfilActivo.edad}
+              edadRetiro={retiroActivo.edad_retiro ?? 60}
+              edadDefuncion={retiroActivo.edad_defuncion ?? 90}
+              patrimonioActual={
+                (patrimonioActivo?.liquidez ?? 0) +
+                (patrimonioActivo?.inversiones ?? 0) +
+                (patrimonioActivo?.dotales ?? 0)
+              }
+              ahorroMensual={flujoActivo?.ahorro ?? 0}
+              pensionMensual={motorC.pension_total_mensual}
+              rentasMensuales={flujoActivo?.rentas ?? 0}
+              mensualidadDeseada={(retiroActivo as { mensualidad_deseada?: number })?.mensualidad_deseada ?? 50000}
+              modo={isFull ? "resultados" : "mini"}
+              showMetrics={isFull}
+            />
+          </Card>
+        </FadeIn>
+      )}
 
       {/* Output 1 — Análisis Ingreso/Gasto */}
       {motorA && donutData.length > 0 && (

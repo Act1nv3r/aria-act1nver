@@ -5,7 +5,9 @@ import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { ArrowLeft, Share, SlidersHorizontal, Download, Mic } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 import { OutputPanel } from "@/components/diagnostico/output-panel";
+import { FinancialTimeline } from "@/components/outputs/financial-timeline";
 import { useDiagnosticoStore } from "@/stores/diagnostico-store";
 import { useDiagnosticoId } from "@/contexts/diagnostico-context";
 import { generarBalancePDF } from "@/lib/pdf-generator";
@@ -13,6 +15,7 @@ import { getAccessToken } from "@/lib/api-client";
 import { useDeepgram, type TranscriptLine } from "@/hooks/use-deepgram";
 import { detectarOportunidades, type Oportunidad } from "@/lib/navi-opportunities";
 import { BalancePDFTemplate } from "@/components/pdf/balance-pdf-template";
+import { calcularMotorC } from "@/lib/motors";
 
 export default function PresentacionPage() {
   const params = useParams();
@@ -20,7 +23,7 @@ export default function PresentacionPage() {
   const diagnosticoId = params.id as string;
   const { isApiMode } = useDiagnosticoId();
   const store = useDiagnosticoStore();
-  const { perfil, addSessionInsight } = store;
+  const { perfil, flujoMensual, patrimonio, retiro, addSessionInsight } = store;
   const [loading, setLoading] = useState(true);
   const opsRef = useRef<Oportunidad[]>([]);
 
@@ -160,6 +163,47 @@ export default function PresentacionPage() {
           </Button>
         </div>
       </header>
+
+      {/* Hero: Financial Timeline */}
+      {perfil && retiro && patrimonio && flujoMensual && (
+        <div className="max-w-[1400px] mx-auto px-4 sm:px-6 pt-8">
+          <Card>
+            <FinancialTimeline
+              edadActual={perfil.edad}
+              edadRetiro={retiro.edad_retiro}
+              edadDefuncion={retiro.edad_defuncion}
+              patrimonioActual={
+                (patrimonio.liquidez ?? 0) +
+                (patrimonio.inversiones ?? 0) +
+                (patrimonio.dotales ?? 0)
+              }
+              ahorroMensual={flujoMensual.ahorro}
+              pensionMensual={
+                (() => {
+                  const mc = calcularMotorC({
+                    patrimonio_financiero_total:
+                      (patrimonio.liquidez ?? 0) + (patrimonio.inversiones ?? 0) + (patrimonio.dotales ?? 0),
+                    saldo_esquemas:
+                      (patrimonio.afore ?? 0) + (patrimonio.ppr ?? 0) +
+                      (patrimonio.plan_privado ?? 0) + (patrimonio.seguros_retiro ?? 0),
+                    ley_73: patrimonio.ley_73,
+                    rentas: flujoMensual.rentas,
+                    edad: perfil.edad,
+                    edad_retiro: retiro.edad_retiro,
+                    edad_defuncion: retiro.edad_defuncion,
+                    mensualidad_deseada: retiro.mensualidad_deseada,
+                  });
+                  return mc.pension_total_mensual;
+                })()
+              }
+              rentasMensuales={flujoMensual.rentas}
+              mensualidadDeseada={retiro.mensualidad_deseada}
+              modo="presentacion"
+              showMetrics={true}
+            />
+          </Card>
+        </div>
+      )}
 
       {/* Main content — tablet-first, larger typography */}
       <div className="max-w-[1400px] mx-auto px-4 sm:px-6 py-8">
