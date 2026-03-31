@@ -106,7 +106,7 @@ export default function CRMPage() {
     totalClientes > 0 ? Math.round((completados / totalClientes) * 100) : 0;
 
   return (
-    <div className="max-w-[1280px] mx-auto px-6 sm:px-8 py-8">
+    <div className="max-w-[1600px] mx-auto px-6 sm:px-8 lg:px-12 py-8">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center gap-4 mb-6">
         <h1 className="font-bold font-[family-name:var(--font-poppins)] text-2xl text-[#F0F4FA]">

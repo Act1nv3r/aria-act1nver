@@ -164,9 +164,9 @@ export default function PresentacionPage() {
         </div>
       </header>
 
-      {/* Hero: Financial Timeline */}
+      {/* Hero: Financial Timeline — full width */}
       {perfil && retiro && patrimonio && flujoMensual && (
-        <div className="max-w-[1400px] mx-auto px-4 sm:px-6 pt-8">
+        <div className="max-w-[1600px] mx-auto px-6 sm:px-8 lg:px-12 pt-8">
           <Card>
             <FinancialTimeline
               edadActual={perfil.edad}
@@ -205,11 +205,9 @@ export default function PresentacionPage() {
         </div>
       )}
 
-      {/* Main content — tablet-first, larger typography */}
-      <div className="max-w-[1400px] mx-auto px-4 sm:px-6 py-8">
-        <div className="[&_h2]:text-2xl [&_h3]:text-xl [&_.recharts-wrapper]:min-h-[350px]">
-          <OutputPanel variant="full" />
-        </div>
+      {/* Main content — command center layout */}
+      <div className="max-w-[1600px] mx-auto px-6 sm:px-8 lg:px-12 py-8">
+        <OutputPanel variant="full" />
       </div>
 
       {/* FAB: Open simulator */}

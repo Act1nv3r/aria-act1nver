@@ -66,7 +66,8 @@ export default function WrappedPage() {
   }, [id]);
 
   return (
-    <div className="max-w-2xl mx-auto p-6">
+    <div className="min-h-screen bg-[#060D1A]">
+    <div className="max-w-4xl mx-auto px-6 sm:px-8 py-8">
       <h1 className="font-bold font-[family-name:var(--font-poppins)] text-2xl text-white mb-2">
         Tu Financial Wrapped
       </h1>
@@ -299,6 +300,7 @@ export default function WrappedPage() {
       <p className="mt-8 font-[family-name:var(--font-open-sans)] text-sm text-[#5A6A85] text-center">
         Haz tu diagnóstico en ArIA by Actinver
       </p>
+    </div>
     </div>
   );
 }

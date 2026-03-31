@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { ArrowLeft, Check, ChevronRight } from "lucide-react";
+import { ArrowLeft, Check, ChevronRight, Mic } from "lucide-react";
 import { useDiagnosticoStore } from "@/stores/diagnostico-store";
 import { useUIFeedbackStore } from "@/stores/ui-feedback-store";
 import { DiagnosticoProvider } from "@/contexts/diagnostico-context";
@@ -67,6 +67,10 @@ export default function DiagnosticoLayout({
     pasosCompletados,
     setPaso,
     perfil,
+    sesion_inicio,
+    completitud_pct,
+    datos_fuente,
+    setDatosFuente,
   } = useDiagnosticoStore();
 
   useEffect(() => {
@@ -76,8 +80,11 @@ export default function DiagnosticoLayout({
       if (step >= 1 && step <= 6) {
         setPaso(step);
       }
+      if (sesion_inicio && datos_fuente === "voz") {
+        setDatosFuente("mixto");
+      }
     }
-  }, [pathname, setPaso]);
+  }, [pathname, setPaso, sesion_inicio, datos_fuente, setDatosFuente]);
 
   const handleStepClick = (paso: number) => {
     const id = pathname?.split("/diagnosticos/")[1]?.split("/")[0] || "demo";
@@ -97,6 +104,11 @@ export default function DiagnosticoLayout({
   }, [lastSavedAt]);
 
   const isCompletado = pathname?.includes("/completado") ?? false;
+  const isSesion = pathname?.includes("/sesion") ?? false;
+  const isPresentacion = pathname?.includes("/presentacion") ?? false;
+  const isSimulador = pathname?.includes("/simulador") ?? false;
+  const isWrapped = pathname?.includes("/wrapped") ?? false;
+  const isFullScreenPage = isCompletado || isSesion || isPresentacion || isSimulador || isWrapped;
   const currentStep = steps.find((s) => s.id === pasoActual);
 
   const nombreInitials = nombre
@@ -105,6 +117,16 @@ export default function DiagnosticoLayout({
     .join("")
     .toUpperCase()
     .slice(0, 2);
+
+  if (isFullScreenPage) {
+    return (
+      <DiagnosticoProvider>
+        <div className="min-h-screen bg-[#060D1A]">
+          {children}
+        </div>
+      </DiagnosticoProvider>
+    );
+  }
 
   return (
     <DiagnosticoProvider>
@@ -161,6 +183,29 @@ export default function DiagnosticoLayout({
               <span>Guardado</span>
             </div>
           </div>
+
+          {/* Voice session link — shown when a voice session has been started */}
+          {sesion_inicio && !isCompletado && (
+            <div className="px-4 py-3 border-b border-white/[0.06]">
+              <button
+                type="button"
+                onClick={() => {
+                  const id = pathname?.split("/diagnosticos/")[1]?.split("/")[0] || "demo";
+                  router.push(`/diagnosticos/${id}/sesion`);
+                }}
+                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-[10px] bg-[#C9A84C]/[0.08] border border-[#C9A84C]/20 hover:bg-[#C9A84C]/15 transition-colors text-left group"
+              >
+                <div className="w-7 h-7 rounded-full bg-[#C9A84C]/20 flex items-center justify-center shrink-0">
+                  <Mic className="w-3.5 h-3.5 text-[#C9A84C]" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs font-semibold text-[#C9A84C]">Sesión de voz</p>
+                  <p className="text-[10px] text-[#8B9BB4] mt-0.5">{Math.round(completitud_pct)}% capturado</p>
+                </div>
+                <ChevronRight className="w-3.5 h-3.5 text-[#C9A84C]/50 group-hover:text-[#C9A84C] transition-colors" />
+              </button>
+            </div>
+          )}
 
           {/* Progress overview */}
           {!isCompletado && (
@@ -326,12 +371,34 @@ export default function DiagnosticoLayout({
             </div>
           )}
 
+          {/* Voice session banner — visible when coming from voice capture */}
+          {sesion_inicio && !isCompletado && (
+            <div className="mx-6 lg:mx-12 mt-6 flex items-center gap-3 px-4 py-3 rounded-xl bg-[#C9A84C]/[0.06] border border-[#C9A84C]/15">
+              <div className="w-2 h-2 rounded-full bg-[#C9A84C] animate-pulse shrink-0" />
+              <p className="text-xs text-[#8B9BB4] flex-1">
+                Sesión de voz activa — los datos capturados por voz ya están precargados.
+                Puedes editar libremente aquí y volver a la sesión de voz en cualquier momento.
+              </p>
+              <button
+                type="button"
+                onClick={() => {
+                  const id = pathname?.split("/diagnosticos/")[1]?.split("/")[0] || "demo";
+                  router.push(`/diagnosticos/${id}/sesion`);
+                }}
+                className="shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-[#C9A84C] border border-[#C9A84C]/20 hover:bg-[#C9A84C]/10 transition-colors"
+              >
+                <Mic className="w-3 h-3" />
+                Volver a voz
+              </button>
+            </div>
+          )}
+
           {/* Content wrapper */}
           <div
             className={`${
               isCompletado
                 ? "px-0"
-                : "px-6 py-8 lg:px-12 max-w-[760px]"
+                : "px-6 py-8 lg:px-12 max-w-[960px]"
             }`}
           >
             {children}

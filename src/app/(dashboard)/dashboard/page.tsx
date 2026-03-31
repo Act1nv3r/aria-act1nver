@@ -250,7 +250,7 @@ export default function DashboardPage() {
   const completados = clientes.filter((c) => c.estado === "completo").length;
 
   return (
-    <div className="max-w-[1280px] mx-auto px-6 sm:px-8 py-8">
+    <div className="max-w-[1600px] mx-auto px-6 sm:px-8 lg:px-12 py-8">
 
       {/* Top stats bar */}
       {totalClientes > 0 && (

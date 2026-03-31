@@ -82,7 +82,7 @@ export default function Client360Page() {
 
   if (loading) {
     return (
-      <div className="max-w-[1000px] mx-auto px-6 py-8">
+      <div className="max-w-[1400px] mx-auto px-6 sm:px-8 lg:px-12 py-8">
         <div className="space-y-4">
           <div className="h-8 w-48 bg-[#1A3154] rounded animate-pulse" />
           <div className="h-4 w-32 bg-[#1A3154] rounded animate-pulse" />
@@ -114,7 +114,7 @@ export default function Client360Page() {
   ];
 
   return (
-    <div className="max-w-[1000px] mx-auto px-6 sm:px-8 py-8">
+    <div className="max-w-[1400px] mx-auto px-6 sm:px-8 lg:px-12 py-8">
       {/* Header */}
       <div className="flex items-center gap-4 mb-6">
         <Link href="/crm" className="text-[#8B9BB4] hover:text-[#F0F4FA] transition-colors">

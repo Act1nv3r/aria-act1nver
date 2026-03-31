@@ -374,7 +374,7 @@ export const useDiagnosticoStore = create<DiagnosticoStore>()(
           ownership: { ...s.ownership, [asset]: value },
         })),
 
-      setSesionInicio: () => set({ sesion_inicio: Date.now() }),
+      setSesionInicio: () => set((s) => ({ sesion_inicio: s.sesion_inicio ?? Date.now() })),
       setDatosFuente: (fuente) => set({ datos_fuente: fuente }),
       updateCompletitud: () =>
         set((s) => {

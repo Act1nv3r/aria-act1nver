@@ -57,7 +57,7 @@ export default function ClienteReadonlyPage() {
         <header className="py-8 flex justify-center">
           <Skeleton className="h-8 w-48" />
         </header>
-        <main className="max-w-[800px] mx-auto px-6 pb-16">
+        <main className="max-w-[1200px] mx-auto px-6 pb-16">
           <Skeleton className="h-9 w-64 mx-auto mb-8" />
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
             {[1, 2, 3, 4].map((i) => (
@@ -90,7 +90,7 @@ export default function ClienteReadonlyPage() {
         </Link>
       </header>
 
-      <main className="max-w-[800px] mx-auto px-6 pb-16">
+      <main className="max-w-[1200px] mx-auto px-6 pb-16">
         <h1 className="font-bold font-[family-name:var(--font-poppins)] text-[28px] text-white mb-8 text-center">
           Hola {data.nombre}
         </h1>

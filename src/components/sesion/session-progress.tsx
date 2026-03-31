@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { BarChart3, PenLine, ChevronRight } from "lucide-react";
+import { BarChart3, PenLine, ChevronRight, Database } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface SessionProgressProps {
@@ -9,7 +9,9 @@ interface SessionProgressProps {
   categoriasFaltantes: string[];
   sesionMinutos: number;
   diagnosticoId: string;
+  totalDatos: number;
   onGenerarBalance: () => void;
+  onStopRecording?: () => void;
 }
 
 export function SessionProgress({
@@ -17,7 +19,9 @@ export function SessionProgress({
   categoriasFaltantes,
   sesionMinutos,
   diagnosticoId,
+  totalDatos,
   onGenerarBalance,
+  onStopRecording,
 }: SessionProgressProps) {
   const router = useRouter();
 
@@ -29,62 +33,52 @@ export function SessionProgress({
 
   return (
     <div
-      className="border-t border-white/[0.06] px-4 py-3"
+      className="shrink-0 border-t border-white/[0.06] px-4 flex items-center justify-between gap-4"
       style={{
-        background: "rgba(12,24,41,0.95)",
+        height: "52px",
+        background: "rgba(12,24,41,0.92)",
         backdropFilter: "blur(16px)",
       }}
     >
-      {/* Progress bar */}
-      <div className="flex items-center gap-3 mb-2">
-        <div className="flex-1 h-2 bg-[#1A3154] rounded-full overflow-hidden">
-          <div
-            className="h-full rounded-full transition-all duration-700 ease-out"
-            style={{
-              width: `${completitudPct}%`,
-              background:
-                completitudPct >= 60
-                  ? "linear-gradient(to right, #10B981, #34D399)"
-                  : "linear-gradient(to right, #C9A84C, #E8C872)",
-            }}
-          />
-        </div>
-        <span className="text-xs font-mono text-[#C9A84C] font-semibold shrink-0">
-          {completitudPct}%
-        </span>
-        <span className="text-xs font-mono text-[#8B9BB4] shrink-0">
+      {/* Left: timer + data count */}
+      <div className="flex items-center gap-4">
+        <span className="text-lg font-mono font-bold text-[#F0F4FA] tabular-nums tracking-wide">
           {formatTime(sesionMinutos)}
         </span>
+        <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#1A3154] border border-white/[0.06]">
+          <Database className="w-3 h-3 text-[#8B9BB4]" />
+          <span className="text-[11px] text-[#8B9BB4] font-semibold">{totalDatos} datos</span>
+        </div>
+        {categoriasFaltantes.length > 0 && categoriasFaltantes.length <= 3 && (
+          <p className="text-[11px] text-[#5A6A85] hidden lg:block">
+            Faltan: {categoriasFaltantes.join(", ")}
+          </p>
+        )}
       </div>
 
-      {/* Faltantes */}
-      {categoriasFaltantes.length > 0 && (
-        <p className="text-[10px] text-[#5A6A85] mb-2">
-          Faltan: {categoriasFaltantes.join(", ")}
-        </p>
-      )}
-
-      {/* Action buttons */}
+      {/* Right: action buttons */}
       <div className="flex items-center gap-2">
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => {
+            onStopRecording?.();
+            router.push(`/diagnosticos/${diagnosticoId}/paso/1`);
+          }}
+          className="text-[#8B9BB4] text-xs"
+        >
+          <PenLine className="w-3.5 h-3.5" />
+          Captura manual
+        </Button>
         <Button
           variant="accent"
           size="sm"
           onClick={onGenerarBalance}
           disabled={completitudPct < 60}
-          className="flex-1"
         >
           <BarChart3 className="w-3.5 h-3.5" />
           Generar balance
           <ChevronRight className="w-3.5 h-3.5" />
-        </Button>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => router.push(`/diagnosticos/${diagnosticoId}/paso/1`)}
-          className="text-[#8B9BB4] shrink-0"
-        >
-          <PenLine className="w-3.5 h-3.5" />
-          Captura manual
         </Button>
       </div>
     </div>

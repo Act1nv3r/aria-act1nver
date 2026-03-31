@@ -3,9 +3,10 @@ import { HTMLAttributes } from "react";
 interface CardProps extends HTMLAttributes<HTMLDivElement> {
   children: React.ReactNode;
   glow?: boolean;
+  noPadding?: boolean;
 }
 
-export function Card({ children, className = "", glow = false, ...props }: CardProps) {
+export function Card({ children, className = "", glow = false, noPadding = false, ...props }: CardProps) {
   return (
     <div
       className={`
@@ -13,6 +14,7 @@ export function Card({ children, className = "", glow = false, ...props }: CardP
         shadow-[0_4px_24px_rgba(0,0,0,0.4)]
         overflow-hidden min-w-0 break-words
         transition-all duration-300
+        ${noPadding ? "" : "p-5 lg:p-6"}
         ${glow ? "shadow-[0_0_32px_rgba(201,168,76,0.12)] border-[#C9A84C]/20" : ""}
         ${className}
       `}

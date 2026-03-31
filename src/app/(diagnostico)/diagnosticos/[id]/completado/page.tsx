@@ -134,8 +134,8 @@ export default function CompletadoPage() {
         </div>
       </div>
 
-      {/* Results panel */}
-      <div className="max-w-[1200px] mx-auto px-4 sm:px-6 pb-24">
+      {/* Results panel — full width command center */}
+      <div className="max-w-[1600px] mx-auto px-6 sm:px-8 lg:px-12 pb-24">
         <OutputPanel variant="full" />
       </div>
 
@@ -153,7 +153,7 @@ export default function CompletadoPage() {
           backdropFilter: "blur(20px)",
         }}
       >
-        <div className="max-w-[1200px] mx-auto flex flex-wrap gap-3 justify-end">
+        <div className="max-w-[1600px] mx-auto flex flex-wrap gap-3 justify-end">
           <Button
             variant="accent"
             size="sm"

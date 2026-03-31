@@ -319,24 +319,87 @@ export function OutputPanel({ variant = "sidebar" }: OutputPanelProps) {
 
   const isFull = variant === "full";
 
-  return (
-    <div className={isFull ? "space-y-6" : "space-y-4"}>
-      <h3 className="font-bold font-[family-name:var(--font-poppins)] text-base text-[#E6C78A]">
-        Tus resultados
-      </h3>
+  if (!isFull) {
+    return (
+      <div className="space-y-4">
+        <h3 className="font-bold font-[family-name:var(--font-poppins)] text-base text-[#E6C78A]">
+          Tus resultados
+        </h3>
 
-      <div className={isFull ? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 w-full" : "space-y-4"}>
+        {motorC && perfilActivo && retiroActivo && (
+          <FadeIn>
+            <Card>
+              <FinancialTimeline
+                edadActual={perfilActivo.edad}
+                edadRetiro={retiroActivo.edad_retiro ?? 60}
+                edadDefuncion={retiroActivo.edad_defuncion ?? 90}
+                patrimonioActual={(patrimonioActivo?.liquidez ?? 0) + (patrimonioActivo?.inversiones ?? 0) + (patrimonioActivo?.dotales ?? 0)}
+                ahorroMensual={flujoActivo?.ahorro ?? 0}
+                pensionMensual={motorC.pension_total_mensual}
+                rentasMensuales={flujoActivo?.rentas ?? 0}
+                mensualidadDeseada={(retiroActivo as { mensualidad_deseada?: number })?.mensualidad_deseada ?? 50000}
+                modo="mini"
+                showMetrics={false}
+              />
+            </Card>
+          </FadeIn>
+        )}
+
+        {motorA && donutData.length > 0 && (
+          <FadeIn><Card><DonutChart data={donutData} total={motorA.ingresos_totales} /></Card></FadeIn>
+        )}
+        {motorA && (
+          <FadeIn><Card><ReservaSemaforo meses={motorA.meses_cubiertos} benchmark={3} faltante={motorA.meses_cubiertos !== null && motorA.meses_cubiertos < 3 ? (3 - motorA.meses_cubiertos) * (flujoActivo?.gastos_basicos ?? 0) : 0} /></Card></FadeIn>
+        )}
+        {motorC && (
+          <FadeIn><Card><GradoAvanceBar porcentaje={motorC.grado_avance} /></Card></FadeIn>
+        )}
+        {motorB && motorE && (
+          <FadeIn><Card><NivelRiquezaBadge nivel={motorB.nivel_riqueza} ratio={motorB.ratio} benchmarkEdad={motorB.benchmark_para_edad} edad={perfilActivo?.edad ?? 0} /></Card></FadeIn>
+        )}
+        {!motorA && (
+          <div className="text-center py-12">
+            <p className="font-[family-name:var(--font-open-sans)] text-sm text-[#5A6A85]">Completa los primeros pasos para ver tus resultados</p>
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-8">
+      <h2 className="font-bold font-[family-name:var(--font-poppins)] text-2xl text-[#E6C78A]">
+        Centro de control financiero
+      </h2>
+
+      {modo === "pareja" && (
+        <div className="flex gap-1 border-b border-[#5A6A85]/20 pb-2">
+          {(["titular", "pareja", "hogar"] as const).map((t) => (
+            <button
+              key={t}
+              type="button"
+              onClick={() => setTabPareja(t)}
+              className={`px-4 py-2 font-[family-name:var(--font-poppins)] text-sm font-medium transition-colors rounded-lg ${
+                tabPareja === t ? "bg-[#317A70] text-white" : "text-[#5A6A85] hover:text-white"
+              }`}
+            >
+              {t === "titular" ? perfil?.nombre ?? "Titular" : t === "pareja" ? pareja_perfil?.nombre ?? "Pareja" : "Hogar"}
+            </button>
+          ))}
+        </div>
+      )}
+
       {modo === "pareja" && outHogar?.dependencia_financiera && (
         <FadeIn>
-          <Card className={isFull ? "md:col-span-2" : ""}>
+          <Card>
             <div className="space-y-2 min-w-0">
-              <p className="font-[family-name:var(--font-poppins)] text-sm font-bold text-white">
+              <p className="font-[family-name:var(--font-poppins)] text-lg font-bold text-white">
                 Dependencia financiera
               </p>
-              <p className="font-[family-name:var(--font-open-sans)] text-xs text-[#5A6A85]">
+              <p className="font-[family-name:var(--font-open-sans)] text-sm text-[#8B9BB4]">
                 Titular: {Math.round(outHogar.dependencia_financiera.titular_pct * 100)}% · Pareja: {Math.round(outHogar.dependencia_financiera.pareja_pct * 100)}%
               </p>
-              <p className="font-[family-name:var(--font-open-sans)] text-sm text-white">
+              <p className="font-[family-name:var(--font-open-sans)] text-base text-white">
                 {outHogar.dependencia_financiera.dependiente === "equilibrado"
                   ? "Equilibrado"
                   : outHogar.dependencia_financiera.dependiente === "titular"
@@ -348,119 +411,101 @@ export function OutputPanel({ variant = "sidebar" }: OutputPanelProps) {
         </FadeIn>
       )}
 
-      {modo === "pareja" && (
-        <div className="flex gap-1 border-b border-[#5A6A85]/20 pb-2">
-          {(["titular", "pareja", "hogar"] as const).map((t) => (
-            <button
-              key={t}
-              type="button"
-              onClick={() => setTabPareja(t)}
-              className={`px-3 py-1.5 font-[family-name:var(--font-poppins)] text-xs font-medium transition-colors rounded ${
-                tabPareja === t ? "bg-[#317A70] text-white" : "text-[#5A6A85] hover:text-white"
-              }`}
-            >
-              {t === "titular" ? perfil?.nombre ?? "Titular" : t === "pareja" ? pareja_perfil?.nombre ?? "Pareja" : "Hogar"}
-            </button>
-          ))}
-        </div>
-      )}
-
-      {/* Financial Timeline — Hero Visual */}
+      {/* HERO: Financial Timeline — full width */}
       {motorC && perfilActivo && retiroActivo && (
         <FadeIn>
-          <Card className={isFull ? "md:col-span-2 lg:col-span-3 xl:col-span-4" : ""}>
+          <Card>
             <FinancialTimeline
               edadActual={perfilActivo.edad}
               edadRetiro={retiroActivo.edad_retiro ?? 60}
               edadDefuncion={retiroActivo.edad_defuncion ?? 90}
-              patrimonioActual={
-                (patrimonioActivo?.liquidez ?? 0) +
-                (patrimonioActivo?.inversiones ?? 0) +
-                (patrimonioActivo?.dotales ?? 0)
-              }
+              patrimonioActual={(patrimonioActivo?.liquidez ?? 0) + (patrimonioActivo?.inversiones ?? 0) + (patrimonioActivo?.dotales ?? 0)}
               ahorroMensual={flujoActivo?.ahorro ?? 0}
               pensionMensual={motorC.pension_total_mensual}
               rentasMensuales={flujoActivo?.rentas ?? 0}
               mensualidadDeseada={(retiroActivo as { mensualidad_deseada?: number })?.mensualidad_deseada ?? 50000}
-              modo={isFull ? "resultados" : "mini"}
-              showMetrics={isFull}
+              modo="resultados"
+              showMetrics={true}
             />
           </Card>
         </FadeIn>
       )}
 
-      {/* Output 1 — Análisis Ingreso/Gasto */}
-      {motorA && donutData.length > 0 && (
-        <FadeIn>
-          <Card>
-            <DonutChart data={donutData} total={motorA.ingresos_totales} />
-          </Card>
-        </FadeIn>
-      )}
-
-      {/* Output 2 — Reserva de Emergencia */}
+      {/* ROW: Flujo + Reserva + Acumulación — 2 cols */}
       {motorA && (
-        <FadeIn>
-          <Card>
-            <ReservaSemaforo
-              meses={motorA.meses_cubiertos}
-              benchmark={3}
-              faltante={
-                motorA.meses_cubiertos !== null && motorA.meses_cubiertos < 3
-                  ? (3 - motorA.meses_cubiertos) * (flujoActivo?.gastos_basicos ?? 0)
-                  : 0
-              }
-            />
-          </Card>
-        </FadeIn>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {donutData.length > 0 && (
+            <FadeIn>
+              <Card className="min-h-[320px]">
+                <DonutChart data={donutData} total={motorA.ingresos_totales} />
+              </Card>
+            </FadeIn>
+          )}
+          <FadeIn>
+            <Card className="min-h-[320px]">
+              <ReservaSemaforo
+                meses={motorA.meses_cubiertos}
+                benchmark={3}
+                faltante={
+                  motorA.meses_cubiertos !== null && motorA.meses_cubiertos < 3
+                    ? (3 - motorA.meses_cubiertos) * (flujoActivo?.gastos_basicos ?? 0)
+                    : 0
+                }
+              />
+            </Card>
+          </FadeIn>
+        </div>
       )}
 
-      {/* Output 3 — Saldo Acumulación */}
+      {/* ROW: Acumulación + Regla 72 */}
       {motorA && motorE && (
-        <FadeIn>
-          <Card>
-            <SaldoAcumulacionCard
-              saldoAcumulacion={motorE.financiero}
-              mesesReservaAcumulacion={
-                (flujoActivo?.gastos_basicos ?? 0) > 0
-                  ? motorE.financiero / (flujoActivo?.gastos_basicos ?? 1)
-                  : 0
-              }
-              remanenteObjetivos={motorA.remanente}
-            />
-          </Card>
-        </FadeIn>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <FadeIn>
+            <Card>
+              <SaldoAcumulacionCard
+                saldoAcumulacion={motorE.financiero}
+                mesesReservaAcumulacion={(flujoActivo?.gastos_basicos ?? 0) > 0 ? motorE.financiero / (flujoActivo?.gastos_basicos ?? 1) : 0}
+                remanenteObjetivos={motorA.remanente}
+              />
+            </Card>
+          </FadeIn>
+          <FadeIn>
+            <Card>
+              <Regla72Table patrimonio={motorE.patrimonio_neto} />
+            </Card>
+          </FadeIn>
+        </div>
       )}
 
-      {/* Regla del 72 */}
-      {motorE && (
-        <FadeIn>
-          <Card>
-            <Regla72Table patrimonio={motorE.patrimonio_neto} />
-          </Card>
-        </FadeIn>
-      )}
-
-      {/* Output 4/5/6 — Retiro: Grado Avance, Fuentes Ingreso, Déficit */}
+      {/* ROW: Retiro — Grado Avance (full width hero) */}
       {motorC && (
-        <FadeIn>
-          <Card>
-            <GradoAvanceBar porcentaje={motorC.grado_avance} />
-          </Card>
-          <Card>
-            <FuentesIngreso
-              rentas={motorC.fuentes_ingreso.rentas}
-              pension={motorC.fuentes_ingreso.pension}
-              patrimonio={motorC.fuentes_ingreso.patrimonio}
-            />
-          </Card>
-          <Card>
-            <DeficitCard
-              deficit={motorC.deficit_mensual}
-              simuladorUrl={`/diagnosticos/${id}/simulador`}
-            />
-          </Card>
-        </FadeIn>
+        <>
+          <FadeIn>
+            <Card glow>
+              <GradoAvanceBar porcentaje={motorC.grado_avance} />
+            </Card>
+          </FadeIn>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <FadeIn>
+              <Card>
+                <FuentesIngreso
+                  rentas={motorC.fuentes_ingreso.rentas}
+                  pension={motorC.fuentes_ingreso.pension}
+                  patrimonio={motorC.fuentes_ingreso.patrimonio}
+                />
+              </Card>
+            </FadeIn>
+            <FadeIn>
+              <Card>
+                <DeficitCard
+                  deficit={motorC.deficit_mensual}
+                  simuladorUrl={`/diagnosticos/${id}/simulador`}
+                />
+              </Card>
+            </FadeIn>
+          </div>
+        </>
       )}
 
       {/* Índice Patrimonial */}
@@ -468,7 +513,7 @@ export function OutputPanel({ variant = "sidebar" }: OutputPanelProps) {
         <FadeIn>
           <Card>
             <div className="space-y-3 min-w-0">
-              <p className="font-bold font-[family-name:var(--font-poppins)] text-sm text-white">
+              <p className="font-bold font-[family-name:var(--font-poppins)] text-lg text-white">
                 Índice Patrimonial
               </p>
               <div className="space-y-2">
@@ -477,9 +522,9 @@ export function OutputPanel({ variant = "sidebar" }: OutputPanelProps) {
                   { label: "Total ingresos en retiro", value: motorC.pension_total_mensual + (motorC.fuentes_ingreso?.rentas ?? 0), highlight: false },
                   { label: "Faltante / Superávit mensual", value: motorC.deficit_mensual, highlight: true },
                 ].map(({ label, value, highlight }) => (
-                  <div key={label} className="flex justify-between items-center py-1.5 border-b border-white/[0.06]">
-                    <span className="font-[family-name:var(--font-open-sans)] text-xs text-[#8B9BB4]">{label}</span>
-                    <span className={`font-bold font-[family-name:var(--font-poppins)] text-sm ${
+                  <div key={label} className="flex justify-between items-center py-2 border-b border-white/[0.06]">
+                    <span className="font-[family-name:var(--font-open-sans)] text-sm text-[#8B9BB4]">{label}</span>
+                    <span className={`font-bold font-[family-name:var(--font-poppins)] text-lg ${
                       highlight ? (value < 0 ? 'text-[#EF4444]' : 'text-[#10B981]') : 'text-[#E6C78A]'
                     }`}>
                       {highlight && value < 0 ? '-' : ''}{formatMXN(Math.abs(value))}
@@ -492,86 +537,91 @@ export function OutputPanel({ variant = "sidebar" }: OutputPanelProps) {
         </FadeIn>
       )}
 
-      {/* Desacumulación: Curva, Trayectoria */}
+      {/* HERO: Trayectoria retiro — full width chart */}
       {motorC && (
         <FadeIn>
-          <Card>
+          <Card className="min-h-[400px]">
             <TrayectoriaRetiroChart
               saldoInicioJubilacion={motorC.saldo_inicio_jubilacion}
               pensionTotalMensual={motorC.pension_total_mensual}
               mensualidadDeseada={(retiroActivo as { mensualidad_deseada?: number })?.mensualidad_deseada ?? 50000}
               edadRetiro={retiroActivo?.edad_retiro ?? 60}
               edadDefuncion={retiroActivo?.edad_defuncion ?? 90}
-              patrimonioFinancieroActual={
-                (patrimonioActivo?.liquidez ?? 0) +
-                (patrimonioActivo?.inversiones ?? 0) +
-                (patrimonioActivo?.dotales ?? 0)
-              }
+              patrimonioFinancieroActual={(patrimonioActivo?.liquidez ?? 0) + (patrimonioActivo?.inversiones ?? 0) + (patrimonioActivo?.dotales ?? 0)}
             />
           </Card>
         </FadeIn>
       )}
 
-      {/* Objetivos: Tabla Viabilidad, Legado */}
+      {/* ROW: Objetivos — Tabla + Legado */}
       {motorD && (
-        <FadeIn>
-          <Card>
-            <TablaViabilidad objetivos={motorD.resultados} />
-          </Card>
-          <Card>
-            <LegadoCard
-              monto={motorD.legado}
-              edadDefuncion={retiroActivo?.edad_defuncion ?? 90}
-            />
-          </Card>
-        </FadeIn>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <FadeIn>
+            <Card>
+              <TablaViabilidad objetivos={motorD.resultados} />
+            </Card>
+          </FadeIn>
+          <FadeIn>
+            <Card>
+              <LegadoCard monto={motorD.legado} edadDefuncion={retiroActivo?.edad_defuncion ?? 90} />
+            </Card>
+          </FadeIn>
+        </div>
       )}
 
-      {/* Balance: Patrimonio Neto, Nivel Riqueza */}
+      {/* ROW: Patrimonio Neto + Nivel Riqueza */}
       {motorB && motorE && (
-        <FadeIn>
-          <Card>
-            <PatrimonioNetoCard
-              neto={motorE.patrimonio_neto}
-              financiero={motorE.financiero}
-              noFinanciero={motorE.noFinanciero}
-              pasivos={motorE.pasivos_total}
-            />
-          </Card>
-          <Card>
-            <NivelRiquezaBadge
-              nivel={motorB.nivel_riqueza}
-              ratio={motorB.ratio}
-              benchmarkEdad={motorB.benchmark_para_edad}
-              edad={perfilActivo?.edad ?? 0}
-            />
-          </Card>
-        </FadeIn>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <FadeIn>
+            <Card>
+              <PatrimonioNetoCard
+                neto={motorE.patrimonio_neto}
+                financiero={motorE.financiero}
+                noFinanciero={motorE.noFinanciero}
+                pasivos={motorE.pasivos_total}
+              />
+            </Card>
+          </FadeIn>
+          <FadeIn>
+            <Card>
+              <NivelRiquezaBadge
+                nivel={motorB.nivel_riqueza}
+                ratio={motorB.ratio}
+                benchmarkEdad={motorB.benchmark_para_edad}
+                edad={perfilActivo?.edad ?? 0}
+              />
+            </Card>
+          </FadeIn>
+        </div>
       )}
 
-      {/* Potencial del balance: Potencial Apalancamiento, Índice Solvencia */}
+      {/* ROW: Potencial Apalancamiento + Solvencia */}
       {motorE && (
-        <FadeIn>
-          <Card>
-            <PotencialApalancamientoCard
-              potencialApalancamiento={motorE.potencial_apalancamiento}
-              activosTotales={motorE.activos_total}
-              capacidadApalancamiento={motorE.potencial_apalancamiento > 0}
-            />
-          </Card>
-          <Card>
-            <IndiceSolvencia
-              valor={motorE.indice_solvencia}
-              clasificacion={motorE.clasificacion_solvencia}
-            />
-          </Card>
-        </FadeIn>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <FadeIn>
+            <Card>
+              <PotencialApalancamientoCard
+                potencialApalancamiento={motorE.potencial_apalancamiento}
+                activosTotales={motorE.activos_total}
+                capacidadApalancamiento={motorE.potencial_apalancamiento > 0}
+              />
+            </Card>
+          </FadeIn>
+          <FadeIn>
+            <Card>
+              <IndiceSolvencia
+                valor={motorE.indice_solvencia}
+                clasificacion={motorE.clasificacion_solvencia}
+              />
+            </Card>
+          </FadeIn>
+        </div>
       )}
 
-      {/* Patrimonio Financiero: Valor Dinero en el Tiempo */}
+      {/* HERO: Valor del dinero en el tiempo — full width chart */}
       {motorE && (
         <FadeIn>
-          <Card>
+          <Card className="min-h-[400px]">
             <ValorDineroTiempoChart
               montoInversion={(patrimonioActivo?.liquidez ?? 0) + (patrimonioActivo?.inversiones ?? 0)}
               reservaCortoPlazo={patrimonioActivo?.liquidez ?? 0}
@@ -582,10 +632,10 @@ export function OutputPanel({ variant = "sidebar" }: OutputPanelProps) {
         </FadeIn>
       )}
 
-      {/* Esquemas de Pensión */}
+      {/* Esquemas de Pensión — full width */}
       {motorE && (
         <FadeIn>
-          <Card>
+          <Card className="min-h-[350px]">
             <EsquemasPensionChart
               afore={patrimonioActivo?.afore ?? 0}
               ppr={patrimonioActivo?.ppr ?? 0}
@@ -597,16 +647,16 @@ export function OutputPanel({ variant = "sidebar" }: OutputPanelProps) {
         </FadeIn>
       )}
 
-      {/* Output 7 — Protección */}
+      {/* Protección */}
       {motorF && (
         <FadeIn>
           <Card>
-            <div className="space-y-2 min-w-0">
-              <p className="font-[family-name:var(--font-poppins)] text-sm font-bold text-white">
+            <div className="space-y-3 min-w-0">
+              <p className="font-[family-name:var(--font-poppins)] text-lg font-bold text-white">
                 Protección Patrimonial
               </p>
               {motorF.recomendaciones.map((r, i) => (
-                <p key={i} className="font-[family-name:var(--font-open-sans)] text-sm text-white break-words">
+                <p key={i} className="font-[family-name:var(--font-open-sans)] text-base text-white break-words leading-relaxed">
                   {r}
                 </p>
               ))}
@@ -616,13 +666,12 @@ export function OutputPanel({ variant = "sidebar" }: OutputPanelProps) {
       )}
 
       {!motorA && (
-        <div className="text-center py-12">
-          <p className="font-[family-name:var(--font-open-sans)] text-sm text-[#5A6A85]">
+        <div className="text-center py-16">
+          <p className="font-[family-name:var(--font-open-sans)] text-base text-[#5A6A85]">
             Completa los primeros pasos para ver tus resultados
           </p>
         </div>
       )}
-      </div>
     </div>
   );
 }

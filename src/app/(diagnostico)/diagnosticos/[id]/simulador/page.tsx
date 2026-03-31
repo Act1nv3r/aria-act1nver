@@ -115,7 +115,8 @@ export default function SimuladorPage() {
   }, [sliderValues.venta_activo_edad, sliderValues.venta_activo_monto, sliderValues.aportacion_extra, edad]);
 
   return (
-    <div className="max-w-7xl mx-auto p-6">
+    <div className="min-h-screen bg-[#060D1A]">
+      <div className="max-w-[1600px] mx-auto px-6 sm:px-8 lg:px-12 py-8">
       <div className="mb-8">
         <h1 className="font-bold font-[family-name:var(--font-poppins)] text-[28px] text-white">
           Simula tu futuro
@@ -288,7 +289,7 @@ export default function SimuladorPage() {
             <DeficitCard deficit={resultadoSimulado.deficit_mensual} />
           </Card>
 
-          <Card>
+          <Card className="min-h-[380px]">
             <TrayectoriaRetiroChart
               saldoInicioJubilacion={resultadoSimulado.saldo_inicio_jubilacion}
               pensionTotalMensual={resultadoSimulado.pension_total_mensual}
@@ -312,6 +313,7 @@ export default function SimuladorPage() {
         <Button variant="outline" onClick={resetValues}>
           Resetear valores
         </Button>
+      </div>
       </div>
     </div>
   );
