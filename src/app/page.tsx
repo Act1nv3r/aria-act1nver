@@ -26,7 +26,7 @@ export default function HomePage() {
       if (cancelled) return;
       const hasSession = sessionStorage.getItem("isAuthenticated");
       const authed = useAuthStore.getState().isAuthenticated;
-      router.replace(hasSession || authed ? "/dashboard" : "/login");
+      router.replace(hasSession || authed ? "/crm" : "/login");
     };
 
     const fallback = window.setTimeout(go, 2500);

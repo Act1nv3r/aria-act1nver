@@ -125,9 +125,9 @@ export default function CompletadoPage() {
               </Button>
             </Link>
 
-            <Link href="/dashboard">
+            <Link href="/crm">
               <Button variant="ghost" size="lg">
-                Volver al Dashboard
+                Volver al CRM
               </Button>
             </Link>
           </div>
@@ -190,9 +190,9 @@ export default function CompletadoPage() {
             </Button>
           </Link>
 
-          <Link href="/dashboard">
+          <Link href="/crm">
             <Button variant="ghost" size="sm">
-              ← Dashboard
+              ← CRM
             </Button>
           </Link>
         </div>

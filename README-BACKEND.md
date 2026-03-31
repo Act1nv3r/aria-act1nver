@@ -42,6 +42,18 @@ cp .env.local.example .env.local
 npm run dev
 ```
 
+### Railway CLI (evitar `EACCES` en Mac)
+
+Si `npm i -g @railway/cli` falla con **permission denied** en `/usr/local`, **no instales global**. Desde la **raíz del repo** (donde está `package.json`):
+
+```bash
+npm run railway -- login
+npm run railway -- link
+npm run railway -- up
+```
+
+Equivale a `npx @railway/cli …` y no toca `/usr/local`.
+
 ### Seguridad y GitHub
 
 - **`backend/.env`**, **`backend/.env.local`** y **`.env.local`** (raíz) están en **`.gitignore`** para que no se suban secretos a GitHub.

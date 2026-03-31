@@ -13,9 +13,10 @@ import { TranscriptionPanel } from "./transcription-panel";
 interface VoiceButtonProps {
   onStart?: () => void;
   onStop?: () => void;
+  mode?: "normal" | "silent";
 }
 
-export function VoiceButton({ onStart, onStop }: VoiceButtonProps) {
+export function VoiceButton({ onStart, onStop, mode = "normal" }: VoiceButtonProps) {
   const [consentModalOpen, setConsentModalOpen] = useState(false);
   const [consent, setConsent] = useState(false);
   const {
@@ -73,9 +74,20 @@ export function VoiceButton({ onStart, onStop }: VoiceButtonProps) {
     }
   };
 
+  if (mode === "silent" && isRecording) {
+    return (
+      <div className="flex items-center gap-1 px-2 py-1 rounded-full bg-[#10B981]/10">
+        <Mic className="w-2.5 h-2.5 text-[#10B981]" />
+        <div className="w-1.5 h-1.5 rounded-full bg-[#10B981] animate-pulse" />
+      </div>
+    );
+  }
+
   return (
     <>
-      <TranscriptionPanel transcript={transcript} isRecording={isRecording} error={error} />
+      {mode === "normal" && (
+        <TranscriptionPanel transcript={transcript} isRecording={isRecording} error={error} />
+      )}
       <button
         type="button"
         onClick={handleClick}

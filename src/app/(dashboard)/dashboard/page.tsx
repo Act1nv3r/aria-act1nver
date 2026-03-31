@@ -165,7 +165,7 @@ export default function DashboardPage() {
       setNuevoNombre("");
       setModalOpen(false);
       setModalStep("modo");
-      router.push(`/diagnosticos/${d.id}/paso/1`);
+      router.push(`/diagnosticos/${d.id}/sesion`);
     } catch {
       router.push("/diagnosticos/demo/paso/1");
     }

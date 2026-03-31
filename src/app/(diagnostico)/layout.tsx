@@ -115,7 +115,7 @@ export default function DiagnosticoLayout({
 
           {/* Sidebar header / logo */}
           <div className="px-6 py-5 border-b border-white/[0.06]">
-            <Link href="/dashboard" className="flex items-center gap-3 group">
+            <Link href="/crm" className="flex items-center gap-3 group">
               <div className="w-8 h-8 bg-[#C9A84C]/10 border border-[#C9A84C]/30 rounded-[8px] flex items-center justify-center">
                 <span className="text-[#C9A84C] font-bold text-sm">A</span>
               </div>
@@ -247,11 +247,11 @@ export default function DiagnosticoLayout({
           {/* Back to dashboard */}
           <div className="px-4 py-4 border-t border-white/[0.06]">
             <Link
-              href="/dashboard"
+              href="/crm"
               className="flex items-center gap-2 px-3 py-2 rounded-[8px] text-[#8B9BB4] hover:text-[#F0F4FA] hover:bg-[#1A3154]/50 transition-colors text-xs"
             >
               <ArrowLeft className="w-3.5 h-3.5" />
-              Volver al dashboard
+              Volver al CRM
             </Link>
           </div>
         </aside>
@@ -264,7 +264,7 @@ export default function DiagnosticoLayout({
             <div className="lg:hidden sticky top-0 z-50 bg-[#0C1829]/95 border-b border-white/[0.06]"
                  style={{ backdropFilter: "blur(16px)" }}>
               <div className="flex items-center justify-between px-4 py-3">
-                <Link href="/dashboard" className="flex items-center gap-2">
+                <Link href="/crm" className="flex items-center gap-2">
                   <div className="w-7 h-7 bg-[#C9A84C]/10 border border-[#C9A84C]/30 rounded-[6px] flex items-center justify-center">
                     <span className="text-[#C9A84C] font-bold text-xs">A</span>
                   </div>

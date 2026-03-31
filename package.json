@@ -9,6 +9,7 @@
     "lint": "eslint",
     "vercel": "npx vercel",
     "vercel:prod": "npx vercel --prod",
+    "railway": "npx @railway/cli",
     "lighthouse": "lhci autorun",
     "lighthouse:mobile": "lhci autorun --config=lighthouserc.mobile.js"
   },
