@@ -201,63 +201,18 @@ export default function SesionPage() {
     isRecording, transcript, perfil, flujoMensual, patrimonio, retiro, proteccion,
   ]);
 
-  // --- LAYER 2: Claude Haiku deep analysis every ~8 seconds on ALL transcript text ---
-  const haikuTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const haikuRunningRef = useRef(false);
-  const lastHaikuTextRef = useRef("");
+  // Shared extraction processor — uses refs to avoid stale closures in intervals
+  const extractedFieldsRef = useRef(extracted_fields);
+  extractedFieldsRef.current = extracted_fields;
 
-  useEffect(() => {
-    if (!isRecording) {
-      if (haikuTimerRef.current) clearInterval(haikuTimerRef.current);
-      haikuTimerRef.current = null;
-      return;
-    }
-
-    const runHaikuExtraction = async () => {
-      if (haikuRunningRef.current) return;
-
-      // Use ALL lines (including interim) — Haiku can handle partial text
-      const allText = transcript.map((l) => l.text).join(" ");
-      if (!allText.trim() || allText.length < 20) return;
-
-      // Skip if text hasn't changed meaningfully since last Haiku call
-      if (allText === lastHaikuTextRef.current) return;
-
-      const faltantes = getDatosFaltantes({
-        perfil, flujoMensual, patrimonio, retiro, proteccion,
-      });
-      if (faltantes.length === 0) return;
-
-      haikuRunningRef.current = true;
-      lastHaikuTextRef.current = allText;
-      try {
-        const sugerencias = await extraerConHaiku(allText, faltantes);
-        processExtractions(sugerencias);
-      } catch (err) {
-        console.warn("[session] Haiku extraction failed:", err);
-      } finally {
-        haikuRunningRef.current = false;
-      }
-    };
-
-    // Run first extraction after 5 seconds, then every 8 seconds
-    const initialTimeout = setTimeout(runHaikuExtraction, 5_000);
-    haikuTimerRef.current = setInterval(runHaikuExtraction, 8_000);
-
-    return () => {
-      clearTimeout(initialTimeout);
-      if (haikuTimerRef.current) clearInterval(haikuTimerRef.current);
-    };
-  }, [isRecording, transcript, perfil, flujoMensual, patrimonio, retiro, proteccion]);
-
-  // Shared extraction processor — applies results from either regex or Haiku
   const processExtractions = useCallback((sugerencias: { campo: string; valor: string | number | boolean; confianza: number; texto_fuente: string }[]) => {
     for (const s of sugerencias) {
       const action = shouldAutoAccept(s.confianza);
       if (action === "ignore") continue;
 
-      // Skip if this field was already accepted with same or better value
-      const existing = extracted_fields.find((f) => f.campo === s.campo && f.aceptado);
+      // Skip if this field was already accepted
+      const currentFields = extractedFieldsRef.current;
+      const existing = currentFields.find((f) => f.campo === s.campo && f.aceptado);
       if (existing) continue;
 
       const field = {
@@ -276,7 +231,66 @@ export default function SesionPage() {
         showToast(s.campo, String(s.valor));
       }
     }
-  }, [extracted_fields, addExtractedField, applyExtractedField, setDatosFuente, showToast]);
+  }, [addExtractedField, applyExtractedField, setDatosFuente, showToast]);
+
+  // --- LAYER 2: Claude Haiku deep analysis every ~8 seconds on ALL transcript text ---
+  const haikuTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const haikuRunningRef = useRef(false);
+  const lastHaikuTextLenRef = useRef(0);
+
+  // Keep refs to latest values so the interval callback always sees fresh data
+  const transcriptRef = useRef(transcript);
+  transcriptRef.current = transcript;
+  const storeRef = useRef({ perfil, flujoMensual, patrimonio, retiro, proteccion });
+  storeRef.current = { perfil, flujoMensual, patrimonio, retiro, proteccion };
+  const processRef = useRef(processExtractions);
+  processRef.current = processExtractions;
+
+  useEffect(() => {
+    if (!isRecording) {
+      if (haikuTimerRef.current) clearInterval(haikuTimerRef.current);
+      haikuTimerRef.current = null;
+      return;
+    }
+
+    const runHaikuExtraction = async () => {
+      if (haikuRunningRef.current) return;
+
+      const currentTranscript = transcriptRef.current;
+      const allText = currentTranscript.map((l) => l.text).join(" ");
+      if (!allText.trim() || allText.length < 20) return;
+
+      // Skip if text hasn't grown since last call
+      if (allText.length <= lastHaikuTextLenRef.current) return;
+
+      const { perfil: p, flujoMensual: f, patrimonio: pat, retiro: r, proteccion: pro } = storeRef.current;
+      const faltantes = getDatosFaltantes({ perfil: p, flujoMensual: f, patrimonio: pat, retiro: r, proteccion: pro });
+      if (faltantes.length === 0) return;
+
+      haikuRunningRef.current = true;
+      lastHaikuTextLenRef.current = allText.length;
+
+      try {
+        console.log(`[Haiku] Sending ${allText.length} chars, ${faltantes.length} missing fields...`);
+        const sugerencias = await extraerConHaiku(allText, faltantes);
+        console.log(`[Haiku] Got ${sugerencias.length} extractions:`, sugerencias.map((s) => `${s.campo}=${s.valor}`));
+        processRef.current(sugerencias);
+      } catch (err) {
+        console.warn("[session] Haiku extraction failed:", err);
+      } finally {
+        haikuRunningRef.current = false;
+      }
+    };
+
+    // First run after 3 seconds, then every 8 seconds
+    const initialTimeout = setTimeout(runHaikuExtraction, 3_000);
+    haikuTimerRef.current = setInterval(runHaikuExtraction, 8_000);
+
+    return () => {
+      clearTimeout(initialTimeout);
+      if (haikuTimerRef.current) clearInterval(haikuTimerRef.current);
+    };
+  }, [isRecording]);
 
   const handleStart = async () => {
     if (!hasConsent) {

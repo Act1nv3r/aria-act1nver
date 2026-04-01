@@ -501,14 +501,9 @@ export function extraerEntidadesLocal(
   return results;
 }
 
-import { getAccessToken } from "./api-client";
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
-
 /**
- * v2: Continuous extraction — sends the FULL transcript to Claude Haiku
- * via the backend. The local regex engine serves as an instant fallback
- * if the API is unavailable, and also runs alongside to catch obvious matches.
+ * Sends the FULL transcript to Claude Haiku via the Next.js API route.
+ * Falls back to local regex if the API is unavailable.
  */
 export async function extraerConHaiku(
   textoCompleto: string,
@@ -517,13 +512,9 @@ export async function extraerConHaiku(
   if (!textoCompleto.trim() || datosFaltantes.length === 0) return [];
 
   try {
-    const token = getAccessToken();
-    const headers: Record<string, string> = { "Content-Type": "application/json" };
-    if (token) headers["Authorization"] = `Bearer ${token}`;
-
-    const res = await fetch(`${API_URL}/api/v1/voz/extraer-continuo`, {
+    const res = await fetch("/api/extract", {
       method: "POST",
-      headers,
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         texto: textoCompleto,
         datos_faltantes: datosFaltantes,
@@ -536,7 +527,10 @@ export async function extraerConHaiku(
     }
 
     const parsed = await res.json();
-    return Array.isArray(parsed) ? parsed : [];
+    if (!Array.isArray(parsed) || parsed.length === 0) {
+      return extraerEntidadesLocal(textoCompleto, datosFaltantes);
+    }
+    return parsed;
   } catch (err) {
     console.warn("[voz-nlu] Haiku API failed, using local fallback:", err);
     return extraerEntidadesLocal(textoCompleto, datosFaltantes);
