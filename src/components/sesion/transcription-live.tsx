@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, useCallback } from "react";
+import { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import { Mic, MessageSquare, User, Briefcase, Wallet, Building2, Palmtree, Target, Shield } from "lucide-react";
 import type { TranscriptLine } from "@/hooks/use-deepgram";
 import type { ExtractedField } from "@/stores/diagnostico-store";
@@ -89,6 +89,13 @@ export function TranscriptionLive({
     .join("")
     .toUpperCase()
     .slice(0, 2);
+
+  /** Deepgram diarize often assigns only speaker 0 with one mic / mixed room audio — then UI wrongly showed "Asesor" for everyone and hid data highlights (they required speaker === 1). */
+  const diarizationHasMultipleSpeakers = useMemo(() => {
+    const finals = transcript.filter((l) => l.isFinal);
+    const ids = new Set(finals.map((l) => l.speaker));
+    return ids.size >= 2;
+  }, [transcript]);
 
   // Pre-session empty state
   if (transcript.length === 0 && !isRecording) {
@@ -182,7 +189,13 @@ export function TranscriptionLive({
       >
         {transcript.map((line, idx) => {
           const extractedField = getFieldForLine(line);
-          const isCliente = line.speaker === 1;
+          const isCliente =
+            !diarizationHasMultipleSpeakers || line.speaker === 1;
+          const roleLabel = !diarizationHasMultipleSpeakers
+            ? "Conversación"
+            : line.speaker === 1
+              ? "Cliente"
+              : "Asesor";
           const isInterim = !line.isFinal;
 
           if (isInterim) {
@@ -217,7 +230,7 @@ export function TranscriptionLive({
                       isCliente ? "text-[#C9A84C]" : "text-[#5A6A85]"
                     }`}
                   >
-                    {isCliente ? "Cliente" : "Asesor"}
+                    {roleLabel}
                   </span>
                   {line.timestamp && (
                     <span className="text-[10px] text-[#3E4E60]">
@@ -230,7 +243,7 @@ export function TranscriptionLive({
                 </p>
               </div>
 
-              {extractedField && isCliente && (
+              {extractedField && (
                 <div className="mt-2 ml-1">
                   <DataHighlight
                     campo={extractedField.campo}

@@ -5,7 +5,8 @@ import { getAccessToken } from "@/lib/api-client";
 
 export interface TranscriptLine {
   text: string;
-  speaker: 0 | 1; // 0=asesor, 1=cliente
+  /** Deepgram diarization index (0, 1, …). With one mic or mixed audio often only 0 appears — UI must not assume 0=asesor. */
+  speaker: number;
   timestamp: number;
   isFinal: boolean;
 }
@@ -65,15 +66,40 @@ export function useDeepgram(onTranscript?: (lines: TranscriptLine[]) => void): U
           const alternatives = channel?.alternatives?.[0];
           if (!alternatives?.transcript) return;
           const words = alternatives.words || [];
-          const speaker = (words[0]?.speaker ?? 0) as 0 | 1;
+          const speaker = Number(words[0]?.speaker ?? 0);
           const line: TranscriptLine = {
             text: alternatives.transcript,
             speaker,
             timestamp: Date.now(),
             isFinal: !!data.is_final,
           };
+
           setTranscript((prev) => {
-            const next = data.is_final ? [...prev, line] : [...prev.slice(0, -1), line];
+            // Only replace the last line if it was ALSO interim (not final).
+            // This prevents destroying finalized lines from previous utterances.
+            if (!data.is_final) {
+              // Interim: replace last interim, or append if last was final
+              const lastLine = prev[prev.length - 1];
+              if (lastLine && !lastLine.isFinal) {
+                const next = [...prev.slice(0, -1), line];
+                onTranscript?.(next);
+                return next;
+              }
+              // Last was final (or empty) — append this interim as new
+              const next = [...prev, line];
+              onTranscript?.(next);
+              return next;
+            }
+
+            // Final result: replace the last interim for this segment, or append
+            const lastLine = prev[prev.length - 1];
+            if (lastLine && !lastLine.isFinal) {
+              const next = [...prev.slice(0, -1), line];
+              onTranscript?.(next);
+              return next;
+            }
+            // No pending interim — just append the final line
+            const next = [...prev, line];
             onTranscript?.(next);
             return next;
           });

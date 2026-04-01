@@ -13,7 +13,7 @@ import { AudioWaveform } from "@/components/sesion/audio-waveform";
 import { DataCommandCenter } from "@/components/sesion/data-command-center";
 import { useDiagnosticoStore } from "@/stores/diagnostico-store";
 import { useDeepgram, type TranscriptLine } from "@/hooks/use-deepgram";
-import { extraerEntidadesLocal, shouldAutoAccept } from "@/lib/voz-nlu";
+import { extraerEntidadesLocal, extraerConHaiku, shouldAutoAccept } from "@/lib/voz-nlu";
 import { getDatosFaltantes } from "@/lib/navi-engine";
 
 interface ToastItem {
@@ -175,13 +175,12 @@ export default function SesionPage() {
     }, 250);
   }, []);
 
-  // Track which transcript lines we've already processed
+  // --- LAYER 1: Instant regex extraction on every new final transcript line ---
   const lastProcessedIdxRef = useRef(0);
 
   useEffect(() => {
     if (!isRecording) return;
 
-    // Only process new final lines since last extraction
     const finalLines = transcript.filter((l) => l.isFinal);
     if (finalLines.length <= lastProcessedIdxRef.current) return;
 
@@ -196,12 +195,70 @@ export default function SesionPage() {
     });
     if (faltantes.length === 0) return;
 
-    // Synchronous client-side extraction — no backend dependency
     const sugerencias = extraerEntidadesLocal(recentText, faltantes);
+    processExtractions(sugerencias);
+  }, [
+    isRecording, transcript, perfil, flujoMensual, patrimonio, retiro, proteccion,
+  ]);
 
+  // --- LAYER 2: Claude Haiku deep analysis every ~8 seconds on ALL transcript text ---
+  const haikuTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const haikuRunningRef = useRef(false);
+  const lastHaikuTextRef = useRef("");
+
+  useEffect(() => {
+    if (!isRecording) {
+      if (haikuTimerRef.current) clearInterval(haikuTimerRef.current);
+      haikuTimerRef.current = null;
+      return;
+    }
+
+    const runHaikuExtraction = async () => {
+      if (haikuRunningRef.current) return;
+
+      // Use ALL lines (including interim) — Haiku can handle partial text
+      const allText = transcript.map((l) => l.text).join(" ");
+      if (!allText.trim() || allText.length < 20) return;
+
+      // Skip if text hasn't changed meaningfully since last Haiku call
+      if (allText === lastHaikuTextRef.current) return;
+
+      const faltantes = getDatosFaltantes({
+        perfil, flujoMensual, patrimonio, retiro, proteccion,
+      });
+      if (faltantes.length === 0) return;
+
+      haikuRunningRef.current = true;
+      lastHaikuTextRef.current = allText;
+      try {
+        const sugerencias = await extraerConHaiku(allText, faltantes);
+        processExtractions(sugerencias);
+      } catch (err) {
+        console.warn("[session] Haiku extraction failed:", err);
+      } finally {
+        haikuRunningRef.current = false;
+      }
+    };
+
+    // Run first extraction after 5 seconds, then every 8 seconds
+    const initialTimeout = setTimeout(runHaikuExtraction, 5_000);
+    haikuTimerRef.current = setInterval(runHaikuExtraction, 8_000);
+
+    return () => {
+      clearTimeout(initialTimeout);
+      if (haikuTimerRef.current) clearInterval(haikuTimerRef.current);
+    };
+  }, [isRecording, transcript, perfil, flujoMensual, patrimonio, retiro, proteccion]);
+
+  // Shared extraction processor — applies results from either regex or Haiku
+  const processExtractions = useCallback((sugerencias: { campo: string; valor: string | number | boolean; confianza: number; texto_fuente: string }[]) => {
     for (const s of sugerencias) {
       const action = shouldAutoAccept(s.confianza);
       if (action === "ignore") continue;
+
+      // Skip if this field was already accepted with same or better value
+      const existing = extracted_fields.find((f) => f.campo === s.campo && f.aceptado);
+      if (existing) continue;
 
       const field = {
         campo: s.campo,
@@ -219,10 +276,7 @@ export default function SesionPage() {
         showToast(s.campo, String(s.valor));
       }
     }
-  }, [
-    isRecording, transcript, perfil, flujoMensual, patrimonio, retiro, proteccion,
-    addExtractedField, applyExtractedField, setDatosFuente, showToast,
-  ]);
+  }, [extracted_fields, addExtractedField, applyExtractedField, setDatosFuente, showToast]);
 
   const handleStart = async () => {
     if (!hasConsent) {

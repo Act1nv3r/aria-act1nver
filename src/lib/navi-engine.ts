@@ -219,25 +219,34 @@ export function getDatosFaltantes(store: {
     }
   };
 
-  checkFields(store.perfil, ["nombre", "edad", "ocupacion"], { edad: 18 });
+  checkFields(store.perfil, ["nombre", "edad", "genero", "ocupacion", "dependientes"], { edad: 18 });
   checkFields(store.flujoMensual, [
     "ahorro",
+    "rentas",
     "gastos_basicos",
     "obligaciones",
+    "otros",
     "creditos",
   ]);
   checkFields(store.patrimonio, [
     "liquidez",
     "inversiones",
+    "dotales",
     "afore",
     "ppr",
+    "plan_privado",
+    "seguros_retiro",
+    "ley_73",
     "casa",
     "inmuebles_renta",
+    "tierra",
+    "negocio",
+    "herencia",
   ]);
   checkFields(store.retiro, ["edad_retiro", "mensualidad_deseada"], {
     edad_retiro: 65,
   });
-  checkFields(store.proteccion, ["seguro_vida", "sgmm"]);
+  checkFields(store.proteccion, ["seguro_vida", "propiedades_aseguradas", "sgmm"]);
 
   return faltantes;
 }

@@ -30,7 +30,13 @@ export default function PresentacionPage() {
   // Silent listening during presentation
   const onTranscript = useCallback(
     (lines: TranscriptLine[]) => {
-      const recent = lines.filter((l) => l.isFinal && l.speaker === 1).slice(-3);
+      const finals = lines.filter((l) => l.isFinal);
+      if (finals.length === 0) return;
+      const speakers = new Set(finals.map((l) => l.speaker));
+      const recent =
+        speakers.size >= 2
+          ? finals.filter((l) => l.speaker === 1).slice(-3)
+          : finals.slice(-3);
       if (recent.length === 0) return;
 
       const text = recent.map((l) => l.text).join(" ");

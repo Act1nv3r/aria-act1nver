@@ -449,20 +449,47 @@ export const useDiagnosticoStore = create<DiagnosticoStore>()(
           const retiroFields = ["edad_retiro", "mensualidad_deseada", "edad_defuncion"];
           const proteccionFields = ["seguro_vida", "propiedades_aseguradas", "sgmm"];
 
+          // Type coercion: Haiku may return numbers as strings, etc.
+          let valor = field.valor;
+
+          // Numeric fields — parse string to number
+          const numericFields = [
+            ...flujoFields, ...patrimonioFields, ...retiroFields, "edad",
+          ];
+          if (numericFields.includes(field.campo) && typeof valor === "string") {
+            const parsed = Number(String(valor).replace(/[$,\s]/g, ""));
+            if (!isNaN(parsed)) valor = parsed;
+          }
+
+          // Boolean fields — convert number/string to boolean
+          const booleanFields = ["seguro_vida", "propiedades_aseguradas", "sgmm", "dependientes"];
+          if (booleanFields.includes(field.campo)) {
+            if (typeof valor === "number") valor = valor > 0;
+            if (typeof valor === "string") {
+              const lower = valor.toLowerCase();
+              valor = lower === "true" || lower === "sí" || lower === "si" || Number(lower) > 0;
+            }
+          }
+
+          // edad — ensure it's an integer
+          if (field.campo === "edad" && typeof valor === "number") {
+            valor = Math.round(valor);
+          }
+
           if (perfilFields.includes(field.campo)) {
-            return { perfil: { ...(s.perfil ?? {} as Perfil), [field.campo]: field.valor } };
+            return { perfil: { ...(s.perfil ?? {} as Perfil), [field.campo]: valor } };
           }
           if (flujoFields.includes(field.campo)) {
-            return { flujoMensual: { ...(s.flujoMensual ?? {} as FlujoMensual), [field.campo]: field.valor } };
+            return { flujoMensual: { ...(s.flujoMensual ?? {} as FlujoMensual), [field.campo]: valor } };
           }
           if (patrimonioFields.includes(field.campo)) {
-            return { patrimonio: { ...(s.patrimonio ?? {} as Patrimonio), [field.campo]: field.valor } };
+            return { patrimonio: { ...(s.patrimonio ?? {} as Patrimonio), [field.campo]: valor } };
           }
           if (retiroFields.includes(field.campo)) {
-            return { retiro: { ...(s.retiro ?? {} as Retiro), [field.campo]: field.valor } };
+            return { retiro: { ...(s.retiro ?? {} as Retiro), [field.campo]: valor } };
           }
           if (proteccionFields.includes(field.campo)) {
-            return { proteccion: { ...(s.proteccion ?? {} as Proteccion), [field.campo]: field.valor } };
+            return { proteccion: { ...(s.proteccion ?? {} as Proteccion), [field.campo]: valor } };
           }
           return {};
         }),
