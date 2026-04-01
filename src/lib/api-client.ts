@@ -140,6 +140,10 @@ export const api = {
         `/api/v1/diagnosticos/${id}/objetivos`,
         { method: "PUT", body: JSON.stringify(data) }
       ),
+    completar: (id: string) =>
+      apiFetch<{ id: string; estado: string }>(`/api/v1/diagnosticos/${id}/completar`, {
+        method: "PUT",
+      }),
     compartir: (id: string) =>
       apiFetch<{ url: string; token: string; expires_at: string }>(`/api/v1/diagnosticos/${id}/compartir`, {
         method: "POST",

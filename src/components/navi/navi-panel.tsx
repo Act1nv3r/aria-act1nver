@@ -92,7 +92,9 @@ export function NaviPanel({
   const store = useDiagnosticoStore();
   const [suggestion, setSuggestion] = useState<NaviSuggestion | null>(null);
   const [oportunidades, setOportunidades] = useState<Oportunidad[]>([]);
+  const [skippedFields, setSkippedFields] = useState<string[]>([]);
   const opsRef = useRef<Oportunidad[]>([]);
+  const prevFaltantesRef = useRef<string[]>([]);
 
   const datosFaltantes = getDatosFaltantes({
     perfil: store.perfil,
@@ -102,9 +104,16 @@ export function NaviPanel({
     proteccion: store.proteccion,
   });
 
-  const fetchSuggestion = useCallback(async () => {
+  const skippedRef = useRef(skippedFields);
+  skippedRef.current = skippedFields;
+  const transcripcionRef = useRef(transcripcion);
+  transcripcionRef.current = transcripcion;
+  const faltantesRef = useRef(datosFaltantes);
+  faltantesRef.current = datosFaltantes;
+
+  const fetchSuggestion = useCallback(async (skipOverride?: string[]) => {
     const result = await generarSugerenciaNavi({
-      transcripcion,
+      transcripcion: transcripcionRef.current,
       datosRecopilados: {
         ...(store.perfil ?? {}),
         ...(store.flujoMensual ?? {}),
@@ -112,26 +121,53 @@ export function NaviPanel({
         ...(store.retiro ?? {}),
         ...(store.proteccion ?? {}),
       },
-      datosFaltantes,
+      datosFaltantes: faltantesRef.current,
       contextoCliente: {
         edad: store.perfil?.edad,
         ocupacion: store.perfil?.ocupacion,
         dependientes: store.perfil?.dependientes,
         nombre: store.perfil?.nombre,
       },
+      skipFields: skipOverride ?? skippedRef.current,
     });
     setSuggestion(result);
-  }, [transcripcion, datosFaltantes, store.perfil, store.flujoMensual, store.patrimonio, store.retiro, store.proteccion]);
+  }, [store.perfil, store.flujoMensual, store.patrimonio, store.retiro, store.proteccion]);
+
+  const handleSkipSuggestion = useCallback(() => {
+    const currentTarget = suggestion?.campo_target;
+    if (!currentTarget) {
+      fetchSuggestion();
+      return;
+    }
+    const newSkipped = [...skippedFields, currentTarget];
+    setSkippedFields(newSkipped);
+    fetchSuggestion(newSkipped);
+  }, [suggestion, skippedFields, fetchSuggestion]);
+
+  // Auto-detect when a field gets answered → clear skipped and refresh
+  useEffect(() => {
+    const prev = new Set(prevFaltantesRef.current);
+    const curr = new Set(datosFaltantes);
+    const answered = [...prev].filter((f) => !curr.has(f));
+    if (answered.length > 0) {
+      const currentTarget = suggestion?.campo_target;
+      if (currentTarget && answered.includes(currentTarget)) {
+        setSkippedFields([]);
+        fetchSuggestion([]);
+      }
+    }
+    prevFaltantesRef.current = datosFaltantes;
+  }, [datosFaltantes, suggestion, fetchSuggestion]);
 
   const fetchOpportunities = useCallback(async () => {
-    const result = await detectarOportunidades(transcripcion, opsRef.current);
+    const result = await detectarOportunidades(transcripcionRef.current, opsRef.current);
     opsRef.current = result;
     setOportunidades(result);
-  }, [transcripcion]);
+  }, []);
 
   useEffect(() => {
     fetchSuggestion();
-    const interval = setInterval(fetchSuggestion, 15_000);
+    const interval = setInterval(() => fetchSuggestion(), 20_000);
     return () => clearInterval(interval);
   }, [fetchSuggestion]);
 
@@ -262,7 +298,7 @@ export function NaviPanel({
           <div className="flex flex-col h-full p-4 gap-3">
             <NaviSuggestionCard
               suggestion={suggestion}
-              onSkip={fetchSuggestion}
+              onSkip={handleSkipSuggestion}
             />
             <div className="shrink-0 bg-[#0C1829] border border-white/[0.06] rounded-[14px]">
               <PhaseStepperHorizontal categories={categories} />

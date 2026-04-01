@@ -75,12 +75,46 @@ interface Outputs {
 
 export interface SessionInsight {
   id: string;
-  tipo: "oportunidad" | "insight" | "contexto";
+  tipo: "oportunidad" | "insight" | "contexto" | "seguimiento";
   texto: string;
   producto_sugerido?: string;
   confianza: number;
-  fase: "conversacion" | "simulacion";
+  fase: "conversacion" | "simulacion" | "presentacion";
   created_at: number;
+  contexto_seguimiento?: string;
+  accion_sugerida?: string;
+  señal_detectada?: string;
+}
+
+export interface SavedSimulation {
+  id: string;
+  nombre: string;
+  created_at: number;
+  params: {
+    edad_retiro: number;
+    ahorro: number;
+    mensualidad_deseada: number;
+    tasa_real: number;
+    aportacion_extra: number;
+    venta_activo_edad: number;
+    venta_activo_monto: number;
+  };
+  resultados: {
+    grado_avance: number;
+    mensualidad_posible: number;
+    deficit_mensual: number;
+    saldo_inicio_jubilacion: number;
+    pension_total_mensual: number;
+  };
+}
+
+export interface SavedDocument {
+  id: string;
+  tipo: "balance" | "diagnostico";
+  nombre_archivo: string;
+  cliente_nombre: string;
+  created_at: number;
+  diagnostico_id?: string;
 }
 
 export interface ExtractedField {
@@ -120,6 +154,9 @@ interface DiagnosticoStore {
   sesion_insights: SessionInsight[];
   extracted_fields: ExtractedField[];
   sesion_inicio: number | null;
+  simulaciones_guardadas: SavedSimulation[];
+  documentos_guardados: SavedDocument[];
+  diagnosticos_completados: Record<string, { nombre: string; completed_at: number; modo: string }>;
 
   setPaso: (paso: number) => void;
   nextStep: () => void;
@@ -150,6 +187,11 @@ interface DiagnosticoStore {
   acceptExtractedField: (campo: string) => void;
   updateExtractedFieldValue: (campo: string, valor: string | number | boolean) => void;
   applyExtractedField: (field: ExtractedField) => void;
+  addSimulacion: (sim: Omit<SavedSimulation, "id" | "created_at">) => void;
+  removeSimulacion: (id: string) => void;
+  addDocumento: (doc: Omit<SavedDocument, "id" | "created_at">) => void;
+  removeDocumento: (id: string) => void;
+  marcarDiagnosticoCompleto: (diagnosticoId: string, nombre: string, modo: string) => void;
   reset: () => void;
 }
 
@@ -219,6 +261,9 @@ const initialState = {
   sesion_insights: [] as SessionInsight[],
   extracted_fields: [] as ExtractedField[],
   sesion_inicio: null as number | null,
+  simulaciones_guardadas: [] as SavedSimulation[],
+  documentos_guardados: [] as SavedDocument[],
+  diagnosticos_completados: {} as Record<string, { nombre: string; completed_at: number; modo: string }>,
   pareja_perfil: null,
   pareja_flujoMensual: null,
   pareja_patrimonio: null,
@@ -378,17 +423,27 @@ export const useDiagnosticoStore = create<DiagnosticoStore>()(
       setDatosFuente: (fuente) => set({ datos_fuente: fuente }),
       updateCompletitud: () =>
         set((s) => {
-          const fields = {
+          const defaults: Record<string, unknown> = {
+            nombre: "", edad: 18, genero: "H", ocupacion: "asalariado", dependientes: false,
+            ahorro: 0, rentas: 0, otros: 0, gastos_basicos: 0, obligaciones: 0, creditos: 0,
+            liquidez: 0, inversiones: 0, dotales: 0,
+            afore: 0, ppr: 0, plan_privado: 0, seguros_retiro: 0, ley_73: null,
+            casa: 0, inmuebles_renta: 0, tierra: 0, negocio: 0, herencia: 0,
+            seguro_vida: false, propiedades_aseguradas: null, sgmm: false,
+            edad_retiro: 65, mensualidad_deseada: 0,
+          };
+          const fieldGroups: Record<string, string[]> = {
             perfil: ["nombre", "edad", "genero", "ocupacion", "dependientes"],
             flujo: ["ahorro", "rentas", "otros", "gastos_basicos", "obligaciones", "creditos"],
             patrimonio_fin: ["liquidez", "inversiones", "dotales"],
             retiro_esquemas: ["afore", "ppr", "plan_privado", "seguros_retiro", "ley_73"],
             no_financiero: ["casa", "inmuebles_renta", "tierra", "negocio", "herencia"],
             proteccion: ["seguro_vida", "propiedades_aseguradas", "sgmm"],
+            retiro: ["edad_retiro", "mensualidad_deseada"],
           };
           let total = 0;
           let filled = 0;
-          for (const [cat, flds] of Object.entries(fields)) {
+          for (const [cat, flds] of Object.entries(fieldGroups)) {
             for (const f of flds) {
               total++;
               let val: unknown = undefined;
@@ -401,14 +456,12 @@ export const useDiagnosticoStore = create<DiagnosticoStore>()(
                 val = (s.patrimonio as any)?.[f];
               // eslint-disable-next-line @typescript-eslint/no-explicit-any
               else if (cat === "proteccion") val = (s.proteccion as any)?.[f];
-              if (val !== undefined && val !== null && val !== "" && val !== 0 && val !== false) filled++;
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              else if (cat === "retiro") val = (s.retiro as any)?.[f];
+              if (val === undefined || val === null || val === "" || val === defaults[f]) continue;
+              filled++;
             }
           }
-          // Add retiro fields
-          if (s.retiro?.edad_retiro && s.retiro.edad_retiro !== 65) { filled++; }
-          total++;
-          if (s.retiro?.mensualidad_deseada && s.retiro.mensualidad_deseada > 0) { filled++; }
-          total++;
           return { completitud_pct: total > 0 ? Math.round((filled / total) * 100) : 0 };
         }),
       addSessionInsight: (insight) =>
@@ -493,6 +546,35 @@ export const useDiagnosticoStore = create<DiagnosticoStore>()(
           }
           return {};
         }),
+      addSimulacion: (sim) =>
+        set((s) => ({
+          simulaciones_guardadas: [
+            ...s.simulaciones_guardadas,
+            { ...sim, id: crypto.randomUUID(), created_at: Date.now() },
+          ],
+        })),
+      removeSimulacion: (id) =>
+        set((s) => ({
+          simulaciones_guardadas: s.simulaciones_guardadas.filter((sim) => sim.id !== id),
+        })),
+      addDocumento: (doc) =>
+        set((s) => ({
+          documentos_guardados: [
+            { ...doc, id: crypto.randomUUID(), created_at: Date.now() },
+            ...s.documentos_guardados,
+          ],
+        })),
+      removeDocumento: (id) =>
+        set((s) => ({
+          documentos_guardados: s.documentos_guardados.filter((d) => d.id !== id),
+        })),
+      marcarDiagnosticoCompleto: (diagnosticoId, nombre, modo) =>
+        set((s) => ({
+          diagnosticos_completados: {
+            ...s.diagnosticos_completados,
+            [diagnosticoId]: { nombre, completed_at: Date.now(), modo },
+          },
+        })),
       reset: () => set(initialState),
     }),
     {

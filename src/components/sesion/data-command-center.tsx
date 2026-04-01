@@ -81,8 +81,11 @@ export function DataCommandCenter({
   const [suggestion, setSuggestion] = useState<NaviSuggestion | null>(null);
   const [oportunidades, setOportunidades] = useState<Oportunidad[]>([]);
   const [recentlyFilled, setRecentlyFilled] = useState<Set<string>>(new Set());
+  const [skippedFields, setSkippedFields] = useState<string[]>([]);
+  const [suggestionTransition, setSuggestionTransition] = useState(false);
   const opsRef = useRef<Oportunidad[]>([]);
   const prevFieldCountRef = useRef(0);
+  const prevFaltantesRef = useRef<string[]>([]);
 
   const categories: CategoryDef[] = [
     {
@@ -189,9 +192,18 @@ export function DataCommandCenter({
     proteccion: store.proteccion,
   });
 
-  const fetchSuggestion = useCallback(async () => {
+  // Keep refs so interval/callbacks always read fresh values
+  const skippedRef = useRef(skippedFields);
+  skippedRef.current = skippedFields;
+  const transcripcionRef = useRef(transcripcion);
+  transcripcionRef.current = transcripcion;
+  const faltantesRef = useRef(datosFaltantes);
+  faltantesRef.current = datosFaltantes;
+
+  const fetchSuggestion = useCallback(async (skipOverride?: string[]) => {
+    setSuggestionTransition(true);
     const result = await generarSugerenciaNavi({
-      transcripcion,
+      transcripcion: transcripcionRef.current,
       datosRecopilados: {
         ...(store.perfil ?? {}),
         ...(store.flujoMensual ?? {}),
@@ -199,26 +211,84 @@ export function DataCommandCenter({
         ...(store.retiro ?? {}),
         ...(store.proteccion ?? {}),
       },
-      datosFaltantes,
+      datosFaltantes: faltantesRef.current,
       contextoCliente: {
         edad: store.perfil?.edad,
         ocupacion: store.perfil?.ocupacion,
         dependientes: store.perfil?.dependientes,
         nombre: store.perfil?.nombre,
       },
+      skipFields: skipOverride ?? skippedRef.current,
     });
     setSuggestion(result);
-  }, [transcripcion, datosFaltantes, store.perfil, store.flujoMensual, store.patrimonio, store.retiro, store.proteccion]);
+    setTimeout(() => setSuggestionTransition(false), 300);
+  }, [store.perfil, store.flujoMensual, store.patrimonio, store.retiro, store.proteccion]);
+
+  const handleSkipSuggestion = useCallback(() => {
+    const currentTarget = suggestion?.campo_target;
+    if (!currentTarget) {
+      fetchSuggestion();
+      return;
+    }
+    const newSkipped = [...skippedFields, currentTarget];
+    setSkippedFields(newSkipped);
+    fetchSuggestion(newSkipped);
+  }, [suggestion, skippedFields, fetchSuggestion]);
+
+  // Auto-detect when a field gets answered → refresh suggestion & clear skipped
+  useEffect(() => {
+    const prev = new Set(prevFaltantesRef.current);
+    const curr = new Set(datosFaltantes);
+    const answered = [...prev].filter((f) => !curr.has(f));
+
+    if (answered.length > 0) {
+      // A field was just answered — if it was the current suggestion's target, auto-refresh
+      const currentTarget = suggestion?.campo_target;
+      if (currentTarget && answered.includes(currentTarget)) {
+        setSkippedFields([]);
+        fetchSuggestion([]);
+      }
+    }
+    prevFaltantesRef.current = datosFaltantes;
+  }, [datosFaltantes, suggestion, fetchSuggestion]);
+
+  const storedInsightIdsRef = useRef<Set<string>>(new Set());
 
   const fetchOpportunities = useCallback(async () => {
-    const result = await detectarOportunidades(transcripcion, opsRef.current);
+    const storeSnapshot = {
+      perfil: store.perfil,
+      flujoMensual: store.flujoMensual,
+      patrimonio: store.patrimonio,
+      retiro: store.retiro,
+      proteccion: store.proteccion,
+    };
+    const result = await detectarOportunidades(transcripcionRef.current, opsRef.current, storeSnapshot);
+
+    // Persist AI-detected opportunities as session insights for CRM follow-up
+    for (const op of result) {
+      if (op.fuente === "ai" && !storedInsightIdsRef.current.has(op.oportunidad)) {
+        storedInsightIdsRef.current.add(op.oportunidad);
+        store.addSessionInsight({
+          tipo: op.contexto_seguimiento ? "seguimiento" : "oportunidad",
+          texto: op.oportunidad + (op.razon ? ` — ${op.razon}` : ""),
+          producto_sugerido: op.producto_sugerido,
+          confianza: op.confianza,
+          fase: "conversacion",
+          contexto_seguimiento: op.contexto_seguimiento,
+          accion_sugerida: op.accion_sugerida,
+          señal_detectada: op.señal_detectada,
+        });
+      }
+    }
+
     opsRef.current = result;
     setOportunidades(result);
-  }, [transcripcion]);
+  }, [store]);
 
+  // Periodic refresh: every 20s for suggestions (Haiku needs time), 30s for opportunities
   useEffect(() => {
     fetchSuggestion();
-    const interval = setInterval(fetchSuggestion, 15_000);
+    const interval = setInterval(() => fetchSuggestion(), 20_000);
     return () => clearInterval(interval);
   }, [fetchSuggestion]);
 
@@ -255,7 +325,9 @@ export function DataCommandCenter({
       {/* Top: Next question suggestion — the most prominent element */}
       <div className="shrink-0 p-4 border-b border-white/[0.06]">
         {suggestion ? (
-          <div className="rounded-xl bg-gradient-to-r from-[#C9A84C]/[0.08] to-transparent border border-[#C9A84C]/20 p-4">
+          <div className={`rounded-xl bg-gradient-to-r from-[#C9A84C]/[0.08] to-transparent border border-[#C9A84C]/20 p-4 transition-all duration-300 ${
+            suggestionTransition ? "opacity-0 translate-y-1" : "opacity-100 translate-y-0"
+          }`}>
             <div className="flex items-start gap-3">
               <div className="w-9 h-9 rounded-full bg-gradient-to-br from-[#C9A84C] to-[#E8C872] flex items-center justify-center shadow-[0_0_12px_rgba(201,168,76,0.3)] animate-pulse-glow shrink-0">
                 <Sparkles className="w-4 h-4 text-[#060D1A]" />
@@ -276,9 +348,11 @@ export function DataCommandCenter({
               </div>
               <button
                 type="button"
-                onClick={fetchSuggestion}
-                className="shrink-0 px-3 py-1.5 rounded-lg text-[11px] font-semibold text-[#8B9BB4] hover:text-[#C9A84C] border border-white/[0.08] hover:border-[#C9A84C]/30 transition-colors"
+                onClick={handleSkipSuggestion}
+                className="shrink-0 flex items-center gap-1 px-3 py-1.5 rounded-lg text-[11px] font-semibold text-[#8B9BB4] hover:text-[#C9A84C] border border-white/[0.08] hover:border-[#C9A84C]/30 transition-colors"
+                title="Saltar y ver otra pregunta"
               >
+                <ChevronRight className="w-3 h-3" />
                 Otra
               </button>
             </div>
@@ -289,7 +363,7 @@ export function DataCommandCenter({
               <div className="w-9 h-9 rounded-full bg-[#1A3154] flex items-center justify-center shrink-0">
                 <Sparkles className="w-4 h-4 text-[#8B9BB4]" />
               </div>
-              <div>
+              <div className="flex-1 min-w-0">
                 <p className="text-[10px] uppercase tracking-widest text-[#8B9BB4] font-semibold mb-1">
                   Siguiente dato por obtener
                 </p>
@@ -300,6 +374,14 @@ export function DataCommandCenter({
                   {firstMissingField.cat.nombre} &middot; {firstMissingField.field.nombre}
                 </p>
               </div>
+              <button
+                type="button"
+                onClick={() => fetchSuggestion()}
+                className="shrink-0 flex items-center gap-1 px-3 py-1.5 rounded-lg text-[11px] font-semibold text-[#8B9BB4] hover:text-[#C9A84C] border border-white/[0.08] hover:border-[#C9A84C]/30 transition-colors"
+              >
+                <ChevronRight className="w-3 h-3" />
+                Otra
+              </button>
             </div>
           </div>
         ) : (
@@ -447,17 +529,41 @@ export function DataCommandCenter({
             <div className="flex items-center gap-2 mb-3">
               <Lightbulb className="w-4 h-4 text-[#C9A84C]" />
               <p className="text-xs text-[#C9A84C] font-semibold uppercase tracking-wider">
-                Oportunidades detectadas
+                Oportunidades detectadas ({oportunidades.length})
               </p>
             </div>
-            <div className="space-y-2">
+            <div className="space-y-2.5">
               {oportunidades.map((op) => (
-                <div key={op.id} className="flex items-start gap-2 px-3 py-2 rounded-lg bg-[#1A3154]/30">
-                  <div className="w-1.5 h-1.5 rounded-full bg-[#C9A84C] mt-1.5 shrink-0" />
-                  <div className="min-w-0">
-                    <p className="text-xs text-[#F0F4FA] font-medium">{op.oportunidad}</p>
-                    <p className="text-[10px] text-[#8B9BB4] mt-0.5">{op.producto_sugerido}</p>
+                <div key={op.id} className="rounded-lg bg-[#1A3154]/30 overflow-hidden">
+                  <div className="flex items-start gap-2.5 px-3 py-2.5">
+                    <span className="text-sm shrink-0 mt-0.5">{op.icono}</span>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2">
+                        <p className="text-xs text-[#F0F4FA] font-semibold">{op.oportunidad}</p>
+                        {op.fuente === "ai" && (
+                          <span className="text-[9px] px-1.5 py-0.5 rounded bg-[#8B5CF6]/15 text-[#8B5CF6] font-medium shrink-0">AI</span>
+                        )}
+                      </div>
+                      <p className="text-[10px] text-[#C9A84C] mt-0.5">{op.producto_sugerido}</p>
+                      {op.señal_detectada && (
+                        <p className="text-[10px] text-[#8B9BB4] mt-1 italic">
+                          &ldquo;{op.señal_detectada}&rdquo;
+                        </p>
+                      )}
+                      {op.accion_sugerida && (
+                        <p className="text-[10px] text-[#10B981] mt-1 font-medium">
+                          → {op.accion_sugerida}
+                        </p>
+                      )}
+                    </div>
                   </div>
+                  {op.contexto_seguimiento && (
+                    <div className="px-3 pb-2 pt-0">
+                      <p className="text-[9px] text-[#5A6A85] leading-relaxed pl-[22px]">
+                        Seguimiento: {op.contexto_seguimiento}
+                      </p>
+                    </div>
+                  )}
                 </div>
               ))}
             </div>

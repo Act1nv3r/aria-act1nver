@@ -13,12 +13,17 @@ import {
   MessageSquare,
   Check,
   ChevronRight,
+  Trash2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Modal } from "@/components/ui/modal";
 import { api } from "@/lib/api-client";
 import { useCRMStore, type CRMTask } from "@/stores/crm-store";
-import { useDiagnosticoStore, type SessionInsight } from "@/stores/diagnostico-store";
+import { useDiagnosticoStore, type SessionInsight, type SavedSimulation, type SavedDocument } from "@/stores/diagnostico-store";
+import { formatMXN } from "@/lib/format-currency";
+import { generarBalancePDF, generarDiagnosticoPDF } from "@/lib/pdf-generator";
+import { getAccessToken } from "@/lib/api-client";
 
 type Tab = "resumen" | "historial" | "oportunidades" | "simulaciones" | "documentos";
 
@@ -38,11 +43,16 @@ export default function Client360Page() {
   const [cliente, setCliente] = useState<{ id: string; nombre_alias: string } | null>(null);
   const [diagnosticos, setDiagnosticos] = useState<DiagnosticoRow[]>([]);
   const [loading, setLoading] = useState(true);
+  const [diagToDelete, setDiagToDelete] = useState<DiagnosticoRow | null>(null);
 
   const tasks = useCRMStore((s) => s.tasks).filter((t) => t.cliente_id === clienteId);
   const completeTask = useCRMStore((s) => s.completeTask);
   const addContactLog = useCRMStore((s) => s.addContactLog);
   const sessionInsights = useDiagnosticoStore((s) => s.sesion_insights);
+  const simulaciones = useDiagnosticoStore((s) => s.simulaciones_guardadas);
+  const removeSimulacion = useDiagnosticoStore((s) => s.removeSimulacion);
+  const documentos = useDiagnosticoStore((s) => s.documentos_guardados);
+  const removeDocumento = useDiagnosticoStore((s) => s.removeDocumento);
 
   const fetchData = useCallback(async () => {
     try {
@@ -78,6 +88,17 @@ export default function Client360Page() {
       tipo,
       notas: `Contacto registrado desde CRM`,
     });
+  };
+
+  const handleDeleteDiagnostico = async () => {
+    if (!diagToDelete) return;
+    try {
+      await api.diagnosticos.delete(diagToDelete.id);
+    } catch {
+      // API may fail; remove from local state anyway
+    }
+    setDiagnosticos((prev) => prev.filter((d) => d.id !== diagToDelete.id));
+    setDiagToDelete(null);
   };
 
   if (loading) {
@@ -250,7 +271,7 @@ export default function Client360Page() {
             diagnosticos.map((d) => (
               <div
                 key={d.id}
-                className="flex items-center gap-4 bg-[#0C1829] border border-white/[0.06] rounded-[14px] p-4 hover:border-white/[0.1] transition-colors cursor-pointer"
+                className="flex items-center gap-4 bg-[#0C1829] border border-white/[0.06] rounded-[14px] p-4 hover:border-white/[0.1] transition-colors cursor-pointer group"
                 onClick={() =>
                   router.push(
                     d.estado === "completo"
@@ -277,6 +298,14 @@ export default function Client360Page() {
                 <Badge variant={d.estado === "completo" ? "mejor" : "suficiente"}>
                   {d.estado === "completo" ? "Completo" : `Paso ${d.paso_actual}/6`}
                 </Badge>
+                <button
+                  type="button"
+                  title="Eliminar diagnóstico"
+                  onClick={(e) => { e.stopPropagation(); setDiagToDelete(d); }}
+                  className="p-1.5 rounded-lg text-[#5A6A85] opacity-0 group-hover:opacity-100 hover:text-[#EF4444] hover:bg-[#EF4444]/10 transition-all"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                </button>
                 <ChevronRight className="w-4 h-4 text-[#4A5A72]" />
               </div>
             ))
@@ -331,34 +360,169 @@ export default function Client360Page() {
       )}
 
       {tab === "simulaciones" && (
-        <div className="text-center py-12">
-          <p className="text-sm text-[#8B9BB4]">
-            Las simulaciones guardadas aparecerán aquí.
-          </p>
-          {lastDiag && (
-            <Link href={`/diagnosticos/${lastDiag.id}/simulador`}>
-              <Button variant="accent" size="sm" className="mt-4">
-                Abrir simulador
-              </Button>
-            </Link>
+        <div>
+          {simulaciones.length === 0 ? (
+            <div className="text-center py-12">
+              <p className="text-sm text-[#8B9BB4]">
+                No hay simulaciones guardadas. Usa el simulador para crear y guardar escenarios.
+              </p>
+              {lastDiag && (
+                <Link href={`/diagnosticos/${lastDiag.id}/simulador`}>
+                  <Button variant="accent" size="sm" className="mt-4">
+                    Abrir simulador
+                  </Button>
+                </Link>
+              )}
+            </div>
+          ) : (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <p className="text-sm text-[#8B9BB4]">{simulaciones.length} simulación{simulaciones.length !== 1 ? "es" : ""} guardada{simulaciones.length !== 1 ? "s" : ""}</p>
+                {lastDiag && (
+                  <Link href={`/diagnosticos/${lastDiag.id}/simulador`}>
+                    <Button variant="accent" size="sm">Abrir simulador</Button>
+                  </Link>
+                )}
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {simulaciones.map((sim) => {
+                  const avancePct = (sim.resultados.grado_avance * 100).toFixed(0);
+                  const dateStr = new Date(sim.created_at).toLocaleDateString("es-MX", {
+                    day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit",
+                  });
+                  return (
+                    <div key={sim.id} className="bg-[#0C1829] border border-white/[0.06] rounded-2xl p-5 space-y-3">
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="min-w-0">
+                          <h4 className="font-bold text-sm text-[#F0F4FA] truncate">{sim.nombre}</h4>
+                          <p className="text-[11px] text-[#5A6A85] mt-0.5">{dateStr}</p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => removeSimulacion(sim.id)}
+                          className="p-1.5 rounded-lg text-[#5A6A85] hover:text-[#EF4444] hover:bg-[#EF4444]/10 transition-colors shrink-0"
+                          title="Eliminar"
+                        >
+                          <span className="text-xs">✕</span>
+                        </button>
+                      </div>
+                      <div className="grid grid-cols-2 gap-2 text-xs">
+                        <div><span className="text-[#5A6A85]">Grado avance</span><p className={`font-bold ${Number(avancePct) >= 100 ? "text-[#10B981]" : Number(avancePct) >= 70 ? "text-[#C9A84C]" : "text-[#EF4444]"}`}>{avancePct}%</p></div>
+                        <div><span className="text-[#5A6A85]">Mensualidad</span><p className="font-bold text-[#F0F4FA]">{formatMXN(sim.resultados.mensualidad_posible)}</p></div>
+                        <div><span className="text-[#5A6A85]">Retiro</span><p className="font-bold text-[#F0F4FA]">{sim.params.edad_retiro} años</p></div>
+                        <div><span className="text-[#5A6A85]">Déficit</span><p className={`font-bold ${sim.resultados.deficit_mensual < 0 ? "text-[#EF4444]" : "text-[#10B981]"}`}>{formatMXN(Math.abs(sim.resultados.deficit_mensual))}</p></div>
+                      </div>
+                      <div className="text-[11px] text-[#5A6A85] pt-1 border-t border-white/[0.04]">
+                        Ahorro: {formatMXN(sim.params.ahorro)}/mes · Tasa: {sim.params.tasa_real}% · Extra: {formatMXN(sim.params.aportacion_extra)}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
           )}
         </div>
       )}
 
       {tab === "documentos" && (
-        <div className="text-center py-12">
-          <p className="text-sm text-[#8B9BB4]">
-            Los PDFs generados y diagnósticos previos aparecerán aquí.
-          </p>
-          {lastDiag?.estado === "completo" && (
-            <Link href={`/diagnosticos/${lastDiag.id}/completado`}>
-              <Button variant="accent" size="sm" className="mt-4">
-                Ver último diagnóstico
-              </Button>
-            </Link>
+        <div>
+          {documentos.length === 0 ? (
+            <div className="text-center py-12">
+              <p className="text-sm text-[#8B9BB4]">
+                No hay documentos generados. Al descargar un PDF desde la pantalla de balance o resultados, aparecerá aquí.
+              </p>
+              {lastDiag && (
+                <Link href={`/diagnosticos/${lastDiag.id}/presentacion`}>
+                  <Button variant="accent" size="sm" className="mt-4">
+                    Ir al balance
+                  </Button>
+                </Link>
+              )}
+            </div>
+          ) : (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <p className="text-sm text-[#8B9BB4]">{documentos.length} documento{documentos.length !== 1 ? "s" : ""}</p>
+                {lastDiag && (
+                  <Link href={`/diagnosticos/${lastDiag.id}/presentacion`}>
+                    <Button variant="accent" size="sm">Ir al balance</Button>
+                  </Link>
+                )}
+              </div>
+              <div className="space-y-3">
+                {documentos.map((doc) => {
+                  const dateStr = new Date(doc.created_at).toLocaleDateString("es-MX", {
+                    day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit",
+                  });
+                  const isBalance = doc.tipo === "balance";
+                  return (
+                    <div
+                      key={doc.id}
+                      className="bg-[#0C1829] border border-white/[0.06] rounded-2xl p-5 flex items-center gap-4"
+                    >
+                      <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${isBalance ? "bg-[#C9A84C]/10 border border-[#C9A84C]/20" : "bg-blue-500/10 border border-blue-500/20"}`}>
+                        <FileText className={`w-5 h-5 ${isBalance ? "text-[#C9A84C]" : "text-blue-400"}`} />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h4 className="font-bold text-sm text-[#F0F4FA] truncate">{doc.nombre_archivo}</h4>
+                        <p className="text-[11px] text-[#5A6A85] mt-0.5">
+                          {isBalance ? "Balance Financiero" : "Diagnóstico"} · {dateStr}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-2 shrink-0">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            const opts = doc.diagnostico_id ? { diagnosticoId: doc.diagnostico_id, token: getAccessToken() ?? undefined } : undefined;
+                            if (isBalance) void generarBalancePDF(doc.cliente_nombre, opts);
+                            else void generarDiagnosticoPDF(doc.cliente_nombre, opts);
+                          }}
+                        >
+                          Descargar
+                        </Button>
+                        <button
+                          type="button"
+                          onClick={() => removeDocumento(doc.id)}
+                          className="p-1.5 rounded-lg text-[#5A6A85] hover:text-[#EF4444] hover:bg-[#EF4444]/10 transition-colors"
+                          title="Eliminar"
+                        >
+                          <span className="text-xs">✕</span>
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
           )}
         </div>
       )}
+      {/* Delete diagnostic confirmation */}
+      <Modal
+        open={!!diagToDelete}
+        onClose={() => setDiagToDelete(null)}
+        title="¿Eliminar diagnóstico?"
+      >
+        <p className="text-sm text-[#8B9BB4]">
+          Se borrarán los datos de este diagnóstico y no se puede deshacer. Los enlaces de compartir dejarán de funcionar.
+        </p>
+        {diagToDelete && (
+          <p className="mt-2 text-xs text-[#5A6A85]">
+            Diagnóstico {diagToDelete.modo} · {diagToDelete.created_at
+              ? new Date(diagToDelete.created_at).toLocaleDateString("es-MX", { day: "numeric", month: "long", year: "numeric" })
+              : "Sin fecha"}
+          </p>
+        )}
+        <div className="mt-6 flex gap-3 justify-end">
+          <Button type="button" variant="ghost" onClick={() => setDiagToDelete(null)} className="text-[#8B9BB4]">
+            Cancelar
+          </Button>
+          <Button type="button" variant="danger" onClick={() => void handleDeleteDiagnostico()}>
+            Eliminar diagnóstico
+          </Button>
+        </div>
+      </Modal>
     </div>
   );
 }

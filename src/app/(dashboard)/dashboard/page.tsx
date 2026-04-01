@@ -101,6 +101,7 @@ function getInitials(name: string): string {
 export default function DashboardPage() {
   const router = useRouter();
   const setModo = useDiagnosticoStore((s) => s.setModo);
+  const diagnosticosCompletados = useDiagnosticoStore((s) => s.diagnosticos_completados);
   const [clientes, setClientes] = useState<ClienteItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [modalOpen, setModalOpen] = useState(false);
@@ -129,9 +130,30 @@ export default function DashboardPage() {
   const refreshClientes = useCallback(async () => {
     try {
       const list = await api.clientes.list();
-      setClientes(list.map(mapClienteFromApi));
+      const mapped = list.map(mapClienteFromApi);
+      // Merge local completion data: if the store knows a diagnostic is complete, override
+      const completados = useDiagnosticoStore.getState().diagnosticos_completados;
+      const merged = mapped.map((c) => {
+        if (c.diagnosticoId && completados[c.diagnosticoId] && c.estado !== "completo") {
+          return { ...c, estado: "completo" as ClienteEstado };
+        }
+        return c;
+      });
+      setClientes(merged);
     } catch {
-      setClientes([]);
+      // API unavailable — build cards from local completion data
+      const completados = useDiagnosticoStore.getState().diagnosticos_completados;
+      const localClientes: ClienteItem[] = Object.entries(completados).map(([diagId, info]) => ({
+        id: diagId,
+        nombre_alias: info.nombre,
+        estado: "completo" as ClienteEstado,
+        diagnosticoId: diagId,
+        modo: info.modo as "individual" | "pareja",
+        ultimoDiagnostico: new Date(info.completed_at).toLocaleDateString("es-MX", {
+          day: "numeric", month: "short", year: "numeric",
+        }),
+      }));
+      setClientes(localClientes);
     }
   }, []);
 
@@ -205,25 +227,11 @@ export default function DashboardPage() {
   };
 
   const handleDeleteFromCard = (cliente: ClienteItem) => {
-    if (cliente.diagnosticoId) {
-      setPendingDelete({
-        kind: "diagnostico",
-        row: {
-          id: cliente.diagnosticoId,
-          cliente_id: cliente.id,
-          estado: cliente.estado === "completo" ? "completo" : "borrador",
-          paso_actual: cliente.pasoActual ?? 1,
-          modo: cliente.modo ?? "individual",
-          created_at: null,
-        },
-      });
-    } else {
-      setPendingDelete({
-        kind: "cliente",
-        id: cliente.id,
-        nombre_alias: cliente.nombre_alias,
-      });
-    }
+    setPendingDelete({
+      kind: "cliente",
+      id: cliente.id,
+      nombre_alias: cliente.nombre_alias,
+    });
   };
 
   const handleConfirmDelete = async () => {
@@ -236,7 +244,10 @@ export default function DashboardPage() {
       }
       await refreshClientes();
     } catch {
-      /* keep modal open; user can retry */
+      // If API fails, remove from local state
+      if (pendingDelete.kind === "cliente") {
+        setClientes((prev) => prev.filter((c) => c.id !== pendingDelete.id));
+      }
     }
     setPendingDelete(null);
   };
@@ -448,10 +459,8 @@ export default function DashboardPage() {
                   )}
                   <button
                     type="button"
-                    aria-label={
-                      cliente.diagnosticoId ? "Eliminar diagnóstico" : "Eliminar cliente"
-                    }
-                    title={cliente.diagnosticoId ? "Eliminar diagnóstico" : "Eliminar cliente"}
+                    aria-label="Eliminar cliente"
+                    title="Eliminar cliente y todos sus diagnósticos"
                     onClick={(e) => {
                       e.stopPropagation();
                       handleDeleteFromCard(cliente);
@@ -479,7 +488,9 @@ export default function DashboardPage() {
       >
         <div className="space-y-4">
           {modalStep === "modo" ? (
-            <>
+            <div
+              onKeyDown={(e) => { if (e.key === "Enter") setModalStep("nombre"); }}
+            >
               <p className="text-sm text-[#8B9BB4] mb-4">
                 Selecciona el tipo de diagnóstico
               </p>
@@ -558,10 +569,11 @@ export default function DashboardPage() {
                 variant="accent"
                 className="w-full mt-2"
                 onClick={() => setModalStep("nombre")}
+                autoFocus
               >
                 Siguiente
               </Button>
-            </>
+            </div>
           ) : (
             <>
               <Input
@@ -569,6 +581,8 @@ export default function DashboardPage() {
                 placeholder="Ej: Juan Pérez"
                 value={nuevoNombre}
                 onChange={(e) => setNuevoNombre(e.target.value)}
+                onKeyDown={(e) => { if (e.key === "Enter" && nuevoNombre.trim()) void handleNuevoCliente(); }}
+                autoFocus
               />
               <div className="flex flex-col gap-3 pt-2">
                 <Button
@@ -591,30 +605,24 @@ export default function DashboardPage() {
       <Modal
         open={!!pendingDelete}
         onClose={() => setPendingDelete(null)}
-        title={
-          pendingDelete?.kind === "cliente"
-            ? "¿Eliminar cliente?"
-            : "¿Eliminar diagnóstico?"
-        }
+        title="¿Eliminar cliente?"
       >
-        {pendingDelete?.kind === "cliente" ? (
+        {pendingDelete?.kind === "cliente" && (
           <>
             <p className="text-sm text-[#8B9BB4]">
-              El cliente{" "}
-              <span className="font-medium text-[#F0F4FA]">{pendingDelete.nombre_alias}</span> se
-              archivará y dejará de aparecer en tu lista. Esta acción no se puede deshacer.
+              Se eliminará el cliente{" "}
+              <span className="font-medium text-[#F0F4FA]">{pendingDelete.nombre_alias}</span> junto
+              con todos sus diagnósticos. Esta acción no se puede deshacer.
             </p>
-            <p className="mt-2 font-mono text-xs text-[#5A6A85] break-all">{pendingDelete.id}</p>
           </>
-        ) : pendingDelete?.kind === "diagnostico" ? (
+        )}
+        {pendingDelete?.kind === "diagnostico" && (
           <>
             <p className="text-sm text-[#8B9BB4]">
-              Se borrarán los datos de este diagnóstico y no se puede deshacer. Los enlaces de compartir
-              dejarán de funcionar.
+              Se borrarán los datos de este diagnóstico y no se puede deshacer.
             </p>
-            <p className="mt-2 font-mono text-xs text-[#5A6A85] break-all">{pendingDelete.row.id}</p>
           </>
-        ) : null}
+        )}
         <div className="mt-6 flex gap-3 justify-end">
           <Button type="button" variant="ghost" onClick={() => setPendingDelete(null)} className="text-[#8B9BB4]">
             Cancelar

@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from "react";
 import { useRouter, usePathname } from "next/navigation";
-import { useDiagnosticoStore } from "@/stores/diagnostico-store";
+import { useDiagnosticoStore, type SavedSimulation } from "@/stores/diagnostico-store";
 import { calcularMotorC } from "@/lib/motors";
 import { PARAMS } from "@/lib/constants";
 import { Button } from "@/components/ui/button";
@@ -13,12 +13,16 @@ import { DeficitCard } from "@/components/outputs/deficit-card";
 import { FinancialTimeline, type EventoVida } from "@/components/outputs/financial-timeline";
 import { TrayectoriaRetiroChart } from "@/components/outputs/trayectoria-retiro-chart";
 import { formatMXN } from "@/lib/format-currency";
+import { Save, Trash2, RotateCcw, ChevronLeft, Clock } from "lucide-react";
 
 export default function SimuladorPage() {
   const router = useRouter();
   const pathname = usePathname();
   const id = pathname?.split("/diagnosticos/")[1]?.split("/")[0] || "demo";
-  const { perfil, flujoMensual, patrimonio, retiro } = useDiagnosticoStore();
+  const { perfil, flujoMensual, patrimonio, retiro, simulaciones_guardadas, addSimulacion, removeSimulacion } = useDiagnosticoStore();
+  const [saveLabel, setSaveLabel] = useState("");
+  const [showSaveInput, setShowSaveInput] = useState(false);
+  const [justSaved, setJustSaved] = useState(false);
 
   const patrimonioFin =
     (patrimonio?.liquidez ?? 0) +
@@ -113,6 +117,29 @@ export default function SimuladorPage() {
     }
     return evts;
   }, [sliderValues.venta_activo_edad, sliderValues.venta_activo_monto, sliderValues.aportacion_extra, edad]);
+
+  const handleSaveSimulation = () => {
+    if (!saveLabel.trim()) return;
+    addSimulacion({
+      nombre: saveLabel.trim(),
+      params: { ...sliderValues },
+      resultados: {
+        grado_avance: resultadoSimulado.grado_avance,
+        mensualidad_posible: resultadoSimulado.mensualidad_posible,
+        deficit_mensual: resultadoSimulado.deficit_mensual,
+        saldo_inicio_jubilacion: resultadoSimulado.saldo_inicio_jubilacion,
+        pension_total_mensual: resultadoSimulado.pension_total_mensual,
+      },
+    });
+    setSaveLabel("");
+    setShowSaveInput(false);
+    setJustSaved(true);
+    setTimeout(() => setJustSaved(false), 2000);
+  };
+
+  const loadSimulation = (sim: SavedSimulation) => {
+    setSliderValues({ ...sim.params });
+  };
 
   return (
     <div className="min-h-screen bg-[#060D1A]">
@@ -303,18 +330,152 @@ export default function SimuladorPage() {
         </div>
       </div>
 
-      <div className="flex gap-4 mt-8">
+      {/* Action bar */}
+      <div className="flex flex-wrap items-center gap-3 mt-8">
         <Button
           variant="ghost"
-          onClick={() => router.push(`/diagnosticos/${id}/completado`)}
+          onClick={() => router.push(`/diagnosticos/${id}/presentacion`)}
         >
-          Volver al diagnóstico
+          <ChevronLeft className="w-4 h-4" />
+          Volver al balance
         </Button>
         <Button variant="outline" onClick={resetValues}>
+          <RotateCcw className="w-3.5 h-3.5" />
           Resetear valores
         </Button>
+
+        <div className="ml-auto flex items-center gap-2">
+          {showSaveInput ? (
+            <div className="flex items-center gap-2">
+              <input
+                type="text"
+                autoFocus
+                value={saveLabel}
+                onChange={(e) => setSaveLabel(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && saveLabel.trim()) {
+                    handleSaveSimulation();
+                  }
+                  if (e.key === "Escape") {
+                    setShowSaveInput(false);
+                    setSaveLabel("");
+                  }
+                }}
+                placeholder="Nombre de la simulación..."
+                className="bg-[#112038] border border-white/[0.08] rounded-lg px-3 py-2 text-sm text-[#F0F4FA] placeholder:text-[#4A5A72] focus:outline-none focus:border-[#C9A84C]/60 w-[220px]"
+              />
+              <Button
+                variant="accent"
+                size="sm"
+                onClick={handleSaveSimulation}
+                disabled={!saveLabel.trim()}
+              >
+                Guardar
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => { setShowSaveInput(false); setSaveLabel(""); }}
+              >
+                Cancelar
+              </Button>
+            </div>
+          ) : (
+            <Button
+              variant="accent"
+              onClick={() => setShowSaveInput(true)}
+            >
+              <Save className="w-4 h-4" />
+              {justSaved ? "¡Guardada!" : "Guardar simulación"}
+            </Button>
+          )}
+        </div>
       </div>
+
+      {/* Saved simulations */}
+      {simulaciones_guardadas.length > 0 && (
+        <div className="mt-10">
+          <h2 className="font-bold text-lg text-[#F0F4FA] mb-4 flex items-center gap-2">
+            <Clock className="w-5 h-5 text-[#C9A84C]" />
+            Simulaciones guardadas ({simulaciones_guardadas.length})
+          </h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {simulaciones_guardadas.map((sim) => (
+              <SavedSimulationCard
+                key={sim.id}
+                sim={sim}
+                onLoad={() => loadSimulation(sim)}
+                onDelete={() => removeSimulacion(sim.id)}
+              />
+            ))}
+          </div>
+        </div>
+      )}
       </div>
     </div>
+  );
+}
+
+function SavedSimulationCard({
+  sim,
+  onLoad,
+  onDelete,
+}: {
+  sim: SavedSimulation;
+  onLoad: () => void;
+  onDelete: () => void;
+}) {
+  const avancePct = (sim.resultados.grado_avance * 100).toFixed(0);
+  const dateStr = new Date(sim.created_at).toLocaleDateString("es-MX", {
+    day: "numeric", month: "short", hour: "2-digit", minute: "2-digit",
+  });
+
+  return (
+    <Card className="group hover:border-[#C9A84C]/30 transition-all duration-300 cursor-pointer" onClick={onLoad}>
+      <div className="space-y-3">
+        <div className="flex items-start justify-between gap-2">
+          <div className="min-w-0">
+            <h4 className="font-bold text-sm text-[#F0F4FA] truncate">{sim.nombre}</h4>
+            <p className="text-[11px] text-[#5A6A85] mt-0.5">{dateStr}</p>
+          </div>
+          <button
+            type="button"
+            onClick={(e) => { e.stopPropagation(); onDelete(); }}
+            className="p-1.5 rounded-lg text-[#5A6A85] hover:text-[#EF4444] hover:bg-[#EF4444]/10 transition-colors shrink-0"
+            title="Eliminar simulación"
+          >
+            <Trash2 className="w-3.5 h-3.5" />
+          </button>
+        </div>
+
+        {/* Key metrics */}
+        <div className="grid grid-cols-2 gap-2 text-xs">
+          <div>
+            <span className="text-[#5A6A85]">Grado avance</span>
+            <p className={`font-bold ${Number(avancePct) >= 100 ? "text-[#10B981]" : Number(avancePct) >= 70 ? "text-[#C9A84C]" : "text-[#EF4444]"}`}>
+              {avancePct}%
+            </p>
+          </div>
+          <div>
+            <span className="text-[#5A6A85]">Mensualidad</span>
+            <p className="font-bold text-[#F0F4FA]">{formatMXN(sim.resultados.mensualidad_posible)}</p>
+          </div>
+          <div>
+            <span className="text-[#5A6A85]">Retiro a</span>
+            <p className="font-bold text-[#F0F4FA]">{sim.params.edad_retiro} años</p>
+          </div>
+          <div>
+            <span className="text-[#5A6A85]">Déficit</span>
+            <p className={`font-bold ${sim.resultados.deficit_mensual < 0 ? "text-[#EF4444]" : "text-[#10B981]"}`}>
+              {formatMXN(Math.abs(sim.resultados.deficit_mensual))}
+            </p>
+          </div>
+        </div>
+
+        <p className="text-[10px] text-[#5A6A85] text-center group-hover:text-[#C9A84C] transition-colors">
+          Toca para cargar esta simulación
+        </p>
+      </div>
+    </Card>
   );
 }

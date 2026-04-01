@@ -44,12 +44,36 @@ export default function CRMPage() {
   const [modoSeleccionado, setModoSeleccionado] = useState<"individual" | "pareja">("individual");
   const [nuevoNombre, setNuevoNombre] = useState("");
 
+  const diagnosticosCompletados = useDiagnosticoStore((s) => s.diagnosticos_completados);
+
   const refreshClientes = useCallback(async () => {
     try {
       const list = await api.clientes.list();
-      setClientes(list);
+      // Merge local completion data
+      const completados = useDiagnosticoStore.getState().diagnosticos_completados;
+      const merged = list.map((c) => {
+        if (c.ultimo_diagnostico && completados[c.ultimo_diagnostico.id] && c.ultimo_diagnostico.estado !== "completo") {
+          return { ...c, ultimo_diagnostico: { ...c.ultimo_diagnostico, estado: "completo" } };
+        }
+        return c;
+      });
+      setClientes(merged);
     } catch {
-      setClientes([]);
+      // API unavailable — build from local data
+      const completados = useDiagnosticoStore.getState().diagnosticos_completados;
+      const localClientes = Object.entries(completados).map(([diagId, info]) => ({
+        id: diagId,
+        nombre_alias: info.nombre,
+        activo: true,
+        ultimo_diagnostico: {
+          id: diagId,
+          estado: "completo",
+          paso_actual: 6,
+          modo: info.modo,
+          created_at: new Date(info.completed_at).toISOString(),
+        },
+      }));
+      setClientes(localClientes);
     }
   }, []);
 

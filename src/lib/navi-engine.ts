@@ -17,95 +17,273 @@ interface NaviContext {
     dependientes?: boolean;
     nombre?: string;
   };
+  skipFields?: string[];
 }
 
 const FALLBACK_SUGGESTIONS: Record<string, NaviSuggestion> = {
+  nombre: {
+    tipo: "pregunta",
+    texto: "Para comenzar, ¿me podría dar su nombre completo?",
+    categoria: "perfil", campo_target: "nombre", confianza: 1,
+  },
   edad: {
     tipo: "pregunta",
-    texto: "Pregúntale: ¿Cuántos años tienes? o ¿En qué año naciste?",
-    categoria: "perfil",
-    campo_target: "edad",
-    confianza: 1,
+    texto: "¿Cuántos años tienes? o ¿En qué año naciste?",
+    categoria: "perfil", campo_target: "edad", confianza: 1,
+  },
+  genero: {
+    tipo: "pregunta",
+    texto: "Para completar tu perfil, ¿podría indicarme su género?",
+    categoria: "perfil", campo_target: "genero", confianza: 1,
   },
   ocupacion: {
     tipo: "pregunta",
-    texto: "Pregúntale: ¿A qué te dedicas actualmente?",
-    categoria: "perfil",
-    campo_target: "ocupacion",
-    confianza: 1,
+    texto: "¿A qué te dedicas actualmente? ¿Eres asalariado, independiente o tienes un negocio?",
+    categoria: "perfil", campo_target: "ocupacion", confianza: 1,
   },
-  gastos_basicos: {
+  dependientes: {
     tipo: "pregunta",
-    texto: "Pregúntale: ¿Cómo es un mes típico para ti entre lo que entra y sale?",
-    categoria: "flujo",
-    campo_target: "gastos_basicos",
-    confianza: 1,
+    texto: "¿Tienes hijos o algún familiar que dependa económicamente de ti?",
+    categoria: "perfil", campo_target: "dependientes", confianza: 1,
   },
   ahorro: {
     tipo: "pregunta",
-    texto: "Pregúntale: ¿Cuánto logras ahorrar al mes, aproximadamente?",
-    categoria: "flujo",
-    campo_target: "ahorro",
-    confianza: 1,
+    texto: "¿Cuánto logras ahorrar al mes, aproximadamente? Lo que te sobra después de todos tus gastos.",
+    categoria: "flujo", campo_target: "ahorro", confianza: 1,
   },
-  afore: {
+  rentas: {
     tipo: "pregunta",
-    texto: "Pregúntale: ¿Tienes tu estado de cuenta del Afore? ¿Sabes cuánto tienes ahí?",
-    categoria: "retiro",
-    campo_target: "afore",
-    confianza: 1,
+    texto: "¿Recibes ingresos por rentas de propiedades o algún ingreso pasivo?",
+    categoria: "flujo", campo_target: "rentas", confianza: 1,
   },
-  edad_retiro: {
+  gastos_basicos: {
     tipo: "pregunta",
-    texto: "Pregúntale: ¿A qué edad te gustaría retirarte? ¿Has pensado en eso?",
-    categoria: "retiro",
-    campo_target: "edad_retiro",
-    confianza: 1,
+    texto: "¿Cómo es un mes típico para ti entre lo que entra y sale? ¿Cuánto gastas en lo esencial?",
+    categoria: "flujo", campo_target: "gastos_basicos", confianza: 1,
   },
-  seguro_vida: {
+  obligaciones: {
     tipo: "pregunta",
-    texto: "Pregúntale: ¿Tu familia está protegida si algo te pasa? ¿Tienes algún seguro?",
-    categoria: "proteccion",
-    campo_target: "seguro_vida",
-    confianza: 1,
+    texto: "¿Tienes pagos fijos mensuales como colegiaturas, seguros o mantenimientos?",
+    categoria: "flujo", campo_target: "obligaciones", confianza: 1,
+  },
+  otros: {
+    tipo: "pregunta",
+    texto: "¿Tienes algún otro ingreso adicional al sueldo? ¿Freelance, honorarios, negocio extra?",
+    categoria: "flujo", campo_target: "otros", confianza: 1,
+  },
+  creditos: {
+    tipo: "pregunta",
+    texto: "¿Pagas algún crédito actualmente? Hipoteca, auto, tarjetas de crédito...",
+    categoria: "flujo", campo_target: "creditos", confianza: 1,
   },
   liquidez: {
     tipo: "pregunta",
-    texto: "Pregúntale: Aparte de tus inversiones, ¿cuánto tienes disponible en cuentas bancarias?",
-    categoria: "patrimonio",
-    campo_target: "liquidez",
-    confianza: 1,
+    texto: "Aparte de tus inversiones, ¿cuánto tienes disponible en cuentas bancarias o efectivo?",
+    categoria: "patrimonio", campo_target: "liquidez", confianza: 1,
+  },
+  inversiones: {
+    tipo: "pregunta",
+    texto: "¿Tienes inversiones en fondos, acciones, CETES o algún instrumento financiero?",
+    categoria: "patrimonio", campo_target: "inversiones", confianza: 1,
+  },
+  dotales: {
+    tipo: "pregunta",
+    texto: "¿Tienes algún seguro dotal o producto con componente de ahorro?",
+    categoria: "patrimonio", campo_target: "dotales", confianza: 1,
+  },
+  afore: {
+    tipo: "pregunta",
+    texto: "¿Tienes tu estado de cuenta del Afore? ¿Sabes cuánto tienes acumulado ahí?",
+    categoria: "retiro", campo_target: "afore", confianza: 1,
+  },
+  ppr: {
+    tipo: "pregunta",
+    texto: "¿Tienes un Plan Personal de Retiro (PPR)? Es deducible de impuestos y muy útil.",
+    categoria: "retiro", campo_target: "ppr", confianza: 1,
+  },
+  plan_privado: {
+    tipo: "pregunta",
+    texto: "¿Tu empresa te ofrece algún plan de pensión o fondo de retiro complementario?",
+    categoria: "retiro", campo_target: "plan_privado", confianza: 1,
+  },
+  seguros_retiro: {
+    tipo: "pregunta",
+    texto: "¿Tienes algún seguro que te dé un beneficio al momento de retirarte?",
+    categoria: "retiro", campo_target: "seguros_retiro", confianza: 1,
+  },
+  ley_73: {
+    tipo: "pregunta",
+    texto: "¿Cotizas bajo la Ley 73 del IMSS? ¿Conoces tu pensión estimada?",
+    categoria: "retiro", campo_target: "ley_73", confianza: 1,
   },
   casa: {
     tipo: "pregunta",
-    texto: "Pregúntale: Aparte de tus inversiones, ¿tienes algún inmueble o negocio?",
-    categoria: "patrimonio",
-    campo_target: "casa",
-    confianza: 1,
+    texto: "¿Tienes casa propia? ¿Cuál sería su valor aproximado hoy?",
+    categoria: "patrimonio_nf", campo_target: "casa", confianza: 1,
+  },
+  inmuebles_renta: {
+    tipo: "pregunta",
+    texto: "¿Tienes alguna propiedad que rentes o puedas rentar?",
+    categoria: "patrimonio_nf", campo_target: "inmuebles_renta", confianza: 1,
+  },
+  tierra: {
+    tipo: "pregunta",
+    texto: "¿Tienes algún terreno o tierra? ¿Cuál es su valor aproximado?",
+    categoria: "patrimonio_nf", campo_target: "tierra", confianza: 1,
+  },
+  negocio: {
+    tipo: "pregunta",
+    texto: "¿Tienes un negocio propio? ¿Cuál sería su valor estimado?",
+    categoria: "patrimonio_nf", campo_target: "negocio", confianza: 1,
+  },
+  herencia: {
+    tipo: "pregunta",
+    texto: "¿Esperas recibir alguna herencia en el futuro?",
+    categoria: "patrimonio_nf", campo_target: "herencia", confianza: 1,
+  },
+  seguro_vida: {
+    tipo: "pregunta",
+    texto: "¿Tu familia está protegida si algo te pasa? ¿Tienes algún seguro de vida?",
+    categoria: "proteccion", campo_target: "seguro_vida", confianza: 1,
+  },
+  propiedades_aseguradas: {
+    tipo: "pregunta",
+    texto: "¿Tus propiedades están aseguradas contra siniestros?",
+    categoria: "proteccion", campo_target: "propiedades_aseguradas", confianza: 1,
+  },
+  sgmm: {
+    tipo: "pregunta",
+    texto: "¿Cuentas con Seguro de Gastos Médicos Mayores?",
+    categoria: "proteccion", campo_target: "sgmm", confianza: 1,
+  },
+  edad_retiro: {
+    tipo: "pregunta",
+    texto: "¿A qué edad te gustaría retirarte? ¿Has pensado en eso?",
+    categoria: "retiro", campo_target: "edad_retiro", confianza: 1,
   },
   mensualidad_deseada: {
     tipo: "pregunta",
-    texto: "Pregúntale: ¿Cuánto te gustaría recibir al mes cuando te retires?",
-    categoria: "retiro",
-    campo_target: "mensualidad_deseada",
-    confianza: 1,
+    texto: "Cuando te retires, ¿cuánto te gustaría recibir al mes para vivir tranquilamente?",
+    categoria: "retiro", campo_target: "mensualidad_deseada", confianza: 1,
   },
 };
 
 const PRIORITY_ORDER = [
-  "edad",
-  "ocupacion",
-  "ahorro",
-  "gastos_basicos",
-  "liquidez",
-  "inversiones",
-  "afore",
-  "edad_retiro",
-  "mensualidad_deseada",
-  "casa",
-  "seguro_vida",
+  "nombre", "edad", "ocupacion", "dependientes",
+  "ahorro", "gastos_basicos", "creditos",
+  "liquidez", "inversiones",
+  "afore", "edad_retiro", "mensualidad_deseada",
+  "casa", "seguro_vida", "sgmm",
+  "rentas", "obligaciones", "otros",
+  "dotales", "ppr", "plan_privado", "seguros_retiro", "ley_73",
+  "inmuebles_renta", "tierra", "negocio", "herencia",
+  "propiedades_aseguradas", "genero",
 ];
 
+// Contextual topic groups: if the transcript mentions a keyword,
+// prioritize fields from the same topic.
+const TOPIC_KEYWORDS: { keywords: RegExp; fields: string[] }[] = [
+  {
+    keywords: /\b(hijo|hija|hijos|familia|esposa|esposo|dependientes?|ninos?|bebe)\b/i,
+    fields: ["dependientes", "seguro_vida", "sgmm"],
+  },
+  {
+    keywords: /\b(gasto|gastos|pago|pagar|renta|servicios|comida|transporte|basico)\b/i,
+    fields: ["gastos_basicos", "obligaciones", "creditos"],
+  },
+  {
+    keywords: /\b(ahorro|ahorr[oa]|sobra|queda|ingreso|sueldo|gan[oa]|salario)\b/i,
+    fields: ["ahorro", "rentas", "otros"],
+  },
+  {
+    keywords: /\b(casa|departamento|inmueble|propiedad|terreno|tierra)\b/i,
+    fields: ["casa", "inmuebles_renta", "tierra", "propiedades_aseguradas"],
+  },
+  {
+    keywords: /\b(retir[oa]|afore|pension|jubilar|jubilarme|vejez)\b/i,
+    fields: ["edad_retiro", "afore", "mensualidad_deseada", "ppr", "plan_privado", "ley_73"],
+  },
+  {
+    keywords: /\b(seguro|asegurad[oa]|proteccion|proteger|poliza|medico|sgmm)\b/i,
+    fields: ["seguro_vida", "sgmm", "propiedades_aseguradas"],
+  },
+  {
+    keywords: /\b(inversion|inversiones|fondos|acciones|cetes|bonos|bolsa)\b/i,
+    fields: ["inversiones", "liquidez", "dotales"],
+  },
+  {
+    keywords: /\b(negocio|empresa|emprendimiento|emprender|socio|autonomo|independiente)\b/i,
+    fields: ["negocio", "ocupacion", "otros"],
+  },
+  {
+    keywords: /\b(credito|hipoteca|tarjeta|deuda|prestamo|mensualidad)\b/i,
+    fields: ["creditos", "obligaciones", "casa"],
+  },
+  {
+    keywords: /\b(herencia|heredar|padres|abuelos|legado)\b/i,
+    fields: ["herencia"],
+  },
+];
+
+/**
+ * Pick the best next suggestion considering:
+ * 1. Fields that are still missing
+ * 2. Fields the advisor has already skipped (will be excluded)
+ * 3. Conversation context (keywords in transcript)
+ */
+function pickLocalSuggestion(
+  datosFaltantes: string[],
+  skipFields: string[],
+  transcripcion: string,
+): NaviSuggestion | null {
+  if (datosFaltantes.length === 0) return null;
+
+  const skipSet = new Set(skipFields);
+  const available = datosFaltantes.filter((f) => !skipSet.has(f));
+
+  // If all available were skipped, reset and use the full list
+  const pool = available.length > 0 ? available : datosFaltantes;
+
+  // Check if there's a contextual match from the recent transcript (last ~200 chars)
+  const recentText = transcripcion.slice(-300);
+  if (recentText.length > 10) {
+    for (const topic of TOPIC_KEYWORDS) {
+      if (topic.keywords.test(recentText)) {
+        const contextualField = topic.fields.find(
+          (f) => pool.includes(f) && FALLBACK_SUGGESTIONS[f]
+        );
+        if (contextualField) {
+          return FALLBACK_SUGGESTIONS[contextualField];
+        }
+      }
+    }
+  }
+
+  // No contextual match → fall back to priority order
+  for (const field of PRIORITY_ORDER) {
+    if (pool.includes(field) && FALLBACK_SUGGESTIONS[field]) {
+      return FALLBACK_SUGGESTIONS[field];
+    }
+  }
+
+  // Last resort: any remaining field
+  const first = pool[0];
+  if (FALLBACK_SUGGESTIONS[first]) return FALLBACK_SUGGESTIONS[first];
+
+  return {
+    tipo: "pregunta",
+    texto: `Aún faltan datos de: ${pool.slice(0, 3).join(", ")}. Intenta preguntar sobre estos temas.`,
+    categoria: "general",
+    confianza: 0.6,
+  };
+}
+
+let _haikuInFlight = false;
+
+/**
+ * Main entry: returns a contextual suggestion.
+ * Tries Haiku first (if transcript is long enough), then falls back to local logic.
+ */
 export async function generarSugerenciaNavi(
   ctx: NaviContext
 ): Promise<NaviSuggestion> {
@@ -118,25 +296,42 @@ export async function generarSugerenciaNavi(
     };
   }
 
-  return getFallbackSuggestion(ctx.datosFaltantes);
-}
+  const skipFields = ctx.skipFields ?? [];
 
-function getFallbackSuggestion(datosFaltantes: string[]): NaviSuggestion {
-  for (const field of PRIORITY_ORDER) {
-    if (datosFaltantes.includes(field) && FALLBACK_SUGGESTIONS[field]) {
-      return FALLBACK_SUGGESTIONS[field];
+  // Try Haiku for smarter, contextual suggestions when we have enough transcript
+  if (ctx.transcripcion.length > 80 && !_haikuInFlight) {
+    try {
+      _haikuInFlight = true;
+      const res = await fetch("/api/navi-suggest", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          transcripcion: ctx.transcripcion.slice(-2000),
+          datos_faltantes: ctx.datosFaltantes.filter((f) => !new Set(skipFields).has(f)),
+          contexto: ctx.contextoCliente,
+        }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data?.texto) {
+          return data as NaviSuggestion;
+        }
+      }
+    } catch {
+      // Haiku failed, fall back silently
+    } finally {
+      _haikuInFlight = false;
     }
   }
 
-  const first = datosFaltantes[0];
-  if (FALLBACK_SUGGESTIONS[first]) return FALLBACK_SUGGESTIONS[first];
-
-  return {
-    tipo: "pregunta",
-    texto: `Aún faltan datos de: ${datosFaltantes.slice(0, 3).join(", ")}. Intenta preguntar sobre estos temas.`,
-    categoria: "general",
-    confianza: 0.6,
-  };
+  return (
+    pickLocalSuggestion(ctx.datosFaltantes, skipFields, ctx.transcripcion) ?? {
+      tipo: "pregunta",
+      texto: `Faltan ${ctx.datosFaltantes.length} datos. Pregunta al cliente sobre ${ctx.datosFaltantes[0]}.`,
+      categoria: "general",
+      confianza: 0.5,
+    }
+  );
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any

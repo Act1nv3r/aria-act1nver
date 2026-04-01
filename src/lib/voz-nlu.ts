@@ -7,85 +7,225 @@ export interface Sugerencia {
 
 // ---------------------------------------------------------------------------
 // Number parsing: handles spoken numbers, currency, and shorthand
+// Mexican colloquial: "4.5 millones", "1 millón doscientos", "3 millones y medio"
 // ---------------------------------------------------------------------------
 
-function parseSpokenNumber(raw: string): number | null {
-  let s = raw
-    .toLowerCase()
-    .replace(/,/g, "")
-    .replace(/\$/g, "")
-    .replace(/pesos/gi, "")
-    .replace(/mensuales/gi, "")
-    .replace(/al\s+mes/gi, "")
-    .replace(/millones?\s+de\s+pesos/gi, "000000")
-    .replace(/millón\s+de\s+pesos/gi, "000000")
-    .replace(/millones/gi, "000000")
-    .replace(/millón/gi, "000000")
-    .replace(/mil\s+pesos/gi, "000")
-    .replace(/mil/gi, "000")
-    .trim();
+const WORD_NUMBERS: Record<string, number> = {
+  cero: 0, un: 1, uno: 1, una: 1, dos: 2, tres: 3, cuatro: 4, cinco: 5,
+  seis: 6, siete: 7, ocho: 8, nueve: 9, diez: 10,
+  once: 11, doce: 12, trece: 13, catorce: 14, quince: 15,
+  dieciséis: 16, dieciseis: 16, diecisiete: 17, dieciocho: 18, diecinueve: 19,
+  veinte: 20, veintiuno: 21, veintidos: 22, veintitrés: 23, veintitres: 23,
+  veinticuatro: 24, veinticinco: 25, veintiséis: 26, veintiseis: 26,
+  veintisiete: 27, veintiocho: 28, veintinueve: 29,
+  treinta: 30, cuarenta: 40, cincuenta: 50, sesenta: 60,
+  setenta: 70, ochenta: 80, noventa: 90,
+  cien: 100, ciento: 100,
+  doscientos: 200, doscientas: 200, trescientos: 300, trescientas: 300,
+  cuatrocientos: 400, cuatrocientas: 400, quinientos: 500, quinientas: 500,
+  seiscientos: 600, seiscientas: 600, setecientos: 700, setecientas: 700,
+  ochocientos: 800, ochocientas: 800, novecientos: 900, novecientas: 900,
+};
 
-  const wordNumbers: Record<string, number> = {
-    cero: 0, uno: 1, una: 1, dos: 2, tres: 3, cuatro: 4, cinco: 5,
-    seis: 6, siete: 7, ocho: 8, nueve: 9, diez: 10,
-    once: 11, doce: 12, trece: 13, catorce: 14, quince: 15,
-    dieciséis: 16, dieciseis: 16, diecisiete: 17, dieciocho: 18, diecinueve: 19,
-    veinte: 20, veintiuno: 21, veintidos: 22, veintitrés: 23, veintitres: 23,
-    veinticuatro: 24, veinticinco: 25, veintiséis: 26, veintiseis: 26,
-    veintisiete: 27, veintiocho: 28, veintinueve: 29,
-    treinta: 30, cuarenta: 40, cincuenta: 50, sesenta: 60,
-    setenta: 70, ochenta: 80, noventa: 90, cien: 100,
-  };
-
-  if (wordNumbers[s] !== undefined) return wordNumbers[s];
+function parseWordNumber(word: string): number | null {
+  const w = word.toLowerCase().trim();
+  if (WORD_NUMBERS[w] !== undefined) return WORD_NUMBERS[w];
 
   // "treinta y cinco" → 35
-  const compoundMatch = s.match(
+  const compoundMatch = w.match(
     /^(treinta|cuarenta|cincuenta|sesenta|setenta|ochenta|noventa)\s+y\s+(uno|una|dos|tres|cuatro|cinco|seis|siete|ocho|nueve)$/
   );
   if (compoundMatch) {
-    const tens = wordNumbers[compoundMatch[1]];
-    const ones = wordNumbers[compoundMatch[2]];
+    const tens = WORD_NUMBERS[compoundMatch[1]];
+    const ones = WORD_NUMBERS[compoundMatch[2]];
     if (tens !== undefined && ones !== undefined) return tens + ones;
   }
 
-  s = s.replace(/\s+/g, "");
+  return null;
+}
+
+function parseSimpleNumber(raw: string): number | null {
+  const s = raw
+    .replace(/,/g, "")
+    .replace(/\$/g, "")
+    .replace(/\s+/g, "")
+    .trim();
   const n = Number(s);
   return isNaN(n) ? null : n;
 }
 
+/**
+ * Parse a full spoken amount including compound expressions.
+ * Handles: "4.5 millones", "1 millón doscientos", "3 millones y medio",
+ * "un millón doscientos mil", "medio millón", "350 mil", "doscientos mil", etc.
+ */
+function parseSpokenAmount(text: string): number | null {
+  const s = text
+    .toLowerCase()
+    .replace(/\$/g, "")
+    .replace(/,/g, "")
+    .replace(/pesos/gi, "")
+    .replace(/mensuales/gi, "")
+    .replace(/al\s+mes/gi, "")
+    .replace(/de\s+pesos/gi, "")
+    .replace(/mxn/gi, "")
+    .trim();
+
+  if (!s) return null;
+
+  // "medio millón" → 500,000
+  if (/^medio\s+mill[oó]n$/i.test(s)) return 500_000;
+
+  // "un cuarto de millón" → 250,000
+  if (/^un\s+cuarto\s+de\s+mill[oó]n$/i.test(s)) return 250_000;
+
+  // Pattern: {N} millón(es) {remainder}
+  // Examples: "4.5 millones", "1 millón doscientos", "3 millones y medio",
+  //           "un millón 200", "2 millones 500 mil", "1 millón doscientos mil"
+  const millonPattern = /^([\d.]+|un[oa]?|medio)\s*mill[oó]n(?:es)?(?:\s+(?:de\s+)?(?:y\s+)?(.+))?$/i;
+  const mm = s.match(millonPattern);
+  if (mm) {
+    let base: number;
+    if (mm[1] === "un" || mm[1] === "uno" || mm[1] === "una") base = 1;
+    else if (mm[1] === "medio") base = 0.5;
+    else base = parseFloat(mm[1]);
+    if (isNaN(base)) return null;
+
+    let millions = base * 1_000_000;
+
+    const remainder = (mm[2] || "").trim();
+    if (remainder) {
+      const extra = parseRemainderAfterMillions(remainder);
+      if (extra !== null) millions += extra;
+    }
+
+    return millions;
+  }
+
+  // Pattern: {word} millón(es) — e.g. "dos millones", "tres millones y medio"
+  const wordMillonPattern = /^(\w+)\s+mill[oó]n(?:es)?(?:\s+(?:de\s+)?(?:y\s+)?(.+))?$/i;
+  const wm = s.match(wordMillonPattern);
+  if (wm) {
+    const baseWord = parseWordNumber(wm[1]);
+    if (baseWord !== null && baseWord >= 1 && baseWord <= 999) {
+      let millions = baseWord * 1_000_000;
+      const remainder = (wm[2] || "").trim();
+      if (remainder) {
+        const extra = parseRemainderAfterMillions(remainder);
+        if (extra !== null) millions += extra;
+      }
+      return millions;
+    }
+  }
+
+  // Pattern: {N} mil — e.g. "50 mil", "350 mil", "doscientos mil"
+  const milPattern = /^([\d.]+)\s*mil$/i;
+  const km = s.match(milPattern);
+  if (km) {
+    const n = parseFloat(km[1]);
+    if (!isNaN(n)) return n * 1_000;
+  }
+
+  // Pattern: {word} mil — e.g. "doscientos mil", "quinientos mil"
+  const wordMilPattern = /^(\w+(?:\s+y\s+\w+)?)\s+mil$/i;
+  const wkm = s.match(wordMilPattern);
+  if (wkm) {
+    const n = parseWordNumber(wkm[1]);
+    if (n !== null) return n * 1_000;
+  }
+
+  // Simple word number
+  const wordVal = parseWordNumber(s);
+  if (wordVal !== null) return wordVal;
+
+  // Plain numeric
+  return parseSimpleNumber(s);
+}
+
+/**
+ * Parse the part after "millones" — could be "y medio", "doscientos",
+ * "200", "500 mil", "doscientos mil", etc.
+ */
+function parseRemainderAfterMillions(remainder: string): number | null {
+  const r = remainder.toLowerCase().trim();
+
+  if (r === "medio" || r === "y medio") return 500_000;
+
+  // "{N} mil" — e.g. "500 mil", "200 mil"
+  const milMatch = r.match(/^([\d.]+)\s*mil$/i);
+  if (milMatch) {
+    const n = parseFloat(milMatch[1]);
+    if (!isNaN(n)) return n * 1_000;
+  }
+
+  // "{word} mil" — e.g. "doscientos mil", "quinientos mil"
+  const wordMilMatch = r.match(/^(\w+(?:\s+y\s+\w+)?)\s+mil$/i);
+  if (wordMilMatch) {
+    const n = parseWordNumber(wordMilMatch[1]);
+    if (n !== null) return n * 1_000;
+  }
+
+  // Plain number — e.g. "200" meaning 200,000, "doscientos" meaning 200,000
+  // Context: after "millones", a naked number ≤999 implies thousands
+  const wordVal = parseWordNumber(r);
+  if (wordVal !== null) return wordVal * 1_000;
+
+  const plainNum = parseFloat(r.replace(/,/g, ""));
+  if (!isNaN(plainNum)) {
+    // After millions: "200" → 200,000 ; "1200" → 1,200 (literal)
+    return plainNum <= 999 ? plainNum * 1_000 : plainNum;
+  }
+
+  return null;
+}
+
 // Try to extract a currency/monetary amount from text
 function extractAmount(text: string): number | null {
-  // $50,000 or $50000 or 50,000 pesos
-  const patterns = [
-    /\$\s*([\d,]+(?:\.\d{1,2})?)/,
-    /([\d,]+(?:\.\d{1,2})?)\s*(?:pesos|mxn|mensuales|al\s+mes)/i,
-    /(?:como|unos|aproximadamente|más o menos|cerca de|alrededor de)\s*\$?\s*([\d,]+)/i,
-    /(?:gano|cobro|recibo|ahorro|gasto|pago|debo|tengo)\s+(?:como\s+)?(?:unos\s+)?\$?\s*([\d,]+)/i,
+  // Direct $ amounts: $50,000 or $4,500,000
+  const dollarMatch = text.match(/\$\s*([\d,]+(?:\.\d{1,2})?)/);
+  if (dollarMatch) {
+    const n = parseSimpleNumber(dollarMatch[1]);
+    if (n !== null && n > 0) return n;
+  }
+
+  // "XXX pesos/mxn/mensuales"
+  const pesosMatch = text.match(/([\d,]+(?:\.\d{1,2})?)\s*(?:pesos|mxn|mensuales|al\s+mes)/i);
+  if (pesosMatch) {
+    const n = parseSimpleNumber(pesosMatch[1]);
+    if (n !== null && n > 0) return n;
+  }
+
+  // Compound spoken amounts: "4.5 millones", "1 millón doscientos",
+  // "medio millón", "3 millones y medio", "doscientos mil", "50 mil"
+  const spokenPatterns = [
+    // millones with optional remainder
+    /(?:como|unos|aproximadamente|más o menos|cerca de|alrededor de|de|son|vale|tiene|tengo)?\s*((?:[\d.]+|un[oa]?|medio|dos|tres|cuatro|cinco|seis|siete|ocho|nueve|diez)\s*mill[oó]n(?:es)?(?:\s+(?:y\s+)?(?:medio|[\d.]+\s*mil|(?:doscient|trescient|cuatrocient|quinient|seiscient|setecient|ochocient|novecient)\w*(?:\s+mil)?))?)/i,
+    // medio millón standalone
+    /(?:como|unos)?\s*(medio\s+mill[oó]n)/i,
+    // N mil
+    /(?:como|unos|aproximadamente|más o menos|cerca de|alrededor de)?\s*((?:[\d.]+|(?:doscient|trescient|cuatrocient|quinient|seiscient|setecient|ochocient|novecient)\w*)\s+mil)/i,
   ];
 
-  for (const p of patterns) {
+  for (const p of spokenPatterns) {
     const m = text.match(p);
     if (m) {
-      const n = parseSpokenNumber(m[1]);
+      const n = parseSpokenAmount(m[1]);
       if (n !== null && n > 0) return n;
     }
   }
 
-  // "50 mil", "2 millones", "medio millón"
-  const milMatch = text.match(/([\d.]+)\s*mil/i);
-  if (milMatch) {
-    const n = parseFloat(milMatch[1]);
-    if (!isNaN(n)) return n * 1000;
+  // Contextual patterns with verbs + amount
+  const contextPatterns = [
+    /(?:como|unos|aproximadamente|más o menos|cerca de|alrededor de)\s*\$?\s*([\d,]+)/i,
+    /(?:gano|cobro|recibo|ahorro|gasto|pago|debo|tengo)\s+(?:como\s+)?(?:unos\s+)?\$?\s*([\d,]+)/i,
+  ];
+  for (const p of contextPatterns) {
+    const m = text.match(p);
+    if (m) {
+      const n = parseSimpleNumber(m[1]);
+      if (n !== null && n > 0) return n;
+    }
   }
-
-  const millonMatch = text.match(/([\d.]+)\s*mill[oó]n(?:es)?/i);
-  if (millonMatch) {
-    const n = parseFloat(millonMatch[1]);
-    if (!isNaN(n)) return n * 1_000_000;
-  }
-
-  if (/medio\s+mill[oó]n/i.test(text)) return 500_000;
 
   return null;
 }
@@ -175,19 +315,21 @@ const RULES: ExtractionRule[] = [
     extract: (text) => {
       const lower = text.toLowerCase();
       const numPatterns = [
-        /tengo\s+(\d+)\s+(?:hijos?|dependientes?|hij[oa]s?)/i,
-        /(\d+)\s+(?:hijos?|dependientes?|hij[oa]s?)/i,
-        /(?:tengo|somos)\s+(un|una|dos|tres|cuatro|cinco|seis)\s+(?:hijo|hija|hijos|dependientes)/i,
+        /tengo\s+(\d+)\s+(?:hijos?|dependientes?|hij[oa]s?|niños?)/i,
+        /(\d+)\s+(?:hijos?|dependientes?|hij[oa]s?|niños?)/i,
+        /(?:tengo|somos)\s+(un[oa]?|dos|tres|cuatro|cinco|seis|siete|ocho)\s+(?:hijos?|hijas?|niños?|dependientes?)/i,
       ];
       for (const p of numPatterns) {
         const m = lower.match(p);
         if (m) {
-          const n = parseSpokenNumber(m[1]);
-          return { valor: (n ?? parseInt(m[1])) || 1, confianza: 0.88, fuente: m[0] };
+          const n = parseWordNumber(m[1]) ?? parseInt(m[1]);
+          return { valor: !isNaN(n) && n > 0 ? n : 1, confianza: 0.88, fuente: m[0] };
         }
       }
-      if (/no tengo (?:hijos|dependientes|familia que dependa)/i.test(lower))
-        return { valor: 0, confianza: 0.9, fuente: text.slice(0, 50) };
+      if (/\b(?:tengo\s+(?:hijos?|familia)|sí\s+tengo\s+(?:hijos?|dependientes))\b/i.test(lower))
+        return { valor: true, confianza: 0.85, fuente: text.slice(0, 50) };
+      if (/no tengo (?:hijos|dependientes|familia que dependa|ningún dependiente)/i.test(lower))
+        return { valor: false, confianza: 0.9, fuente: text.slice(0, 50) };
       return null;
     },
   },
@@ -427,6 +569,39 @@ const RULES: ExtractionRule[] = [
       }
       if (/no\s+(?:espero|tengo)\s+(?:ninguna\s+)?herencia/i.test(lower))
         return { valor: 0, confianza: 0.85, fuente: text.slice(0, 40) };
+      return null;
+    },
+  },
+
+  // --- RETIRO OBJETIVOS ---
+  {
+    campo: "edad_retiro",
+    extract: (text) => {
+      const patterns = [
+        /(?:retirar(?:me)?|jubilar(?:me)?)\s+(?:a\s+los\s+)?(\d{2})/i,
+        /(?:retiro|jubilación)\s+(?:a\s+(?:los\s+)?)?(\d{2})/i,
+        /a\s+los\s+(\d{2})\s+(?:me\s+)?(?:retiro|jubilo)/i,
+      ];
+      for (const p of patterns) {
+        const m = text.match(p);
+        if (m) {
+          const age = parseInt(m[1]);
+          if (age >= 40 && age <= 80) return { valor: age, confianza: 0.9, fuente: m[0] };
+        }
+      }
+      return null;
+    },
+  },
+  {
+    campo: "mensualidad_deseada",
+    extract: (text) => {
+      const lower = text.toLowerCase();
+      if (/(?:recibir|necesit|quisiera|quiero|me gustaría|vivir con|necesitaría)\s+(?:al\s+mes|mensuales?|cada\s+mes)/i.test(lower) ||
+          /(?:al\s+mes|mensual(?:es)?)\s+(?:cuando|para|al)\s+(?:me\s+)?retir/i.test(lower) ||
+          /(?:para\s+(?:mi\s+)?retiro|cuando\s+me\s+retire).{0,30}?\d/i.test(lower)) {
+        const amount = extractAmount(text);
+        if (amount && amount > 0) return { valor: amount, confianza: 0.87, fuente: text.slice(0, 60) };
+      }
       return null;
     },
   },

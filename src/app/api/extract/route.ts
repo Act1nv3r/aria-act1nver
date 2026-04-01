@@ -71,7 +71,23 @@ REGLAS CRÍTICAS:
    - "Sí tengo seguro de vida" = seguro_vida: true
    - "También tengo gastos médicos mayores" = sgmm: true
    - "No tengo deudas" = creditos: 0
-3. Montos en MXN: "50 mil"=50000, "un millón"=1000000, "2.5 millones"=2500000, "medio millón"=500000.
+3. Montos en MXN — el mexicano usa estas expresiones:
+   - "50 mil" = 50000
+   - "350 mil" = 350000
+   - "doscientos mil" = 200000
+   - "medio millón" = 500000
+   - "un millón" = 1000000
+   - "1.5 millones" = 1500000
+   - "2.5 millones" = 2500000
+   - "4.5 millones" = 4500000 (NO 4.5, son 4 millones y medio)
+   - "1 millón doscientos" = 1200000 (1 millón + 200 mil)
+   - "1 millón 200" = 1200000 (misma lógica)
+   - "3 millones y medio" = 3500000
+   - "un millón y medio" = 1500000
+   - "2 millones 500 mil" = 2500000
+   - "como millón y medio" = 1500000
+   - "un cuarto de millón" = 250000
+   REGLA CLAVE: Cuando dicen "X millones Y" donde Y es un número pequeño (ej: 200, 300, 500), Y se refiere a MILES. "1 millón doscientos" = 1,200,000 NO 1,000,200.
 4. Para campos booleanos (seguro_vida, propiedades_aseguradas, sgmm, dependientes): cualquier mención afirmativa = true, negativa = false.
 5. Confianza alta (0.88-0.95) cuando el dato es claro. Media (0.75-0.87) si hay que inferir un poco.
 6. Responde SOLAMENTE con un JSON array válido. Sin texto adicional, sin markdown, sin explicaciones.

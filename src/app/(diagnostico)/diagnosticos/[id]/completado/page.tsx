@@ -10,7 +10,7 @@ import { OutputPanel } from "@/components/diagnostico/output-panel";
 import { useDiagnosticoStore } from "@/stores/diagnostico-store";
 import { useDiagnosticoId } from "@/contexts/diagnostico-context";
 import { generarBalancePDF, generarDiagnosticoPDF } from "@/lib/pdf-generator";
-import { getAccessToken } from "@/lib/api-client";
+import { api, getAccessToken } from "@/lib/api-client";
 import { CompartirButton } from "./compartir-button";
 import { BalancePDFTemplate } from "@/components/pdf/balance-pdf-template";
 import { DiagnosticoPDFTemplate } from "@/components/pdf/diagnostico-pdf-template";
@@ -20,6 +20,20 @@ export default function CompletadoPage() {
   const id = params?.id as string;
   const { isApiMode } = useDiagnosticoId();
   const perfil = useDiagnosticoStore((s) => s.perfil);
+  const modo = useDiagnosticoStore((s) => s.modo);
+  const marcarDiagnosticoCompleto = useDiagnosticoStore((s) => s.marcarDiagnosticoCompleto);
+
+  // Mark diagnostic as complete (locally + API)
+  useEffect(() => {
+    if (!id || id === "demo") return;
+    marcarDiagnosticoCompleto(id, perfil?.nombre ?? "Cliente", modo);
+    if (isApiMode) {
+      api.diagnosticos.completar(id).catch(() => {
+        // API may not be available; local store already has it
+      });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id]);
 
   useEffect(() => {
     const duration = 3 * 1000;

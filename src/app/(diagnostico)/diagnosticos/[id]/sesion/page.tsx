@@ -334,7 +334,7 @@ export default function SesionPage() {
   };
 
   const handleGenerarBalance = () => {
-    if (completitud_pct < 60) {
+    if (completitud_pct < 25) {
       setCompletionModalOpen(true);
       return;
     }
@@ -508,7 +508,7 @@ export default function SesionPage() {
       <Modal open={completionModalOpen} onClose={() => setCompletionModalOpen(false)} title="Datos insuficientes">
         <div className="space-y-4">
           <p className="text-sm text-[#8B9BB4]">
-            Solo tienes {completitud_pct}% de datos recopilados. Se necesita al menos 60% para generar un balance confiable.
+            Solo tienes {completitud_pct}% de datos recopilados. Se necesita al menos 25% para generar un balance preliminar.
           </p>
           <div className="flex gap-3">
             <Button variant="ghost" onClick={() => { setCompletionModalOpen(false); router.push(`/diagnosticos/${diagnosticoId}/paso/1`); }} className="flex-1">

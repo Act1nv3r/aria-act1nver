@@ -74,7 +74,7 @@ export function SessionProgress({
           variant="accent"
           size="sm"
           onClick={onGenerarBalance}
-          disabled={completitudPct < 60}
+          disabled={completitudPct < 25}
         >
           <BarChart3 className="w-3.5 h-3.5" />
           Generar balance
