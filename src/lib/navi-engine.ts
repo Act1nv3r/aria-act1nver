@@ -1,5 +1,3 @@
-import { getAccessToken } from "./api-client";
-
 export interface NaviSuggestion {
   tipo: "pregunta" | "oportunidad" | "alerta";
   texto: string;
@@ -20,8 +18,6 @@ interface NaviContext {
     nombre?: string;
   };
 }
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
 const FALLBACK_SUGGESTIONS: Record<string, NaviSuggestion> = {
   edad: {
@@ -110,23 +106,6 @@ const PRIORITY_ORDER = [
   "seguro_vida",
 ];
 
-let lastCallTime = 0;
-const MIN_COOLDOWN_MS = 15_000;
-const MAX_CALLS_PER_MINUTE = 4;
-let callsThisMinute = 0;
-let minuteStart = Date.now();
-
-function checkRateLimit(): boolean {
-  const now = Date.now();
-  if (now - lastCallTime < MIN_COOLDOWN_MS) return false;
-  if (now - minuteStart > 60_000) {
-    minuteStart = now;
-    callsThisMinute = 0;
-  }
-  if (callsThisMinute >= MAX_CALLS_PER_MINUTE) return false;
-  return true;
-}
-
 export async function generarSugerenciaNavi(
   ctx: NaviContext
 ): Promise<NaviSuggestion> {
@@ -139,42 +118,7 @@ export async function generarSugerenciaNavi(
     };
   }
 
-  // If rate limited or no transcript, use prioritized fallback
-  if (!checkRateLimit() || !ctx.transcripcion.trim()) {
-    return getFallbackSuggestion(ctx.datosFaltantes);
-  }
-
-  try {
-    callsThisMinute++;
-    lastCallTime = Date.now();
-
-    const token = getAccessToken();
-    const headers: Record<string, string> = { "Content-Type": "application/json" };
-    if (token) headers["Authorization"] = `Bearer ${token}`;
-
-    const res = await fetch(`${API_URL}/api/v1/voz/navi-sugerencia`, {
-      method: "POST",
-      headers,
-      body: JSON.stringify({
-        transcripcion: ctx.transcripcion.slice(-2000),
-        datos_faltantes: ctx.datosFaltantes,
-        contexto_cliente: ctx.contextoCliente,
-      }),
-    });
-
-    if (!res.ok) return getFallbackSuggestion(ctx.datosFaltantes);
-
-    const data = await res.json();
-    return {
-      tipo: data.tipo || "pregunta",
-      texto: data.texto || getFallbackSuggestion(ctx.datosFaltantes).texto,
-      categoria: data.categoria || "general",
-      campo_target: data.campo_target,
-      confianza: data.confianza || 0.8,
-    };
-  } catch {
-    return getFallbackSuggestion(ctx.datosFaltantes);
-  }
+  return getFallbackSuggestion(ctx.datosFaltantes);
 }
 
 function getFallbackSuggestion(datosFaltantes: string[]): NaviSuggestion {
