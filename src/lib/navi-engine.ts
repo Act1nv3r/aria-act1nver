@@ -163,34 +163,27 @@ export function getDatosFaltantes(store: {
     }
   };
 
-  checkFields(store.perfil, ["nombre", "edad", "genero", "ocupacion", "dependientes"], { edad: 18 });
-  checkFields(store.flujoMensual, [
-    "ahorro",
-    "rentas",
-    "gastos_basicos",
-    "obligaciones",
-    "otros",
-    "creditos",
-  ]);
-  checkFields(store.patrimonio, [
-    "liquidez",
-    "inversiones",
-    "dotales",
-    "afore",
-    "ppr",
-    "plan_privado",
-    "seguros_retiro",
-    "ley_73",
-    "casa",
-    "inmuebles_renta",
-    "tierra",
-    "negocio",
-    "herencia",
-  ]);
-  checkFields(store.retiro, ["edad_retiro", "mensualidad_deseada"], {
-    edad_retiro: 65,
+  checkFields(store.perfil, ["nombre", "edad", "genero", "ocupacion", "dependientes"], {
+    nombre: "", edad: 18, genero: "H", ocupacion: "asalariado", dependientes: false,
   });
-  checkFields(store.proteccion, ["seguro_vida", "propiedades_aseguradas", "sgmm"]);
+  checkFields(store.flujoMensual, [
+    "ahorro", "rentas", "gastos_basicos", "obligaciones", "otros", "creditos",
+  ], {
+    ahorro: 0, rentas: 0, gastos_basicos: 0, obligaciones: 0, otros: 0, creditos: 0,
+  });
+  checkFields(store.patrimonio, [
+    "liquidez", "inversiones", "dotales", "afore", "ppr", "plan_privado",
+    "seguros_retiro", "ley_73", "casa", "inmuebles_renta", "tierra", "negocio", "herencia",
+  ], {
+    liquidez: 0, inversiones: 0, dotales: 0, afore: 0, ppr: 0, plan_privado: 0,
+    seguros_retiro: 0, ley_73: null, casa: 0, inmuebles_renta: 0, tierra: 0, negocio: 0, herencia: 0,
+  });
+  checkFields(store.retiro, ["edad_retiro", "mensualidad_deseada"], {
+    edad_retiro: 65, mensualidad_deseada: 0,
+  });
+  checkFields(store.proteccion, ["seguro_vida", "propiedades_aseguradas", "sgmm"], {
+    seguro_vida: false, propiedades_aseguradas: null, sgmm: false,
+  });
 
   return faltantes;
 }
