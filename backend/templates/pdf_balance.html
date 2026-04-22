@@ -2,24 +2,110 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <title>Balance - ArIA</title>
+  <title>Balance Financiero - ArIA</title>
   <style>
-    body { font-family: 'Open Sans', sans-serif; background: #F5F2EB; color: #0A0E12; padding: 40px; }
-    .header { display: flex; justify-content: space-between; margin-bottom: 24px; padding-bottom: 16px; border-bottom: 2px solid #314566; }
-    .brand { font-family: Poppins, sans-serif; font-size: 20px; font-weight: 700; color: #0A0E12; }
+    @page { size: A4; margin: 20mm 15mm; }
+    body { font-family: 'Open Sans', Arial, sans-serif; background: #F5F2EB; color: #0A0E12; font-size: 10pt; line-height: 1.5; }
+    .header { border-bottom: 2px solid #314566; padding-bottom: 12px; margin-bottom: 20px; }
+    .brand { font-family: 'Poppins', Arial, sans-serif; font-size: 16pt; font-weight: 700; color: #0A0E12; }
     .brand span { color: #E6C78A; }
-    .meta { text-align: right; font-size: 12px; color: #5A6A85; }
-    h2 { font-family: Poppins, sans-serif; font-size: 18px; color: #314566; margin-top: 24px; }
-    .footer { margin-top: 32px; padding-top: 16px; border-top: 1px solid #ccc; font-size: 10px; color: #999; text-align: center; }
+    h2 { font-family: 'Poppins', Arial, sans-serif; font-size: 13pt; color: #314566; margin-top: 20px; margin-bottom: 8px; border-left: 3px solid #E6C78A; padding-left: 8px; }
+    table.data { width: 100%; border-collapse: collapse; margin: 8px 0; font-size: 9pt; }
+    table.data th { background: #314566; color: white; padding: 6px 10px; text-align: left; }
+    table.data td { padding: 5px 10px; border-bottom: 1px solid #e0d8cc; }
+    table.data tr:nth-child(even) td { background: #f0ece4; }
+    .total-row td, .total-row th { font-weight: 700; background: #E6C78A !important; color: #0A0E12; }
+    .kpi-row { width: 100%; border-collapse: collapse; margin: 12px 0; }
+    .kpi-row td { width: 33.3%; padding: 12px 8px; text-align: center; background: #fff; border: 1px solid #e0d8cc; }
+    .kpi-val { font-size: 15pt; font-weight: 700; color: #314566; }
+    .kpi-label { font-size: 8pt; color: #5A6A85; }
+    .note { font-size: 8pt; color: #5A6A85; font-style: italic; }
+    .footer { margin-top: 24px; padding-top: 12px; border-top: 1px solid #ccc; font-size: 8pt; color: #999; text-align: center; }
   </style>
 </head>
 <body>
-  <div class="header">
-    <div class="brand">Actinver<span>·</span> ArIA</div>
-    <div class="meta"><div>{{ nombre }}</div><div>{{ fecha }}</div></div>
-  </div>
-  <h2>Balance</h2>
-  <p>Resumen de flujo y patrimonio consolidado.</p>
-  <div class="footer">Este documento es informativo. ArIA by Actinver.</div>
+
+<div class="header">
+  <table style="width:100%; border-collapse:collapse;">
+    <tr>
+      <td><div class="brand">Actinver<span>·</span> ArIA</div>
+          <div style="font-size:9pt; color:#5A6A85;">Balance Financiero</div></td>
+      <td style="text-align:right; font-size:9pt; color:#5A6A85;">
+        <div><strong>{{ nombre }}</strong></div><div>{{ fecha }}</div>
+      </td>
+    </tr>
+  </table>
+</div>
+
+<!-- KPIs -->
+{% if motor_e %}
+<table class="kpi-row">
+  <tr>
+    <td>
+      <div class="kpi-val">${{ "{:,.0f}".format(motor_e.activos_total) }}</div>
+      <div class="kpi-label">Total activos</div>
+    </td>
+    <td>
+      <div class="kpi-val" style="color:#b04040">${{ "{:,.0f}".format(motor_e.pasivos_total) }}</div>
+      <div class="kpi-label">Total pasivos</div>
+    </td>
+    <td>
+      <div class="kpi-val" style="color:#2a7a50">${{ "{:,.0f}".format(motor_e.patrimonio_neto) }}</div>
+      <div class="kpi-label">Patrimonio neto</div>
+    </td>
+  </tr>
+</table>
+{% endif %}
+
+<!-- FLUJO -->
+{% if flujo and motor_a %}
+<h2>Flujo mensual</h2>
+<table class="data">
+  <tr><th>Concepto</th><th style="text-align:right">Monto (MXN)</th></tr>
+  <tr><td>Ingresos totales</td><td style="text-align:right">${{ "{:,.0f}".format(motor_a.ingresos_totales) }}</td></tr>
+  <tr><td>Egresos totales</td><td style="text-align:right">${{ "{:,.0f}".format(motor_a.gastos_totales) }}</td></tr>
+  <tr class="total-row"><td>Remanente mensual</td><td style="text-align:right">${{ "{:,.0f}".format(motor_a.remanente) }}</td></tr>
+</table>
+<p class="note">
+  Ahorro: {{ "%.0f"|format(motor_a.distribucion.ahorro_pct * 100) }}% ·
+  Gastos: {{ "%.0f"|format(motor_a.distribucion.gastos_pct * 100) }}% ·
+  Obligaciones: {{ "%.0f"|format(motor_a.distribucion.obligaciones_pct * 100) }}% ·
+  Reserva: {{ motor_a.resultado_reserva }}{% if motor_a.meses_cubiertos %} ({{ "%.1f"|format(motor_a.meses_cubiertos) }} meses){% endif %}
+</p>
+{% endif %}
+
+<!-- BALANCE -->
+{% if patrimonio %}
+<h2>Balance patrimonial</h2>
+<table class="data">
+  <tr><th>Activos</th><th style="text-align:right">Monto (MXN)</th></tr>
+  {% if patrimonio.liquidez > 0 %}<tr><td>Liquidez</td><td style="text-align:right">${{ "{:,.0f}".format(patrimonio.liquidez) }}</td></tr>{% endif %}
+  {% if patrimonio.inversiones > 0 %}<tr><td>Inversiones</td><td style="text-align:right">${{ "{:,.0f}".format(patrimonio.inversiones) }}</td></tr>{% endif %}
+  {% if patrimonio.dotales > 0 %}<tr><td>Dotales</td><td style="text-align:right">${{ "{:,.0f}".format(patrimonio.dotales) }}</td></tr>{% endif %}
+  {% if patrimonio.afore > 0 %}<tr><td>AFORE</td><td style="text-align:right">${{ "{:,.0f}".format(patrimonio.afore) }}</td></tr>{% endif %}
+  {% if patrimonio.ppr > 0 %}<tr><td>PPR</td><td style="text-align:right">${{ "{:,.0f}".format(patrimonio.ppr) }}</td></tr>{% endif %}
+  {% if patrimonio.casa > 0 %}<tr><td>Casa habitación</td><td style="text-align:right">${{ "{:,.0f}".format(patrimonio.casa) }}</td></tr>{% endif %}
+  {% if patrimonio.inmuebles_renta > 0 %}<tr><td>Inmuebles en renta</td><td style="text-align:right">${{ "{:,.0f}".format(patrimonio.inmuebles_renta) }}</td></tr>{% endif %}
+  {% if patrimonio.negocio > 0 %}<tr><td>Negocio</td><td style="text-align:right">${{ "{:,.0f}".format(patrimonio.negocio) }}</td></tr>{% endif %}
+  {% if motor_e %}<tr class="total-row"><td>Total activos</td><td style="text-align:right">${{ "{:,.0f}".format(motor_e.activos_total) }}</td></tr>{% endif %}
+</table>
+{% if motor_e and motor_e.pasivos_total > 0 %}
+<table class="data">
+  <tr><th>Pasivos</th><th style="text-align:right">Monto (MXN)</th></tr>
+  {% if patrimonio.hipoteca > 0 %}<tr><td>Hipoteca</td><td style="text-align:right">${{ "{:,.0f}".format(patrimonio.hipoteca) }}</td></tr>{% endif %}
+  {% if patrimonio.saldo_planes > 0 %}<tr><td>Saldo planes</td><td style="text-align:right">${{ "{:,.0f}".format(patrimonio.saldo_planes) }}</td></tr>{% endif %}
+  {% if patrimonio.compromisos > 0 %}<tr><td>Compromisos</td><td style="text-align:right">${{ "{:,.0f}".format(patrimonio.compromisos) }}</td></tr>{% endif %}
+  <tr class="total-row"><td>Total pasivos</td><td style="text-align:right">${{ "{:,.0f}".format(motor_e.pasivos_total) }}</td></tr>
+</table>
+{% endif %}
+{% if motor_e %}
+<p class="note">Solvencia: <strong>{{ motor_e.clasificacion_solvencia }}</strong> · Índice: {{ "%.0f"|format(motor_e.indice_solvencia * 100) }}%
+{% if motor_b %} · Nivel de riqueza: <strong>{{ motor_b.nivel_riqueza | title }}</strong>{% endif %}</p>
+{% endif %}
+{% endif %}
+
+<div class="footer">
+  Este documento es informativo y no constituye una recomendación de inversión. ArIA by Actinver.
+</div>
 </body>
 </html>

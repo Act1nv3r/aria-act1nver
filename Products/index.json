@@ -1,0 +1,586 @@
+{
+  "version": "1.0",
+  "updated_at": "2026-04-14T22:46:17.188Z",
+  "total": 20,
+  "products": [
+    {
+      "id": "credito-actinver",
+      "nombre": "Crédito Actinver",
+      "categoria": "credito",
+      "subcategoria": "Crédito de consumo con tasa de interés fija",
+      "descripcion": "Producto de financiamiento que permite al cliente obtener capital para sus necesidades, con opciones de plazos y tasas de interés variables. El producto se caracteriza por la transparencia en su costo total mediante el CAT (Costo Anual Total), facilitando la comparación con otras ofertas de crédito en el mercado.",
+      "beneficios_clave": [
+        "CAT transparente que facilita comparación entre opciones de crédito",
+        "Flexibilidad en plazos de pago y periodicidad de cuotas",
+        "Opción de realizar pagos anticipados para reducir intereses",
+        "Acceso a tabla de amortización detallada para planificación financiera"
+      ],
+      "perfil_ideal": "Personas físicas de 25-65 años con ingresos comprobables, capacidad de pago demostrada, que requieren financiamiento para consumo o proyectos personales y buscan transparencia en costos. Ideal para clientes que desean comparar opciones y planificar su deuda de forma responsable.",
+      "triggers_de_venta": [
+        "Cliente menciona necesidad de financiar un gasto importante pero no tiene liquidez inmediata",
+        "Cliente pregunta por opciones de crédito y quiere entender el costo total real del financiamiento",
+        "Cliente busca hacer un pago anticipado o quiere conocer cómo reducir intereses en un crédito existente",
+        "Cliente compara múltiples opciones de crédito y necesita asesoría para elegir la más conveniente",
+        "Cliente solicita información sobre cómo funciona la amortización y qué significa el CAT",
+        "Cliente con ingresos regulares y comprobables expresa deseo de realizar una compra importante"
+      ],
+      "cuando_no_proponer": "No proponer si el cliente carece de ingresos comprobables, tiene historial de impagos severos, solicita montos que excedan su capacidad real de pago, o si sus compromisos de deuda actuales son superiores al 50% de sus ingresos.",
+      "monto_minimo": null,
+      "producto_sugerido_texto": "Crédito Actinver",
+      "fuente": "ACT_UCA_CREDITO_INFO_V2_110225.pdf",
+      "hash": "5b0a6fa1fd7b2e7a",
+      "updated_at": "2026-04-14T22:05:17.403Z"
+    },
+    {
+      "id": "fianzas-cauciones-atlas",
+      "nombre": "Fianzas y Cauciones Atlas",
+      "categoria": "proteccion",
+      "subcategoria": "fianzas y garantías comerciales, administrativas y judiciales",
+      "descripcion": "Producto de garantía mediante el cual Fianzas y Cauciones Atlas se compromete a garantizar el cumplimiento de obligaciones asumidas por empresas ante terceros. En caso de incumplimiento, la institución responde por la deuda u obligación pendiente, brindando seguridad y confianza en transacciones comerciales, procesos judiciales, arrendamientos y proyectos de infraestructura.",
+      "beneficios_clave": [
+        "Garantiza el cumplimiento de obligaciones comerciales y administrativas",
+        "Cubre múltiples tipos de fianzas: licitación, anticipo, cumplimiento, buena calidad",
+        "Aplicable en construcción, proveeduría, concesiones y procedimientos judiciales",
+        "Reduce riesgo para acreedores y brinda confianza en acuerdos comerciales"
+      ],
+      "perfil_ideal": "Empresas constructoras, proveedoras de bienes y servicios, y concesionarios con facturación anual >5M MXN que participan en licitaciones públicas/privadas, requieren garantías de cumplimiento o necesitan respaldar obligaciones ante terceros acreditados",
+      "triggers_de_venta": [
+        "Empresa constructora que ganó una licitación pública y necesita fianza de cumplimiento",
+        "Proveedor de servicios que debe garantizar anticipo recibido de cliente",
+        "Contratista que requiere fianza de buena calidad para responder por vicios ocultos",
+        "Empresa que participa en concurso público y necesita fianza de seriedad de propuesta",
+        "Concesionario de infraestructura que debe garantizar operación correcta del servicio",
+        "Agencia de viajes que necesita fianza de boletaje IATA ante compañías aéreas"
+      ],
+      "cuando_no_proponer": "Personas físicas sin actividad empresarial, microempresas sin antecedentes crediticios, clientes que requieren créditos de consumo personal, personas en procedimientos de insolvencia, o cuando la obligación a garantizar es ilegal o contraria a normas de SEMARNAT",
+      "monto_minimo": null,
+      "producto_sugerido_texto": "Fianzas y Cauciones Atlas",
+      "fuente": "Fianzas y Cauciones Atlas.pdf",
+      "hash": "d3b5c855bbb3c14d",
+      "updated_at": "2026-04-14T22:05:24.521Z"
+    },
+    {
+      "id": "seguro-vida-grupo-plus",
+      "nombre": "Seguro de Vida Grupo Plus",
+      "categoria": "seguro",
+      "subcategoria": "seguro de vida colectivo",
+      "descripcion": "Producto de protección de vida diseñado para grupos empresariales que brinda cobertura ante fallecimiento y accidentes personales. Ofrece protección financiera integral a empleados y sus familias con beneficios adicionales como saldo deudor y garantía extendida.",
+      "beneficios_clave": [
+        "Cobertura de vida e incapacidad total y permanente",
+        "Protección contra accidentes personales colectivos",
+        "Cobertura de saldo deudor en créditos",
+        "Acceso a servicios de ingeniería de riesgos de Zurich",
+        "Flexibilidad de montos y coberturas según necesidades empresariales"
+      ],
+      "perfil_ideal": "Empresarios y directivos de PYMES y grandes empresas con 10 o más empleados, edades 30-65 años, que buscan proteger a sus colaboradores y cumplir responsabilidades patronales. Ideal para empresas con activos superiores a 5M MXN y preocupación por retención de talento.",
+      "triggers_de_venta": [
+        "Empresa que acaba de crecer o contrató personal nuevo requiere beneficios para empleados",
+        "Empresario consulta sobre protección financiera ante fallecimiento de clave personal",
+        "PYME busca mejorar paquete de prestaciones para retener talento competitivo",
+        "Empresa enfrentó riesgo operativo por accidente de empleado sin cobertura",
+        "Directivo pregunta cómo proteger patrimonio empresarial ante riesgos de personal crítico",
+        "Empresa necesita cumplir requisitos de aseguradoras para créditos o contratos"
+      ],
+      "cuando_no_proponer": "Cuando la empresa tiene menos de 5 empleados, no tiene nómina formal, está en situación financiera crítica, ya cuenta con cobertura equivalente con otra aseguradora, o cuando el cliente busca únicamente protección personal sin componente colectivo.",
+      "monto_minimo": null,
+      "producto_sugerido_texto": "Seguro de Vida Grupo Plus de Zurich",
+      "fuente": "Portafolio de Productos Seguros Zurich.pdf",
+      "hash": "931253a979fe996c",
+      "updated_at": "2026-04-14T22:05:31.105Z"
+    },
+    {
+      "id": "seguro-vida-integral",
+      "nombre": "Seguro de Vida Integral",
+      "categoria": "seguro",
+      "subcategoria": "seguro de vida colectivo temporal",
+      "descripcion": "Seguro de vida colectivo temporal a 1 año que ofrece protección integral ante fallecimiento por cualquier causa, invalidez total y permanente, muerte accidental y gastos funerarios. El producto se adapta al perfil de salud del cliente ofreciendo cobertura completa o seguro de muerte accidental según su cuestionario médico.",
+      "beneficios_clave": [
+        "Suma asegurada flexible desde $500,000 hasta $5,000,000 MXN",
+        "Cobertura de fallecimiento por cualquier causa más 10% para gastos funerarios",
+        "Protección por invalidez total y permanente por accidente y enfermedad",
+        "Anticipo del 30% de suma asegurada en caso de enfermedad terminal",
+        "Asistencia de viaje 24/7 incluida",
+        "Contratación voluntaria con cuestionario de salud simplificado"
+      ],
+      "perfil_ideal": "Clientes del banco de 18 a 64 años, activos laboralmente, con dependientes económicos o patrimonio a proteger. Especialmente aplicable a profesionales, empresarios y empleados con responsabilidades familiares que buscan garantizar estabilidad financiera a sus beneficiarios en caso de fallecimiento o invalidez.",
+      "triggers_de_venta": [
+        "Cliente con hijos menores o dependientes económicos que desea proteger su futuro financiero",
+        "Empresario o profesional independiente sin protección de vida asegurada",
+        "Cliente que planifica viajes frecuentes y requiere asistencia médica internacional incluida",
+        "Persona diagnosticada recientemente con enfermedad que le imposibilita trabajar",
+        "Solicitante de crédito hipotecario o empresarial que requiere garantía de pago",
+        "Cliente en rango de edad 35-64 años con activos o responsabilidades financieras"
+      ],
+      "cuando_no_proponer": "No proponer a menores de 18 años o mayores de 64 años en contratación inicial. Evitar ofrecimiento si cliente reporta en cuestionario enfermedades preexistentes graves no cubiertas, tiene antecedentes de suicidio, participa en deportes de alto riesgo, o si expresa que no puede destinar presupuesto mensual a la prima.",
+      "monto_minimo": 500000,
+      "producto_sugerido_texto": "Seguro de Vida Integral Actinver",
+      "fuente": "SEGURO VIDA_INTEGRAL.pdf",
+      "hash": "620d99281b7fdb4a",
+      "updated_at": "2026-04-14T22:05:39.904Z"
+    },
+    {
+      "id": "seguro-auto-zurich",
+      "nombre": "Seguro Auto Zurich - Tu Auto Seguro Más",
+      "categoria": "seguro",
+      "subcategoria": "seguro integral de automóviles",
+      "descripcion": "Seguro integral para automóviles, pick-ups y camiones hasta 3.5 toneladas que cubre daños materiales, robo total, responsabilidad civil hacia terceros, gastos médicos de ocupantes y accidentes. Ofrece múltiples esquemas de aseguramiento con coberturas básicas y opcionales adaptables a las necesidades del propietario.",
+      "beneficios_clave": [
+        "Cobertura integral: daños materiales, robo total y responsabilidad civil obligatoria",
+        "Protección MaZ que ampara RC, gastos médicos y asistencia legal sin deducible",
+        "Opciones de auto sustituto para pérdidas totales o parciales",
+        "Coberturas especializadas: adaptaciones, equipos especiales, remolques y carga",
+        "Reinstalación automática de coberturas después de siniestro",
+        "Suma asegurada hasta $3,000,000 MXN"
+      ],
+      "perfil_ideal": "Propietarios de vehículos particulares, comerciales o flotillas, edad 25-65 años, ingresos medios-altos con patrimonio a proteger, con dependientes económicos o uso frecuente del vehículo. Incluye residentes, fronterizos y clientes con viajes frecuentes a USA-Canadá.",
+      "triggers_de_venta": [
+        "Cliente menciona que acaba de comprar o financiar un automóvil",
+        "Cliente expresa preocupación por accidentes, robos o responsabilidad civil",
+        "Cliente comenta que viaja frecuentemente a Estados Unidos o Canadá",
+        "Cliente tiene vehículos con adaptaciones, remolques o equipos especiales instalados",
+        "Cliente pregunta sobre protección para ocupantes ante accidentes",
+        "Cliente busca póliza que no aplique deducible en ciertos siniestros"
+      ],
+      "cuando_no_proponer": "No proponer si el cliente tiene vehículos con más de 20 años de antigüedad, camiones de carga mayores a 3.5 toneladas, vehículos en pésimas condiciones mecánicas, o si declara uso exclusivamente agrícola/industrial no amparado por esta póliza.",
+      "monto_minimo": null,
+      "producto_sugerido_texto": "Seguro Auto Zurich - Tu Auto Seguro Más",
+      "fuente": "Seguro Auto.pdf",
+      "hash": "ef7239dffe188540",
+      "updated_at": "2026-04-14T22:05:47.708Z"
+    },
+    {
+      "id": "seguro-flotillas",
+      "nombre": "Seguro Flotillas",
+      "categoria": "seguro",
+      "subcategoria": "seguro de flota vehicular para empresas",
+      "descripcion": "Seguro integral para flotas vehiculares de empresas con 10 a 750 unidades, cubriendo autos, pickups y camiones hasta 3.5 toneladas. Proporciona protección completa de daños y ofrece soluciones de protección patrimonial con coberturas flexibles según necesidades del negocio.",
+      "beneficios_clave": [
+        "Cobertura integral para flotas de 10 a 750 vehículos",
+        "Composición vehicular flexible (80% autos/pickups, 20% otros)",
+        "Suma asegurada actualizable con seguimiento post-venta",
+        "Indemnización rápida de daños en 7 días hábiles",
+        "Atención personalizada y resolución eficiente de siniestros"
+      ],
+      "perfil_ideal": "Empresarios y gerentes de empresas medianas a grandes (edad 35-55 años) con flotas vehiculares de 10 a 750 unidades destinadas a transporte de empleados, servicios utilitarios o distribución. Requieren protección patrimonial integral y mitigación de riesgos operacionales.",
+      "triggers_de_venta": [
+        "Cliente expresa preocupación por pérdidas o daños en su flota vehicular de la empresa",
+        "Empresa está expandiendo su parque vehicular y necesita protección completa",
+        "Cliente menciona que tiene múltiples vehículos sin cobertura adecuada o con pólizas fragmentadas",
+        "Negocio requiere protección integral en una sola póliza para simplificar administración",
+        "Cliente busca mitigar riesgos operacionales y salvaguardar su patrimonio empresarial",
+        "Empresa necesita actualizar sumas aseguradas o revisar composición de su flota"
+      ],
+      "cuando_no_proponer": "No proponer cuando: la flota tiene menos de 10 unidades o más de 750, incluye mercancías altamente peligrosas tipo C (explosivos, gasolina), la empresa es de transporte público (ADO, ETN), taxi, renta diaria (Avis, Sixt), autoescuela, traslado de valores, Fuerzas Armadas, energía nuclear, o flotas de arrendadoras/financieras (excepto utilitarios de empleados).",
+      "monto_minimo": null,
+      "producto_sugerido_texto": "Seguro Flotillas",
+      "fuente": "Seguro Flotillas.pdf",
+      "hash": "0f4a93e7f9491c92",
+      "updated_at": "2026-04-14T22:05:54.925Z"
+    },
+    {
+      "id": "seguro-lineas-financieras",
+      "nombre": "Seguro Líneas Financieras",
+      "categoria": "seguro",
+      "subcategoria": "Seguro de Responsabilidad Civil para Directivos y Profesionales",
+      "descripcion": "Portafolio integral de seguros que protege a directivos, funcionarios y empresas contra reclamaciones por errores, omisiones y negligencias profesionales. Incluye coberturas de Directores y Funcionarios (D&O), Crimen Comercial, Responsabilidad Civil Profesional y Protección de Datos.",
+      "beneficios_clave": [
+        "Protección de bienes personales de consejeros y funcionarios contra reclamaciones",
+        "Cobertura de gastos legales, defensa y fianzas en litigios",
+        "Reembolso directo sin deducible en cobertura A",
+        "Período extendido de reclamación hasta 24 meses",
+        "Capacidad de hasta $15 millones USD",
+        "Servicios complementarios de ciberseguridad y análisis forense"
+      ],
+      "perfil_ideal": "Empresarios y directivos de 40-65 años con empresas medianas a grandes (ingresos >50M anuales), directores ejecutivos, consejeros de administración, propietarios de despachos profesionales (abogados, contadores, consultores) y empresas que requieren protección integral contra riesgos operacionales y regulatorios.",
+      "triggers_de_venta": [
+        "Empresa que acaba de cotizar en bolsa o expandir su consejo de administración",
+        "Director o accionista que exprese preocupación por reclamaciones de empleados o accionistas",
+        "Empresa que sufrió una auditoría regulatoria o tiene antecedentes de conflictos laborales",
+        "Empresa en sectores sensibles (IT, biotecnología, instituciones financieras) con exposición a demandas",
+        "Despacho profesional o empresa de servicios que busca protección integral ante errores profesionales",
+        "Empresa que ha experimentado una brecha de seguridad o incidente de ciberseguridad"
+      ],
+      "cuando_no_proponer": "No se recomienda para empresas en sectores excluidos (aerolíneas, exchanges de criptomonedas, oil & gas extracción, televisoras, gobierno), empresas con Hazard Grade 4 o superior sin evaluación adicional, o aquellas sin estructura de gobierno corporativo definida.",
+      "monto_minimo": null,
+      "producto_sugerido_texto": "Seguro Líneas Financieras - Protección integral para directivos, funcionarios y responsabilidad profesional",
+      "fuente": "Seguro Lineas Financieras.pdf",
+      "hash": "72af6641a774a5e1",
+      "updated_at": "2026-04-14T22:06:03.349Z"
+    },
+    {
+      "id": "seguro-obra-civil-terminada",
+      "nombre": "Seguro de Obra Civil Terminada",
+      "categoria": "seguro",
+      "subcategoria": "Seguro de Daños Materiales para Infraestructura",
+      "descripcion": "Producto especializado que protege obras civiles terminadas contra daños y pérdidas por eventos imprevistos como incendios, terremotos, inundaciones y otros fenómenos naturales. Está diseñado para reparar o reconstruir infraestructuras dañadas y restablecer su operación en el menor tiempo posible.",
+      "beneficios_clave": [
+        "Cobertura integral contra daños materiales por incendio, terremotos, inundaciones y fenómenos naturales",
+        "Protección de infraestructuras públicas, concesiones y bienes de alto valor estratégico",
+        "Servicio especializado de ingeniería en riesgos para evaluación y mitigación continua",
+        "Responsabilidad civil incluida para cobertura por daños a terceros",
+        "Reconstrucción rápida de operaciones con atención personalizada post-siniestro"
+      ],
+      "perfil_ideal": "Propietarios y arrendatarios de infraestructuras mayores (carreteras, puentes, plantas de tratamiento, túneles, presas, sistemas de distribución de agua, puertos) con patrimonios significativos y necesidad de protección integral contra riesgos catastróficos",
+      "triggers_de_venta": [
+        "Cliente propietario de obra civil terminada pregunta cómo proteger su infraestructura contra terremotos o desastres naturales",
+        "Contratista o desarrollador que acaba de entregar proyecto de infraestructura mayor y requiere protección post-construcción",
+        "Municipalidad o entidad pública con responsabilidad sobre infraestructura crítica busca seguro integral contra eventos imprevistos",
+        "Empresa concesionaria de carretera, puente o sistema de agua requiere cobertura por daños que interrumpan operaciones",
+        "Cliente con experiencia previa de siniestros en infraestructura busca no repetir pérdidas económicas"
+      ],
+      "cuando_no_proponer": "No proponer a clientes con obras en zonas de exposición catastrófica media-alta (zonas 3 y 4 según mapa Munich Re), proyectos sobre el agua, completamente subterráneos, en beach front o zonas costeras, ni para instalaciones de fabricación comercial o residencial",
+      "monto_minimo": 1500,
+      "producto_sugerido_texto": "Seguro de Obra Civil Terminada",
+      "fuente": "Seguro Obra Civil.pdf",
+      "hash": "f6c9ece75b0e8b57",
+      "updated_at": "2026-04-14T22:06:11.431Z"
+    },
+    {
+      "id": "relax-hogar-pluz",
+      "nombre": "Relax Hogar Pluz",
+      "categoria": "seguro",
+      "subcategoria": "seguro integral de hogar",
+      "descripcion": "Seguro integral de protección para casa habitación que ampara el edificio, contenidos y responsabilidad civil familiar contra incendio, robo y otros riesgos. Ofrece suma asegurada hasta $35,000,000 MXN con indemnización a valor de reposición y amplio servicio de asistencia.",
+      "beneficios_clave": [
+        "Protección integral del edificio y contenidos hasta $35,000,000 MXN",
+        "Indemnización a valor de reposición en todas las coberturas",
+        "Deducible eliminado en incendio edificio e incendio contenidos",
+        "Hasta 15 ubicaciones en la misma póliza",
+        "Amplio servicio de asistencia médica, legal y técnica las 24 horas",
+        "Cobertura de responsabilidad civil familiar hasta $10,000,000 MXN",
+        "Múltiples coberturas opcionales (robo, terremoto, fenómenos hidrometeorológicos, mascotas)"
+      ],
+      "perfil_ideal": "Propietarios de casa habitación entre 35-65 años con patrimonio mayor a $2,000,000 MXN, familia constituida con dependientes económicos, preocupados por proteger sus bienes y responsabilidades civiles, que valoran seguridad integral y servicio de calidad.",
+      "triggers_de_venta": [
+        "Cliente comenta que acaba de comprar casa o remodelado recientemente su inmueble",
+        "Menciona preocupación por proteger sus bienes contra robos, incendios o desastres naturales",
+        "Tiene familia joven o dependientes y quiere asegurar su patrimonio familiar",
+        "Refiere vivir en zona con riesgo de fenómenos hidrometeorológicos o sísmicos",
+        "Pregunta sobre coberturas para bienes electrónicos o joyas de valor",
+        "Busca póliza que ampare responsabilidad civil por daños a terceros"
+      ],
+      "cuando_no_proponer": "No proponer a clientes que renten (sin cobertura de arrendatario), que tengan inmuebles a menos de 1000 metros de línea de costa o cuerpo de agua (fenómenos hidrometeorológicos), o que busquen solo cobertura mínima sin interés en protección integral.",
+      "monto_minimo": 50000,
+      "producto_sugerido_texto": "Relax Hogar Pluz - Seguro Integral de Hogar",
+      "fuente": "Seguro Relax Hogar.pdf",
+      "hash": "d93c0ae26723fdbf",
+      "updated_at": "2026-04-14T22:06:19.053Z"
+    },
+    {
+      "id": "seguro-transporte-mercancias",
+      "nombre": "Seguro de Transporte de Mercancías",
+      "categoria": "seguro",
+      "subcategoria": "Seguro de transporte de carga y mercancías",
+      "descripcion": "Seguro diseñado para cubrir daños a bienes del asegurado o de terceros bajo su responsabilidad durante el traslado de mercancías. Ofrece protección integral a todo riesgo o riesgos nombrados con límites de cobertura de hasta $30,000,000 USD en México y $70,000,000 USD a nivel grupo, incluyendo transporte marítimo, terrestre y aéreo.",
+      "beneficios_clave": [
+        "Cobertura a todo riesgo y riesgos nombrados con máxima flexibilidad",
+        "Límite por embarque de hasta $30,000,000 USD en México",
+        "Bonificación de hasta 60% por siniestralidad favorable",
+        "Servicio de ingeniería en riesgos para mercancías de alto riesgo",
+        "Atención inmediata de siniestros con asignación de ajustador en 24 horas",
+        "Monolínea sin primas de reciprocidad con capacidad local"
+      ],
+      "perfil_ideal": "Empresas importadoras/exportadoras, transportistas, distribuidoras y comerciantes con operaciones de carga regular. Negocios con ventas anuales mayores a $5,000,000 USD que necesitan protección integral de sus embarques nacionales e internacionales, especialmente con mercancías de riesgo moderado a alto.",
+      "triggers_de_venta": [
+        "Cliente dice: 'Tenemos embarques regulares y queremos proteger nuestras mercancías durante el traslado'",
+        "Empresa importadora/exportadora que requiere cobertura para múltiples viajes mensuales",
+        "Transportista o agencia aduanal que necesita protección integral sin primas de reciprocidad",
+        "Cliente menciona: 'Sufrimos pérdidas por robo, daños o contaminación en nuestros embarques'",
+        "Negocio que maneja mercancías de valor alto (electrónicas, químicas, alimentos perecederos) que requiere ingeniería en riesgos",
+        "Empresa con siniestralidad mayor al 60% que necesita servicios especializados de prevención"
+      ],
+      "cuando_no_proponer": "No proponer a empresas que transportan tabaco, armas de fuego, aparatos de videojuegos, combustibles (sin análisis caso por caso), electrodomésticos de bajo valor o empresas sin historial de operaciones de transporte documentadas",
+      "monto_minimo": null,
+      "producto_sugerido_texto": "Seguro de Transporte de Mercancías",
+      "fuente": "Seguro Transporte de Mercancias.pdf",
+      "hash": "b4a00d82fd0bf540",
+      "updated_at": "2026-04-14T22:06:27.369Z"
+    },
+    {
+      "id": "blindaje-seguro-patrimonial",
+      "nombre": "Blindaje Seguro Patrimonial",
+      "categoria": "patrimonio",
+      "subcategoria": "Seguro de vida Unit Linked con beneficios fiscales e inversión",
+      "descripcion": "Producto de seguro de vida flexible tipo Unit Linked con prima única que combina protección por fallecimiento ($30,000 + fondo invertido) con acceso a fondos de inversión administrados por Actinver. Diseñado para maximizar beneficios fiscales bajo Artículo 93 de la LISR, permitiendo exención de impuestos sobre intereses reales y otorgando inembargabilidad patrimonial.",
+      "beneficios_clave": [
+        "Exención de impuestos sobre intereses reales (Artículo 93 LISR) a partir de 60 años y 5 años de antigüedad",
+        "Inembargabilidad de los recursos administrados por la póliza de seguros",
+        "Heredabilidad sin disputabilidad: indemnización pasa directamente al beneficiario",
+        "Flexibilidad de inversión en fondos diversificados de Actinver (ACTIVAR, ACTI500, ACTIGOB, ACTICOB, ACTIMED)",
+        "Retiros parciales disponibles a partir de 3 meses",
+        "Cobertura de fallecimiento asegurada de $30,000 más el fondo acumulado"
+      ],
+      "perfil_ideal": "Empresarios, profesionales independientes o personas con patrimonio significativo (mínimo $1M), edades 40-70 años, con preocupación por blindaje patrimonial, planeación fiscal y transferencia de patrimonio a herederos sin disputas. Ideal para quienes buscan optimizar recursos fiscalmente mientras mantienen control de inversiones.",
+      "triggers_de_venta": [
+        "Cliente menciona: 'Quiero proteger mi patrimonio y reducir impuestos' o 'Me preocupa que mis herederos tengan problemas con mis bienes'",
+        "Empresario que dice: 'Busco una solución que me permita invertir y tenga beneficios fiscales'",
+        "Cliente con preocupación por embargos: 'Quiero que mis recursos estén protegidos legalmente'",
+        "Persona que expresa: 'Tengo fondos disponibles para invertir pero quiero seguridad y blindaje legal'",
+        "Cliente pregunta sobre herencia: 'Cómo hago para que mi familia no tenga problemas al heredar mis bienes'",
+        "Cuando cliente menciona tener más de 60 años y busca inversión con exención fiscal"
+      ],
+      "cuando_no_proponer": "No proponer a clientes menores de 18 años, sin capacidad de aportación mínima ($1M), con salud muy comprometida (requiere cuestionario de salud simplificado), o que busquen liquidez inmediata sin restricciones. Tampoco apropiado para quienes no tienen patrimonio que blindar o que necesitan acceso frecuente a fondos (penalizaciones en retiros).",
+      "monto_minimo": 1000000,
+      "producto_sugerido_texto": "Blindaje Seguro Patrimonial - Te ofrece protección de fallecimiento más inversión flexible con beneficios fiscales y blindaje patrimonial",
+      "fuente": "Seguro_Vida_Individual_Actinver_Blindaje Patrimonial.pdf",
+      "hash": "28fd3e2f7d1061b9",
+      "updated_at": "2026-04-14T22:06:36.729Z"
+    },
+    {
+      "id": "seguro-pyme-rc",
+      "nombre": "Seguros PyME Responsabilidad Civil",
+      "categoria": "seguro",
+      "subcategoria": "seguro integral de responsabilidad civil y protección patrimonial para pequeñas y medianas empresas",
+      "descripcion": "Póliza integral de seguros diseñada para PyMEs que protege el patrimonio empresarial contra riesgos de incendio, explosión, daños por agua, responsabilidad civil y pérdidas consecuenciales. Ofrece hasta 29 coberturas entre básicas y opcionales, con capacidad de suma asegurada hasta $10,000,000 USD, permitiendo personalizar la protección según las necesidades específicas del negocio.",
+      "beneficios_clave": [
+        "Protección integral en una sola póliza con hasta 10 ubicaciones",
+        "Cobertura de Responsabilidad Civil hasta $1,000,000 USD contra daños a terceros",
+        "29 coberturas disponibles (10 básicas + 19 opcionales) para adaptar protección a necesidades específicas",
+        "Suma asegurada flexible hasta $10,000,000 USD en modalidad Primer Riesgo Absoluto",
+        "Cláusulas adicionales sin costo y reinstalación automática hasta 10% de suma reducida",
+        "Cobertura de pérdidas consecuenciales por interrupción de negocios con periodo de espera de 7 días"
+      ],
+      "perfil_ideal": "Empresarios y administradores de PyMEs entre 30-60 años con activos entre $500,000 y $10,000,000 MXN, que poseen bienes inmuebles (locales, oficinas, bodegas) y buscan proteger su patrimonio e ingresos contra riesgos operacionales. Especialmente indicado para negocios en sectores manufacturero, comercial, de servicios o con responsabilidad hacia terceros.",
+      "triggers_de_venta": [
+        "Cliente comenta preocupación por cobertura insuficiente ante riesgo de incendio o robo en sus instalaciones",
+        "Empresario menciona reciente adquisición de nuevo local o expansión del negocio a múltiples ubicaciones",
+        "Pequeño empresario expresa inquietud por demandas de terceros o accidentes que podrían afectar su patrimonio",
+        "Cliente busca consolidar múltiples pólizas dispersas en una sola contratación para simplificar administración",
+        "Negociante requiere protección contra pérdida de ingresos por interrupción operacional involuntaria",
+        "Empresario necesita cubrir riesgos adicionales como fenómenos hidrometeorológicos, terremoto o robo con violencia"
+      ],
+      "cuando_no_proponer": "No proponer cuando el cliente es persona física sin negocio registrado, cuando la suma de bienes a proteger es inferior a $100,000 MXN, o cuando el cliente requiere únicamente cobertura de responsabilidad civil aislada sin protección patrimonial. También evitar si el negocio está en zona de riesgo extremo no asegurable según la clasificación de Actinver.",
+      "monto_minimo": null,
+      "producto_sugerido_texto": "Seguros PyME Responsabilidad Civil",
+      "fuente": "Seguros PyME_RC.pdf",
+      "hash": "f9f608aa731ad2a7",
+      "updated_at": "2026-04-14T22:06:46.136Z"
+    },
+    {
+      "id": "soluciones-alpha-internacional",
+      "nombre": "Soluciones Alpha Internacional",
+      "categoria": "inversion",
+      "subcategoria": "portafolios de inversión discrecional con gestión activa",
+      "descripcion": "Portafolios de inversión construidos con posiciones en directo, inteligentemente diversificados y gestionados activamente por Actinver Asset Management. Ofrece 5 estrategias definidas según el perfil del inversionista, horizonte temporal, objetivos patrimoniales y tolerancia al riesgo, con discrecionalidad limitada y régimen de inversión restrictivo pero flexible.",
+      "beneficios_clave": [
+        "Rendimientos competitivos por encima de benchmarks (CETES, Treasuries, MSCI ACWI)",
+        "Gestión profesional de Actinver Asset Management con monitoreo puntual de posiciones",
+        "Administración integral de riesgos con régimen de inversión institucionalmente restrictivo",
+        "Cero comisiones por corretaje y participación en serie preferencial de fondos sin comisión",
+        "Liquidez parcial permanente y liquidez total mensual, sin plazo forzoso ni penalizaciones"
+      ],
+      "perfil_ideal": "Inversionista con patrimonio mínimo de $5 millones, horizonte de inversión de 1-5 años, que busca crecimiento patrimonial con diversificación en mercados internacionales, tolerancia al riesgo variable según estrategia elegida, y que valora la gestión profesional y monitoreo continuo de su cartera",
+      "triggers_de_venta": [
+        "Cliente con liquidez reciente (venta de empresa, herencia, bono importante) que busca invertir $5M+ con horizonte de 2-5 años",
+        "Inversionista insatisfecho con rendimientos de fondos tradicionales o CETES que busca superar benchmarks con gestión activa",
+        "Empresario o ejecutivo con activos >$5M que requiere asesoría integral de inversión sin estar disponible para decisiones diarias",
+        "Cliente que busca diversificación internacional en dólares con exposición a renta variable controlada y estrategias conservadoras",
+        "Persona con capital importante que valora la liquidez y ausencia de restricciones para retiros anticipados"
+      ],
+      "cuando_no_proponer": "No es apropiado para inversionistas con capital inferior a $5 millones, con horizonte de inversión menor a 1 año, que requieren liquidez inmediata, con aversión absoluta al riesgo de mercado, o que están en etapas de desacumulación de activos sin intención de crecimiento patrimonial",
+      "monto_minimo": 5000000,
+      "producto_sugerido_texto": "Soluciones Alpha Internacional",
+      "fuente": "Soluciones Alpha Internacional.pdf",
+      "hash": "75205de90e9fedb9",
+      "updated_at": "2026-04-14T22:06:54.528Z"
+    },
+    {
+      "id": "soluciones-alpha",
+      "nombre": "Soluciones Alpha",
+      "categoria": "inversion",
+      "subcategoria": "portafolios de inversión discrecional con gestión activa",
+      "descripcion": "Portafolios de inversión construidos con posiciones en directo, inteligentemente diversificados y gestionados activamente por Actinver Asset Management. Ofrece 5 estrategias de inversión adaptadas al perfil, horizonte temporal y tolerancia al riesgo de cada inversionista, con discrecionalidad limitada y régimen de inversión razonable.",
+      "beneficios_clave": [
+        "Rendimientos muy competitivos por encima de CETES y benchmarks respectivos",
+        "Gestión profesional de expertos financieros de Actinver Asset Management",
+        "Administración integral de riesgos con monitoreo cercano y puntual",
+        "Comisión flat que incluye todos costos operativos, corretaje y custodia",
+        "Sin plazo forzoso de permanencia ni penalización por retiro anticipado",
+        "Liquidez parcial a 48 horas y liquidez total mensual",
+        "Participación en serie preferencial de fondos sin comisión adicional"
+      ],
+      "perfil_ideal": "Inversionista institucional o persona física con patrimonio mínimo de $5 millones, horizonte de inversión de 1 a 5 años según la estrategia elegida, que busca rendimientos superiores a instrumentos de renta fija tradicional, con capacidad para tolerar volatilidad variable según el perfil de riesgo, y que valora la administración profesional y discrecionalidad en sus inversiones.",
+      "triggers_de_venta": [
+        "Cliente con efectivo o liquidez inactiva en cuentas de ahorro o plazos fijos buscando mayor rendimiento sin asumir riesgo extremo",
+        "Inversionista que ha recibido herencia o venta de negocio por $5M+ y busca diversificación profesional a largo plazo",
+        "Empresario con capital de trabajo excedente que desea rendimientos superiores a CETES pero con gestión profesional de riesgo",
+        "Persona que expresa preocupación por inflación y busca proteger poder adquisitivo con rendimientos reales positivos",
+        "Cliente con horizonte de inversión claro (1-5 años) e interés en no tener que tomar decisiones de inversión diariamente",
+        "Inversionista que ha tenido malas experiencias en inversiones directas en bolsa y busca estrategia diversificada con profesionales"
+      ],
+      "cuando_no_proponer": "No proponer si el cliente tiene horizonte de inversión menor a 1 año, si requiere acceso total a su dinero en menos de 48 horas, si su tolerancia al riesgo es nula (solo acepta inversiones garantizadas), si su monto es menor a $5 millones, o si está en situación financiera frágil con necesidad de mantener liquidez inmediata.",
+      "monto_minimo": 5000000,
+      "producto_sugerido_texto": "Soluciones Alpha",
+      "fuente": "SolucionesAlphaP (1).pdf",
+      "hash": "794a84e6004a19c8",
+      "updated_at": "2026-04-14T22:07:03.773Z"
+    },
+    {
+      "id": "soluciones-alpha-credito-valor-plus",
+      "nombre": "Soluciones Alpha + Crédito Valor Plus",
+      "categoria": "credito",
+      "subcategoria": "Crédito con apalancamiento para inversión en fondos de inversión internacionales",
+      "descripcion": "Producto que combina un crédito variable (Valor Plus) con inversión en Soluciones Alpha Internacionales, permitiendo al cliente apalancar su inversión y potencializar rendimientos. El crédito se paga con los rendimientos generados por la estrategia de inversión, ofreciendo una solución integrada de financiamiento e inversión.",
+      "beneficios_clave": [
+        "Rendimientos adicionales del 12% (Renta Variable) o 2% (Patrimonial) después de pagar el crédito",
+        "El crédito se amortiza con los rendimientos de la inversión",
+        "Tasas competitivas desde TIIE_FC + 3.30% hasta TIIE_FC + 4.50%",
+        "Plazos flexibles de 48 o 60 meses con períodos de gracia en capital",
+        "Comisiones de apertura escalonadas desde 0.25% a 1.50% según monto"
+      ],
+      "perfil_ideal": "Inversionista de alto patrimonio (mínimo MXN $1,000,000), edad máxima 64 años, con activos líquidos disponibles, tolerancia al riesgo de inversión internacional, y capacidad de servicio de deuda. Ideal para empresarios, profesionales independientes y personas físicas con actividad empresarial que buscan multiplicar su inversión.",
+      "triggers_de_venta": [
+        "Cliente con inversión mínima de $5 millones que desea potencializar rendimientos sin aumentar capital propio",
+        "Empresario con flujo de efectivo positivo que busca apalancar su patrimonio para inversión internacional",
+        "Cliente que ya invierte en fondos Actinver y desea ampliar su exposición con financiamiento",
+        "Persona con activos líquidos ociosos que requiere estructura de crédito para inversión con rendimientos que paguen la deuda",
+        "Cliente interesado en Soluciones Alpha Internacionales pero con montos limitados que podría aumentar con crédito"
+      ],
+      "cuando_no_proponer": "No proponer a clientes mayores de 64 años, con ingresos inestables, sin capacidad probada de servicio de deuda, aversión al riesgo de inversiones internacionales, o sin patrimonio mínimo de MXN $1,000,000. Tampoco a personas sin domicilio vigente o documentación completa.",
+      "monto_minimo": 1000000,
+      "producto_sugerido_texto": "Soluciones Alpha + Crédito Valor Plus",
+      "fuente": "Soluciones_Alpha_crédito (1).pdf",
+      "hash": "2d7f7b21c3cb432d",
+      "updated_at": "2026-04-14T22:07:11.698Z"
+    },
+    {
+      "id": "soluciones-alpha",
+      "nombre": "Soluciones Alpha",
+      "categoria": "inversion",
+      "subcategoria": "fondos de inversión administrados con múltiples estrategias de renta fija y variable",
+      "descripcion": "Soluciones Alpha es una familia de fondos de inversión que ofrece cuatro estrategias diferenciadas (Renta Fija, Conservadora, Patrimonial y Crecimiento) para adaptarse a distintos perfiles de riesgo y horizontes de inversión. Cada solución está diseñada para optimizar rendimientos netos considerando comisiones, impuestos y benchmarks específicos.",
+      "beneficios_clave": [
+        "Múltiples estrategias de inversión adaptadas a diferentes perfiles de riesgo",
+        "Rendimientos netos que consideran comisiones de administración e impuestos",
+        "Escalas de inversión con mejores rendimientos a partir de 5 millones de pesos",
+        "Historial de rendimientos documentado con comparativas de benchmarks"
+      ],
+      "perfil_ideal": "Inversionista con patrimonio mínimo de 5 millones de pesos, edad 30-65 años, que busca diversificación entre renta fija y variable según su tolerancia al riesgo, con horizonte de inversión de mediano a largo plazo (3+ años)",
+      "triggers_de_venta": [
+        "Cliente con excedentes de capital de 5-10 millones que quiere invertir con rendimientos superiores a Cetes",
+        "Empresario o profesional independiente que necesita diversificar su cartera entre instrumentos de renta fija y acciones",
+        "Inversionista conservador que busca proteger capital pero obtener rendimientos de 6-8% anual",
+        "Cliente que recibió bonificación, herencia o ganancia extraordinaria y busca colocación profesional",
+        "Persona cercana a jubilación que requiere ingresos pasivos balanceados entre seguridad y crecimiento"
+      ],
+      "cuando_no_proponer": "Clientes con patrimonio menor a 5 millones de pesos, inversores con horizonte menor a 1 año, personas que necesitan liquidez inmediata o con baja tolerancia al riesgo que requieran garantía de capital, e inversionistas que buscan instrumentos especulativos o muy agresivos",
+      "monto_minimo": 5000000,
+      "producto_sugerido_texto": "Soluciones Alpha",
+      "fuente": "Tabla de rendimientos (MARZO)  - Nacionales - Soluciones Alpha.pdf",
+      "hash": "c5c30510cc7d4664",
+      "updated_at": "2026-04-14T22:07:18.187Z"
+    },
+    {
+      "id": "soluciones-alpha-internacional",
+      "nombre": "Soluciones Alpha Internacional",
+      "categoria": "inversion",
+      "subcategoria": "fondos de inversión internacionales multisolucion en USD",
+      "descripcion": "Suite de cuatro soluciones de inversión internacionales denominadas en USD que ofrecen diferentes perfiles de riesgo-rendimiento. Incluye opciones de renta fija internacional, consumo, patrimonio y crédito internacional, permitiendo al inversionista elegir según su tolerancia al riesgo y horizonte temporal.",
+      "beneficios_clave": [
+        "Diversificación internacional con exposición a mercados globales en USD",
+        "Cuatro soluciones con diferentes perfiles de riesgo ajustables a cada inversionista",
+        "Rendimientos netos que consideran comisión de administración, IVA e ISR",
+        "Estructuras escalonadas de comisiones según monto invertido (descuentos desde 5M MXN)"
+      ],
+      "perfil_ideal": "Inversionista sofisticado con capital disponible mayor a 5 millones de MXN, horizonte de inversión mediano a largo plazo, tolerancia al riesgo variable según solución elegida, interés en diversificar en moneda USD y exposición a mercados internacionales.",
+      "triggers_de_venta": [
+        "Cliente con excedentes de liquidez en MXN busca diversificar en USD y mercados internacionales",
+        "Empresario o profesional independiente planea cobertura contra depreciación del peso mexicano",
+        "Inversionista analiza alternativas a fondos tradicionales con rendimientos competitivos en dólares",
+        "Cliente expresa preocupación sobre inflación en México y busca instrumentos en moneda extranjera",
+        "Persona con patrimonio superior a 10M MXN requiere optimización fiscal mediante estructuras de inversión internacionales"
+      ],
+      "cuando_no_proponer": "No proponer a clientes sin capital mínimo de 5 millones de MXN, con horizonte de inversión menor a 1 año, con aversión total al riesgo de mercado, o que requieran liquidez inmediata y frecuente de su inversión.",
+      "monto_minimo": 5000000,
+      "producto_sugerido_texto": "Soluciones Alpha Internacional",
+      "fuente": "Tabla de rendimientos (MARZO) 100%USD - Soluciones Alpha.pdf",
+      "hash": "38b9a694a9472ee0",
+      "updated_at": "2026-04-14T22:07:24.827Z"
+    },
+    {
+      "id": "soluciones-alpha-internacional",
+      "nombre": "Soluciones Alpha Internacional",
+      "categoria": "inversion",
+      "subcategoria": "fondos de inversión internacionales con múltiples perfiles de riesgo",
+      "descripcion": "Familia de fondos de inversión internacionales que ofrece tres soluciones con diferentes perfiles de riesgo (Conservadora, Patrimonial y Crecimiento) más un bloque de renta variable. Diseñados para inversionistas que desean diversificar su portafolio con exposición a mercados globales mediante el MSCI All Country World Index.",
+      "beneficios_clave": [
+        "Diversificación internacional en mercados desarrollados y emergentes",
+        "Tres perfiles de riesgo ajustables según tolerancia del inversionista",
+        "Rendimientos competitivos con comisiones de administración transparentes",
+        "Acceso a inversión global con mínimo de $5,000,000 MXN",
+        "Opciones de rendimiento directo o exento de ISR según perfil fiscal"
+      ],
+      "perfil_ideal": "Inversionista sofisticado con patrimonio mínimo de $5,000,000 MXN, con horizonte de inversión de mediano a largo plazo (3+ años), que busca diversificación internacional y tiene tolerancia al riesgo variable según la solución elegida. Empresarios, profesionales independientes y personas con activos significativos que desean exposición a mercados globales.",
+      "triggers_de_venta": [
+        "Cliente con patrimonio líquido superior a $5M que expresa preocupación por concentración de inversiones en México",
+        "Inversionista que ya tiene inversiones locales y busca diversificación geográfica para reducir riesgo de mercado",
+        "Empresario con ingresos dolarizados o con proyecciones de ingresos en divisas que necesita cobertura natural",
+        "Cliente con horizon de inversión de 5+ años que puede tolerar volatilidad de corto plazo en búsqueda de mayores rendimientos",
+        "Persona que hereda o recibe liquidación importante y necesita estrategia de inversión conservadora pero con retorno",
+        "Profesional o ejecutivo que busca complementar su pensión con inversión en mercados internacionales de largo plazo"
+      ],
+      "cuando_no_proponer": "No proponer a inversionistas con patrimonio menor a $5,000,000 MXN, personas con horizonte de inversión menor a 2 años, clientes que necesitan liquidez inmediata, personas con aversión al riesgo que requieren garantía de capital, o inversionistas sin experiencia previa en mercados financieros internacionales que no cuenten con asesoría especializada.",
+      "monto_minimo": 5000000,
+      "producto_sugerido_texto": "Soluciones Alpha Internacional",
+      "fuente": "Tabla de rendimientos (MARZO) Internacional - Soluciones Alpha.pdf",
+      "hash": "8f09c3ef6766dc8b",
+      "updated_at": "2026-04-14T22:07:32.690Z"
+    },
+    {
+      "id": "tarjeta-divisa-flex",
+      "nombre": "Tarjeta Divisa Flex",
+      "categoria": "otro",
+      "subcategoria": "tarjeta prepagada multimoneda",
+      "descripcion": "Tarjeta Mastercard prepagada que permite administrar simultáneamente saldo en cuatro monedas distintas (USD, EUR, GBP, CAD) con opciones física y digital. Ofrece compras con chip & PIN, contactless, retiros en ATM y compras en línea con CVV dinámico a través de una aplicación móvil.",
+      "beneficios_clave": [
+        "Pago en divisa 1:1 sin comisiones de tipo de cambio elevado",
+        "Mayor seguridad al no cargar efectivo físico",
+        "Compra en línea en la divisa de tu preferencia",
+        "Control total con capacidad de prender y apagar tarjetas desde la APP"
+      ],
+      "perfil_ideal": "Clientes Actinver PF y PFAE que realizan transacciones internacionales frecuentes y necesitan gestionar múltiples monedas de forma segura y flexible",
+      "triggers_de_venta": [
+        "Cliente con viajes frecuentes al extranjero",
+        "Necesidad de realizar compras en línea en moneda extranjera",
+        "Preferencia por evitar comisiones de cambio en terminales de pago extranjeras",
+        "Cliente que busca mayor control y seguridad en transacciones internacionales"
+      ],
+      "cuando_no_proponer": "No ofrecer a clientes no PF/PFAE, clientes que residan en México o países blacklisted, o que no realicen transacciones internacionales",
+      "monto_minimo": 100,
+      "monto_minimo_unidad": "USD",
+      "producto_sugerido_texto": "Tarjeta Divisa Flex",
+      "fuente": "Tarjeta Divisa Flex.pdf",
+      "hash": "a1c30481e2b54d48",
+      "updated_at": "2026-04-14T22:46:16.779Z"
+    },
+    {
+      "id": "vida-ahorro-garantizado",
+      "nombre": "Vida Ahorro Garantizado",
+      "categoria": "seguro",
+      "subcategoria": "seguro de vida con ahorro garantizado",
+      "descripcion": "Producto de vida ahorro que combina protección familiar con acumulación garantizada de capital. Ofrece cobertura por fallecimiento y sobrevivencia, permitiendo al asegurado ahorrar un monto definido durante un plazo elegido (5 o 10 años) con la certeza de recibir la suma asegurada al término del contrato, independientemente de si sobrevive o fallece.",
+      "beneficios_clave": [
+        "Ahorro garantizado: recibe la suma asegurada al finalizar el plazo",
+        "Protección familiar: beneficiarios reciben suma asegurada en caso de fallecimiento",
+        "Flexibilidad total: decide cuánto ahorrar, por cuánto tiempo y en qué moneda (MXN o USD)",
+        "Coberturas opcionales: invalidez total y permanente, muerte accidental, exención de primas",
+        "Disciplina financiera: compromete al cliente a ahorrar de forma constante con pagos mensuales, trimestrales, semestrales o anuales"
+      ],
+      "perfil_ideal": "Profesionales y empresarios de 35-55 años con dependientes económicos e hijos, que buscan ahorrar disciplinadamente para objetivos específicos de mediano plazo (educación de hijos, salud post-jubilación, expansión de negocio, compra de inmueble) mientras protegen a su familia ante imprevistos. Ingresos estables o variables con activos patrimoniales.",
+      "triggers_de_venta": [
+        "Cliente con hijos menores que expresa preocupación por garantizar educación de calidad sin depender de terceros",
+        "Empresario o emprendedor que desea acumular capital para proyecto específico sin endeudarse con bancos",
+        "Ejecutivo próximo a jubilarse que necesita asegurar continuidad de gastos médicos mayores para él o su familia",
+        "Cliente que ha intentado ahorrar sin disciplina y necesita un mecanismo que lo comprometa con metas financieras",
+        "Persona con herencia o bono importante que quiere destinar a proyecto futuro con protección familiar incluida",
+        "Cliente que desea diversificar su patrimonio con instrumento de bajo riesgo y rendimiento garantizado"
+      ],
+      "cuando_no_proponer": "No proponer a menores de 18 años, mayores de 70 años, personas sin ingresos demostrables, clientes con necesidad de liquidez inmediata (el producto tiene cancelación anticipada con condiciones), aquellos que buscan inversión de alto rendimiento, o personas en situación financiera precaria incapaces de mantener pagos regulares.",
+      "monto_minimo": 400000,
+      "producto_sugerido_texto": "Vida Ahorro Garantizado",
+      "fuente": "Vida Ahorro Garantizado.pdf",
+      "hash": "657106bcc88a7793",
+      "updated_at": "2026-04-14T22:07:41.830Z"
+    }
+  ]
+}

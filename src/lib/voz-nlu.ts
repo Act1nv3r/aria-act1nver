@@ -231,17 +231,68 @@ function extractAmount(text: string): number | null {
 }
 
 function extractAge(text: string): number | null {
-  const patterns = [
-    /tengo\s+(\d{1,3})\s*(?:años)?/i,
-    /(\d{1,3})\s*años/i,
-    /edad\s+(?:de\s+)?(\d{1,3})/i,
-    /cumpl[ioí]\s+(\d{1,3})/i,
+  // --- Birth year patterns first (4-digit year → calculate age) ---
+  const birthYearPatterns = [
+    /nac[ií]\s+(?:el\s+\d{1,2}\s+de\s+\w+\s+de\s+|en\s+)?(\d{4})/i, // "nací en 1982" / "nací el 5 de mayo de 1980"
+    /\bsoy\s+de\s+(?:generación\s+)?(\d{4})\b/i,                       // "soy de 1985"
+    /\baño\s+de\s+nacimiento\s+(?:es\s+)?(\d{4})/i,                    // "año de nacimiento es 1985"
   ];
+  for (const p of birthYearPatterns) {
+    const m = text.match(p);
+    if (m) {
+      const year = parseInt(m[1]);
+      if (year >= 1920 && year <= 2009) {
+        const age = new Date().getFullYear() - year;
+        if (age >= 15 && age <= 120) return age;
+      }
+    }
+  }
+
+  // --- Direct age patterns (require context to avoid false positives) ---
+  // IMPORTANT: "años" is required (not optional) to avoid capturing "tengo 20 empleados"
+  // Also avoid matching "N años de hipoteca/experiencia/trabajo/etc."
+  const DISQUALIFY_AFTER = /\baños\s+(?:de\s+(?:hipoteca|experiencia|trabajo|servicio|antigüedad|carrera|crédito|casado|plazo|casada|matrimonio)|pagando|trabajando|viviendo|llevamos|llevo|tiene\s+la\s+empresa|de\s+la\s+empresa)/i;
+
+  // Word-age helper: "tengo cuarenta y cinco años" → 45
+  // Handles decades+units like "treinta y dos", "cuarenta y cinco", etc.
+  const WORD_AGE_PATTERN = /\b(?:tengo|cumplo|cumplí|cumplí)\s+((?:treinta|cuarenta|cincuenta|sesenta|setenta|ochenta|noventa)(?:\s+y\s+(?:un[oa]?|dos|tres|cuatro|cinco|seis|siete|ocho|nueve))?|veinte(?:\s+y\s+(?:un[oa]?|dos|tres|cuatro|cinco|seis|siete|ocho|nueve))?|treinta|cuarenta|cincuenta|sesenta|setenta)\s+años\b/i;
+  const wm = text.match(WORD_AGE_PATTERN);
+  if (wm) {
+    const raw = wm[1].trim().toLowerCase();
+    // Try decade+unit compound first (e.g. "treinta y cinco")
+    const compoundMatch = raw.match(/^(treinta|cuarenta|cincuenta|sesenta|setenta|ochenta|noventa|veinte)\s+y\s+(uno|una|dos|tres|cuatro|cinco|seis|siete|ocho|nueve)$/i);
+    if (compoundMatch) {
+      const tens = WORD_NUMBERS[compoundMatch[1].toLowerCase()] ?? 0;
+      const ones = WORD_NUMBERS[compoundMatch[2].toLowerCase()] ?? 0;
+      const age = tens + ones;
+      if (age >= 15 && age <= 120) return age;
+    }
+    const simpleAge = WORD_NUMBERS[raw];
+    if (simpleAge !== undefined && simpleAge >= 15 && simpleAge <= 120) return simpleAge;
+  }
+
+  const patterns: RegExp[] = [
+    /\btengo\s+(\d{1,3})\s+años\b/i,            // "tengo 45 años"
+    /\bcumplo\s+(\d{1,3})\s+años\b/i,           // "cumplo 45 años"
+    /\bcumpl[ií]\s+(\d{1,3})\s+años?\b/i,       // "cumplí 45 años"
+    /\bvoy\s+a\s+cumplir\s+(\d{1,3})/i,         // "voy a cumplir 45"
+    /\btengo\s+(\d{1,3})\s+de\s+edad\b/i,       // "tengo 45 de edad"
+    /\bmi\s+edad\s+(?:es\s+(?:de\s+)?)?(\d{1,3})/i, // "mi edad es 45" / "mi edad es de 45"
+    /\bedad\s+(?:es\s+(?:de\s+)?|de\s+)?(\d{1,3})/i, // "edad de 45" / "edad es de 45"
+    /\b(\d{1,3})\s+años\s+(?:de\s+edad|tengo|cumpl)/i, // "45 años de edad" / "45 años tengo"
+  ];
+
   for (const p of patterns) {
     const m = text.match(p);
     if (m) {
       const age = parseInt(m[1]);
-      if (age >= 15 && age <= 120) return age;
+      if (age >= 15 && age <= 120) {
+        // Verify no disqualifying context (e.g. "tengo 20 años de hipoteca")
+        const matchStart = text.search(p);
+        const surrounding = text.slice(Math.max(0, matchStart), matchStart + m[0].length + 40);
+        if (DISQUALIFY_AFTER.test(surrounding)) continue;
+        return age;
+      }
     }
   }
   return null;
@@ -416,10 +467,16 @@ const RULES: ExtractionRule[] = [
   {
     campo: "liquidez",
     extract: (text) => {
-      const lower = text.toLowerCase();
-      if (/(?:en (?:el|mi) banco|cuenta(?:s)?\s+(?:de\s+)?(?:ahorro|bancaria)|dinero\s+disponible|liquidez|efectivo|ahorrado(?:s)?)/i.test(lower)) {
-        const amount = extractAmount(text);
-        if (amount && amount > 0) return { valor: amount, confianza: 0.87, fuente: text.slice(0, 60) };
+      // Check each sentence independently — prevents false positives from "en el banco"
+      // appearing in one part of the 30s window and an unrelated number in another part.
+      const BANK_PATTERN = /(?:en (?:el|mi) banco|cuenta(?:s)?\s+(?:de\s+)?(?:ahorro|bancaria|bancarias?)|saldo\s+(?:disponible|bancario|en\s+(?:el|mi)\s+banco)|dinero\s+disponible|liquidez|dinero\s+en\s+efectivo|(?:tengo|mantengo|guardo)\s+(?:\w+\s+)?en\s+(?:el|mi)\s+banco|(?:tengo|mantengo)\s+(?:\w+\s+)?en\s+(?:una\s+)?cuenta)/i;
+      const sentences = text.split(/[.!?\n]+/);
+      for (const sentence of sentences) {
+        if (!sentence.trim()) continue;
+        if (BANK_PATTERN.test(sentence)) {
+          const amount = extractAmount(sentence);
+          if (amount && amount > 0) return { valor: amount, confianza: 0.87, fuente: sentence.trim().slice(0, 60) };
+        }
       }
       return null;
     },
@@ -611,9 +668,9 @@ const RULES: ExtractionRule[] = [
     campo: "seguro_vida",
     extract: (text) => {
       const lower = text.toLowerCase();
-      if (/(?:seguro\s+de\s+vida|tengo\s+(?:un\s+)?seguro\s+de\s+vida|sí(?:,?\s+)tengo\s+seguro)/i.test(lower))
+      if (/(?:seguro\s+de\s+vida|tengo\s+(?:un\s+)?seguro\s+(?:de\s+vida)?|cuento\s+con\s+(?:un\s+)?seguro\s+de\s+vida|sí(?:,?\s+)tengo\s+seguro|tengo\s+mi\s+seguro\s+de\s+vida)/i.test(lower))
         return { valor: true, confianza: 0.9, fuente: text.slice(0, 40) };
-      if (/no\s+tengo\s+(?:un\s+)?seguro\s+de\s+vida/i.test(lower))
+      if (/no\s+tengo\s+(?:un\s+)?seguro\s+de\s+vida|no\s+cuento\s+con\s+seguro\s+de\s+vida|sin\s+seguro\s+de\s+vida/i.test(lower))
         return { valor: false, confianza: 0.9, fuente: text.slice(0, 40) };
       return null;
     },
@@ -622,9 +679,9 @@ const RULES: ExtractionRule[] = [
     campo: "propiedades_aseguradas",
     extract: (text) => {
       const lower = text.toLowerCase();
-      if (/(?:propiedades?\s+(?:están?\s+)?asegurad|sí\s+(?:están?\s+)?asegurad|seguro\s+(?:de\s+)?(?:mi\s+)?(?:casa|propiedad|inmueble))/i.test(lower))
+      if (/(?:propiedades?\s+(?:están?\s+)?asegurad|sí\s+(?:están?\s+)?asegurad|seguro\s+(?:de\s+)?(?:mi\s+)?(?:casa|propiedad|inmueble)|tengo\s+(?:el\s+)?seguro\s+(?:de\s+)?(?:la\s+)?casa|mi\s+casa\s+(?:está\s+)?asegurad)/i.test(lower))
         return { valor: true, confianza: 0.87, fuente: text.slice(0, 40) };
-      if (/no\s+(?:están?\s+)?asegurad|no\s+tengo\s+seguro\s+(?:de\s+)?(?:casa|propiedad)/i.test(lower))
+      if (/no\s+(?:están?\s+)?asegurad|no\s+tengo\s+seguro\s+(?:de\s+)?(?:casa|propiedad)|sin\s+seguro\s+(?:de\s+)?(?:casa|propiedad)/i.test(lower))
         return { valor: false, confianza: 0.87, fuente: text.slice(0, 40) };
       return null;
     },
@@ -633,9 +690,10 @@ const RULES: ExtractionRule[] = [
     campo: "sgmm",
     extract: (text) => {
       const lower = text.toLowerCase();
-      if (/(?:sgmm|gastos\s+médicos\s+mayores|sí\s+tengo\s+(?:un\s+)?(?:seguro\s+)?(?:de\s+)?gastos\s+médicos|sí\s+tengo\s+sgmm)/i.test(lower))
+      // Accept broad phrasings: "tengo SGMM", "cuento con SGMM", "gastos médicos (mayores)", etc.
+      if (/(?:sgmm|gastos\s+médicos(?:\s+mayores)?|tengo\s+(?:un\s+)?(?:seguro\s+(?:de\s+)?)?gastos\s+médicos|cuento\s+con\s+(?:un\s+)?(?:seguro\s+(?:de\s+)?)?gastos\s+médicos|tengo\s+(?:mi\s+)?sgmm|cuento\s+con\s+sgmm)/i.test(lower))
         return { valor: true, confianza: 0.9, fuente: text.slice(0, 40) };
-      if (/no\s+tengo\s+(?:seguro\s+de\s+)?gastos\s+médicos|no\s+tengo\s+sgmm/i.test(lower))
+      if (/no\s+tengo\s+(?:seguro\s+de\s+)?gastos\s+médicos|no\s+tengo\s+sgmm|no\s+cuento\s+con\s+(?:sgmm|gastos\s+médicos)/i.test(lower))
         return { valor: false, confianza: 0.9, fuente: text.slice(0, 40) };
       return null;
     },
@@ -744,7 +802,11 @@ const COLLOQUIAL_MAP: Record<string, string> = {
   "mi afore": "afore",
   "tengo un seguro": "seguro_vida",
   "seguro de vida": "seguro_vida",
+  "cuento con seguro de vida": "seguro_vida",
   "gastos médicos": "sgmm",
+  "gastos médicos mayores": "sgmm",
+  "tengo sgmm": "sgmm",
+  "cuento con sgmm": "sgmm",
 };
 
 export function mapearExpresionColoquial(texto: string): string | null {

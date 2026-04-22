@@ -8,6 +8,7 @@ export interface Oportunidad {
   categoria: "proteccion" | "ahorro" | "retiro" | "deuda" | "inversion" | "fiscal" | "patrimonio" | "seguimiento";
   prioridad: "alta" | "media" | "baja";
   icono: string;
+  tipo?: "oportunidad" | "gancho_conversacion";
   contexto_seguimiento?: string;
   accion_sugerida?: string;
   señal_detectada?: string;
@@ -25,6 +26,8 @@ const KEYWORD_RULES: Array<{
   categoria: Oportunidad["categoria"];
   prioridad: Oportunidad["prioridad"];
   icono: string;
+  tipo?: Oportunidad["tipo"];
+  accion_sugerida?: string;
 }> = [
   {
     keywords: ["cambiar de trabajo", "nuevo empleo", "renunciar", "otra empresa"],
@@ -80,6 +83,88 @@ const KEYWORD_RULES: Array<{
     producto: "Fideicomiso, planeación sucesoria",
     categoria: "patrimonio", prioridad: "media", icono: "📜",
   },
+
+  // === GANCHOS DE CONVERSACIÓN ===
+  {
+    keywords: ["aniversario", "aniversario de bodas", "bodas de"],
+    oportunidad: "Aniversario próximo",
+    producto: "—",
+    categoria: "seguimiento", prioridad: "alta", icono: "💍",
+    tipo: "gancho_conversacion",
+    accion_sugerida: "Menciona el aniversario al inicio de la próxima llamada y pregúntale cómo planea celebrarlo — abre conversación sobre metas compartidas con su pareja.",
+  },
+  {
+    keywords: ["cumpleaños", "mi cumple", "años que cumplo"],
+    oportunidad: "Cumpleaños próximo",
+    producto: "—",
+    categoria: "seguimiento", prioridad: "media", icono: "🎂",
+    tipo: "gancho_conversacion",
+    accion_sugerida: "Felicítalo en su cumpleaños y aprovecha para revisar sus metas del año.",
+  },
+  {
+    keywords: ["boda", "casarnos", "me caso", "nos casamos", "me voy a casar"],
+    oportunidad: "Próxima boda en camino",
+    producto: "Seguro de vida, plan de ahorro conjunto",
+    categoria: "seguimiento", prioridad: "alta", icono: "💒",
+    tipo: "gancho_conversacion",
+    accion_sugerida: "Felicita al cliente y pregunta por sus planes financieros como pareja — ideal para abrir conversación sobre seguros y ahorro compartido.",
+  },
+  {
+    keywords: ["bebé", "embarazada", "estamos esperando", "voy a ser papá", "voy a ser mamá", "recién nacido", "nació"],
+    oportunidad: "Llegada de nuevo integrante",
+    producto: "Seguro de vida, seguro educativo",
+    categoria: "seguimiento", prioridad: "alta", icono: "👶",
+    tipo: "gancho_conversacion",
+    accion_sugerida: "Felicita la llegada del bebé y muéstrale cómo proteger el futuro del recién nacido — abre conversación sobre seguro de vida y plan educativo.",
+  },
+  {
+    keywords: ["graduación", "graduarse", "titularse", "se graduó", "terminó la carrera"],
+    oportunidad: "Graduación reciente o próxima",
+    producto: "—",
+    categoria: "seguimiento", prioridad: "media", icono: "🎓",
+    tipo: "gancho_conversacion",
+    accion_sugerida: "Felicita el logro y pregunta cuáles son sus planes ahora — nueva etapa laboral = nuevo diagnóstico.",
+  },
+  {
+    keywords: ["vacaciones", "viaje planeado", "voy a viajar", "nos vamos de viaje"],
+    oportunidad: "Viaje próximo planeado",
+    producto: "Seguro viajero",
+    categoria: "seguimiento", prioridad: "baja", icono: "✈️",
+    tipo: "gancho_conversacion",
+    accion_sugerida: "Antes de que viaje, envíale info sobre seguro viajero y deséale buen viaje — touchpoint de valor bajo costo.",
+  },
+  {
+    keywords: ["me preocupa", "me da miedo", "tengo miedo", "me angustia", "no duermo"],
+    oportunidad: "Preocupación financiera expresada",
+    producto: "—",
+    categoria: "seguimiento", prioridad: "alta", icono: "💬",
+    tipo: "gancho_conversacion",
+    accion_sugerida: "Valida su preocupación en el seguimiento y ofrécele claridad — los clientes con ansiedad financiera responden bien a un plan concreto.",
+  },
+  {
+    keywords: ["mi papá", "mis papás", "mi mamá", "mis padres", "enfermo", "hospital", "operación"],
+    oportunidad: "Situación familiar sensible",
+    producto: "SGMM familiar",
+    categoria: "seguimiento", prioridad: "alta", icono: "🤝",
+    tipo: "gancho_conversacion",
+    accion_sugerida: "Muestra empatía genuina al iniciar el seguimiento y pregunta cómo está la familia — no abordes productos hasta que se sienta escuchado.",
+  },
+  {
+    keywords: ["cambié de trabajo", "nuevo trabajo", "me contrataron", "empecé en", "nueva empresa"],
+    oportunidad: "Cambio de trabajo reciente",
+    producto: "Revisión de Afore, PPR",
+    categoria: "seguimiento", prioridad: "alta", icono: "💼",
+    tipo: "gancho_conversacion",
+    accion_sugerida: "Felicita el nuevo empleo y ofrece revisar sus beneficios laborales y Afore — momento ideal para actualizar diagnóstico.",
+  },
+  {
+    keywords: ["me jubilé", "ya me retiré", "dejé de trabajar", "ya no trabajo"],
+    oportunidad: "Inicio de etapa de retiro",
+    producto: "Estrategia de retiro, rentas",
+    categoria: "seguimiento", prioridad: "alta", icono: "🌅",
+    tipo: "gancho_conversacion",
+    accion_sugerida: "Felicita el retiro y agenda una sesión para estructurar sus ingresos en esta nueva etapa — es el momento más importante para actuar.",
+  },
 ];
 
 function detectKeywordOpportunities(transcript: string): Oportunidad[] {
@@ -97,6 +182,8 @@ function detectKeywordOpportunities(transcript: string): Oportunidad[] {
         categoria: rule.categoria,
         prioridad: rule.prioridad,
         icono: rule.icono,
+        tipo: rule.tipo ?? "oportunidad",
+        accion_sugerida: rule.accion_sugerida,
         fuente: "keyword",
       });
     }
@@ -109,7 +196,7 @@ function detectKeywordOpportunities(transcript: string): Oportunidad[] {
 /* ------------------------------------------------------------------ */
 
 interface StoreSnapshot {
-  perfil: { nombre?: string; edad?: number; dependientes?: boolean; genero?: string; ocupacion?: string } | null;
+  perfil: { nombre?: string; edad?: number; dependientes?: boolean | null; genero?: string; ocupacion?: string } | null;
   flujoMensual: { ahorro: number; rentas: number; otros: number; gastos_basicos: number; obligaciones: number; creditos: number } | null;
   patrimonio: {
     liquidez: number; inversiones: number; dotales: number; afore: number; ppr: number;
@@ -118,7 +205,7 @@ interface StoreSnapshot {
     hipoteca: number; saldo_planes: number; compromisos: number;
   } | null;
   retiro: { edad_retiro: number; mensualidad_deseada: number; edad_defuncion: number } | null;
-  proteccion: { seguro_vida: boolean; propiedades_aseguradas: boolean | null; sgmm: boolean } | null;
+  proteccion: { seguro_vida: boolean | null; propiedades_aseguradas: boolean | null; sgmm: boolean | null } | null;
 }
 
 export function detectarOportunidadesDesdeDatos(store: StoreSnapshot): Oportunidad[] {
@@ -139,6 +226,7 @@ export function detectarOportunidadesDesdeDatos(store: StoreSnapshot): Oportunid
       oportunidad, producto_sugerido: producto, razon,
       confianza: conf, detected_at: Date.now(),
       categoria: cat, prioridad: pri, icono,
+      tipo: "oportunidad" as const,
       fuente: "datos",
     });
   };
@@ -357,6 +445,7 @@ async function detectarOportunidadesAI(
       categoria: (item.categoria || "seguimiento") as Oportunidad["categoria"],
       prioridad: (item.prioridad || "media") as Oportunidad["prioridad"],
       icono: CATEGORY_ICONS[String(item.categoria)] || "📋",
+      tipo: (String(item.tipo || "oportunidad")) as Oportunidad["tipo"],
       contexto_seguimiento: String(item.contexto_seguimiento || ""),
       accion_sugerida: String(item.accion_sugerida || ""),
       señal_detectada: String(item["señal_detectada"] || item.senal_detectada || ""),

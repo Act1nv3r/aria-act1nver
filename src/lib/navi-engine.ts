@@ -359,17 +359,25 @@ export function getDatosFaltantes(store: {
   };
 
   checkFields(store.perfil, ["nombre", "edad", "genero", "ocupacion", "dependientes"], {
-    nombre: "", edad: 18, genero: "H", ocupacion: "asalariado", dependientes: false,
+    // Use store initial values (0 for edad, "" for strings) so unfilled fields are
+    // correctly detected. edad: 18 was wrong — store starts at 0, not 18.
+    nombre: "", edad: 0, genero: "", ocupacion: "",
   });
   checkFields(store.flujoMensual, [
     "ahorro", "rentas", "gastos_basicos", "obligaciones", "otros", "creditos",
   ], {
     ahorro: 0, rentas: 0, gastos_basicos: 0, obligaciones: 0, otros: 0, creditos: 0,
   });
-  checkFields(store.patrimonio, [
+  // Ley 73 only applies to workers who enrolled in IMSS before July 1997 (age ≥ ~46).
+  // If we know the client is younger, exclude ley_73 so it is never asked or extracted.
+  const edad = (store.perfil as Record<string, unknown> | null)?.edad as number | undefined;
+  const incluirLey73 = !edad || edad === 0 || edad >= 46;
+  const patrimonioFields: string[] = [
     "liquidez", "inversiones", "dotales", "afore", "ppr", "plan_privado",
-    "seguros_retiro", "ley_73", "casa", "inmuebles_renta", "tierra", "negocio", "herencia",
-  ], {
+    "seguros_retiro", ...(incluirLey73 ? ["ley_73"] : []),
+    "casa", "inmuebles_renta", "tierra", "negocio", "herencia",
+  ];
+  checkFields(store.patrimonio, patrimonioFields, {
     liquidez: 0, inversiones: 0, dotales: 0, afore: 0, ppr: 0, plan_privado: 0,
     seguros_retiro: 0, ley_73: null, casa: 0, inmuebles_renta: 0, tierra: 0, negocio: 0, herencia: 0,
   });
@@ -377,7 +385,7 @@ export function getDatosFaltantes(store: {
     edad_retiro: 65, mensualidad_deseada: 0,
   });
   checkFields(store.proteccion, ["seguro_vida", "propiedades_aseguradas", "sgmm"], {
-    seguro_vida: false, propiedades_aseguradas: null, sgmm: false,
+    propiedades_aseguradas: null,
   });
 
   return faltantes;

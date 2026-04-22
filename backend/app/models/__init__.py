@@ -8,6 +8,10 @@ from app.models.patrimonio_financiero import PatrimonioFinanciero
 from app.models.plan_retiro import PlanRetiro
 from app.models.proteccion_patrimonial import ProteccionPatrimonial
 from app.models.resultado_calculo import ResultadoCalculo
+# CRM models (new)
+from app.models.perfil_acumulado import PerfilAcumulado
+from app.models.actividad_cliente import ActividadCliente
+from app.models.oportunidad_cliente import OportunidadCliente
 from app.core.database import Base
 
 __all__ = [
@@ -22,4 +26,8 @@ __all__ = [
     "PlanRetiro",
     "ProteccionPatrimonial",
     "ResultadoCalculo",
+    # CRM
+    "PerfilAcumulado",
+    "ActividadCliente",
+    "OportunidadCliente",
 ]

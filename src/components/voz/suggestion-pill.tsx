@@ -45,7 +45,7 @@ export function SuggestionPill({ sugerencia, onAccept, onReject }: SuggestionPil
       <button
         type="button"
         onClick={onAccept}
-        className="min-w-[44px] min-h-[44px] w-11 h-11 rounded flex items-center justify-center bg-[#317A70] text-white hover:opacity-90 -m-1"
+        className="w-8 h-8 rounded flex items-center justify-center bg-[#317A70] text-white hover:opacity-90"
         aria-label="Aceptar sugerencia"
       >
         <Check className="h-4 w-4" />
@@ -53,7 +53,7 @@ export function SuggestionPill({ sugerencia, onAccept, onReject }: SuggestionPil
       <button
         type="button"
         onClick={onReject}
-        className="min-w-[44px] min-h-[44px] w-11 h-11 rounded flex items-center justify-center bg-[#8B3A3A]/50 text-white hover:opacity-90 -m-1"
+        className="w-8 h-8 rounded flex items-center justify-center bg-[#8B3A3A]/50 text-white hover:opacity-90"
         aria-label="Rechazar sugerencia"
       >
         <X className="h-4 w-4" />

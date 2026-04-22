@@ -63,9 +63,9 @@ export function Paso1Perfil() {
     resolver: zodResolver(schema),
     defaultValues: {
       nombre: perfil?.nombre ?? "",
-      edad: perfil?.edad ?? 18,
-      genero: (perfil?.genero as "H" | "M" | "O" | "N") ?? "H",
-      ocupacion: (perfil?.ocupacion as "asalariado" | "independiente" | "empresario") ?? "asalariado",
+      edad: perfil?.edad || undefined,
+      genero: (perfil?.genero as "H" | "M" | "O" | "N") || ("" as "H"),
+      ocupacion: (perfil?.ocupacion as "asalariado" | "independiente" | "empresario") || ("" as "asalariado"),
       dependientes: perfil?.dependientes ?? false,
     },
   });
@@ -112,9 +112,9 @@ export function Paso1Perfil() {
     resolver: zodResolver(parejaSchema),
     defaultValues: {
       nombre: pareja_perfil?.nombre ?? "",
-      edad: pareja_perfil?.edad ?? 18,
-      genero: (pareja_perfil?.genero as "H" | "M" | "O" | "N") ?? "M",
-      ocupacion: (pareja_perfil?.ocupacion as "asalariado" | "independiente" | "empresario") ?? "asalariado",
+      edad: pareja_perfil?.edad || undefined,
+      genero: (pareja_perfil?.genero as "H" | "M" | "O" | "N") || ("" as "H"),
+      ocupacion: (pareja_perfil?.ocupacion as "asalariado" | "independiente" | "empresario") || ("" as "asalariado"),
       dependientes: pareja_perfil?.dependientes ?? false,
     },
   });

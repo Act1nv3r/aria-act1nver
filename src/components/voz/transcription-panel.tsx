@@ -27,7 +27,7 @@ export function TranscriptionPanel({
   return (
     <div
       className={`
-        fixed right-0 top-[60px] w-[320px] max-h-[calc(100vh-80px)] z-[100]
+        fixed right-0 top-[60px] w-[320px] max-h-[calc(100vh-80px)] z-[45]
         bg-[#1A2433] border-l-2 border-[#E6C78A]/40 shadow-2xl
         flex flex-col transition-all duration-300
         ${isRecording ? "translate-x-0 opacity-100" : "translate-x-full opacity-0"}

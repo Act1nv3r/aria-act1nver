@@ -16,3 +16,8 @@ class Cliente(Base, TimestampMixin):
 
     asesor = relationship("Asesor", back_populates="clientes")
     diagnosticos = relationship("Diagnostico", back_populates="cliente")
+
+    # CRM relationships (new)
+    perfil_acumulado = relationship("PerfilAcumulado", back_populates="cliente", uselist=False)
+    actividades = relationship("ActividadCliente", back_populates="cliente", order_by="ActividadCliente.fecha_actividad.desc()")
+    oportunidades = relationship("OportunidadCliente", back_populates="cliente", order_by="OportunidadCliente.created_at.desc()")

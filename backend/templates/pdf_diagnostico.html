@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Diagnóstico Financiero - ArIA</title>
+  <style>
+    @page { size: A4; margin: 20mm 15mm; }
+    body { font-family: 'Open Sans', Arial, sans-serif; background: #F5F2EB; color: #0A0E12; font-size: 10pt; line-height: 1.5; }
+    .header { border-bottom: 2px solid #314566; padding-bottom: 12px; margin-bottom: 20px; }
+    .brand { font-family: 'Poppins', Arial, sans-serif; font-size: 16pt; font-weight: 700; color: #0A0E12; }
+    .brand span { color: #E6C78A; }
+    .meta { font-size: 9pt; color: #5A6A85; text-align: right; }
+    h2 { font-family: 'Poppins', Arial, sans-serif; font-size: 13pt; color: #314566; margin-top: 20px; margin-bottom: 8px; border-left: 3px solid #E6C78A; padding-left: 8px; }
+    h3 { font-size: 10pt; color: #314566; margin-top: 12px; margin-bottom: 4px; }
+    .kpi-row { width: 100%; border-collapse: collapse; margin: 12px 0; }
+    .kpi-row td { width: 25%; padding: 10px 8px; text-align: center; background: #fff; border: 1px solid #e0d8cc; }
+    .kpi-val { font-size: 16pt; font-weight: 700; color: #314566; }
+    .kpi-label { font-size: 8pt; color: #5A6A85; margin-top: 2px; }
+    .kpi-gold .kpi-val { color: #C9A84C; }
+    .kpi-green .kpi-val { color: #2a7a50; }
+    .kpi-red .kpi-val { color: #b04040; }
+    table.data { width: 100%; border-collapse: collapse; margin: 8px 0; font-size: 9pt; }
+    table.data th { background: #314566; color: white; padding: 6px 10px; text-align: left; font-weight: 600; }
+    table.data td { padding: 5px 10px; border-bottom: 1px solid #e0d8cc; }
+    table.data tr:nth-child(even) td { background: #f0ece4; }
+    .badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 9pt; font-weight: 700; }
+    .badge-gold { background: #E6C78A; color: #0A0E12; }
+    .badge-green { background: #2a7a50; color: white; }
+    .badge-red { background: #b04040; color: white; }
+    .badge-blue { background: #314566; color: white; }
+    .section { margin-bottom: 20px; }
+    .note { font-size: 8pt; color: #5A6A85; font-style: italic; margin-top: 4px; }
+    .rec-item { padding: 6px 10px; background: #fff; border-left: 3px solid #E6C78A; margin: 4px 0; font-size: 9pt; }
+    .footer { margin-top: 24px; padding-top: 12px; border-top: 1px solid #ccc; font-size: 8pt; color: #999; text-align: center; }
+    .two-col { width: 100%; border-collapse: collapse; }
+    .two-col td { width: 50%; vertical-align: top; padding: 0 8px 0 0; }
+    .two-col td:last-child { padding: 0 0 0 8px; }
+  </style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <table style="width:100%; border-collapse:collapse;">
+    <tr>
+      <td><div class="brand">Actinver<span>·</span> ArIA</div>
+          <div style="font-size:9pt; color:#5A6A85; margin-top:2px;">Diagnóstico Financiero Integral</div></td>
+      <td class="meta"><div><strong>{{ nombre }}</strong></div><div>{{ fecha }}</div></td>
+    </tr>
+  </table>
+</div>
+
+<!-- PERFIL -->
+{% if perfil %}
+<div class="section">
+  <h2>Perfil del cliente</h2>
+  <table class="data">
+    <tr><th>Nombre</th><td>{{ perfil.nombre }}</td>
+        <th>Edad</th><td>{{ perfil.edad }} años</td></tr>
+    <tr><th>Ocupación</th><td>{{ perfil.ocupacion | title }}</td>
+        <th>Dependientes</th><td>{{ "Sí" if perfil.dependientes else "No" }}</td></tr>
+  </table>
+</div>
+{% endif %}
+
+<!-- RESUMEN KPIs -->
+{% if motor_b or motor_a or motor_c or motor_e %}
+<div class="section">
+  <h2>Indicadores clave</h2>
+  <table class="kpi-row">
+    <tr>
+      {% if motor_b %}
+      <td class="kpi-gold">
+        <div class="kpi-val">{{ motor_b.nivel_riqueza | title }}</div>
+        <div class="kpi-label">Nivel de riqueza</div>
+      </td>
+      {% endif %}
+      {% if motor_a %}
+      <td class="{{ 'kpi-green' if motor_a.resultado_reserva == 'Cubierta' else 'kpi-red' }}">
+        <div class="kpi-val">{{ "%.1f"|format(motor_a.meses_cubiertos or 0) }} meses</div>
+        <div class="kpi-label">Reserva de emergencia</div>
+      </td>
+      {% endif %}
+      {% if motor_c %}
+      <td class="{{ 'kpi-green' if motor_c.grado_avance >= 1 else ('kpi-gold' if motor_c.grado_avance >= 0.7 else 'kpi-red') }}">
+        <div class="kpi-val">{{ "%.0f"|format(motor_c.grado_avance * 100) }}%</div>
+        <div class="kpi-label">Avance al retiro</div>
+      </td>
+      {% endif %}
+      {% if motor_e %}
+      <td class="{{ 'kpi-green' if motor_e.indice_solvencia >= 0.7 else ('kpi-gold' if motor_e.indice_solvencia >= 0.5 else 'kpi-red') }}">
+        <div class="kpi-val">{{ "%.0f"|format(motor_e.indice_solvencia * 100) }}%</div>
+        <div class="kpi-label">Índice de solvencia</div>
+      </td>
+      {% endif %}
+    </tr>
+  </table>
+</div>
+{% endif %}
+
+<!-- FLUJO MENSUAL -->
+{% if flujo and motor_a %}
+<div class="section">
+  <h2>Flujo mensual</h2>
+  <table class="two-col">
+    <tr>
+      <td>
+        <table class="data">
+          <tr><th colspan="2">Ingresos</th></tr>
+          <tr><td>Ahorro / Sueldo</td><td style="text-align:right">${{ "{:,.0f}".format(flujo.ahorro) }}</td></tr>
+          <tr><td>Rentas</td><td style="text-align:right">${{ "{:,.0f}".format(flujo.rentas) }}</td></tr>
+          <tr><td>Otros</td><td style="text-align:right">${{ "{:,.0f}".format(flujo.otros) }}</td></tr>
+          <tr><th>Total ingresos</th><th style="text-align:right">${{ "{:,.0f}".format(motor_a.ingresos_totales) }}</th></tr>
+        </table>
+      </td>
+      <td>
+        <table class="data">
+          <tr><th colspan="2">Egresos</th></tr>
+          <tr><td>Gastos básicos</td><td style="text-align:right">${{ "{:,.0f}".format(flujo.gastos_basicos) }}</td></tr>
+          <tr><td>Obligaciones</td><td style="text-align:right">${{ "{:,.0f}".format(flujo.obligaciones) }}</td></tr>
+          <tr><td>Créditos</td><td style="text-align:right">${{ "{:,.0f}".format(flujo.creditos) }}</td></tr>
+          <tr><th>Total egresos</th><th style="text-align:right">${{ "{:,.0f}".format(motor_a.gastos_totales) }}</th></tr>
+        </table>
+        <p class="note">Reserva de emergencia: <strong>{{ motor_a.resultado_reserva }}</strong>
+        {% if motor_a.meses_cubiertos %} ({{ "%.1f"|format(motor_a.meses_cubiertos) }} meses cubiertos){% endif %}</p>
+      </td>
+    </tr>
+  </table>
+</div>
+{% endif %}
+
+<!-- PATRIMONIO -->
+{% if patrimonio and motor_e %}
+<div class="section">
+  <h2>Patrimonio</h2>
+  <table class="two-col">
+    <tr>
+      <td>
+        <table class="data">
+          <tr><th colspan="2">Activos financieros</th></tr>
+          <tr><td>Liquidez</td><td style="text-align:right">${{ "{:,.0f}".format(patrimonio.liquidez) }}</td></tr>
+          <tr><td>Inversiones</td><td style="text-align:right">${{ "{:,.0f}".format(patrimonio.inversiones) }}</td></tr>
+          <tr><td>Dotales</td><td style="text-align:right">${{ "{:,.0f}".format(patrimonio.dotales) }}</td></tr>
+          <tr><td>AFORE</td><td style="text-align:right">${{ "{:,.0f}".format(patrimonio.afore) }}</td></tr>
+          <tr><td>PPR</td><td style="text-align:right">${{ "{:,.0f}".format(patrimonio.ppr) }}</td></tr>
+          <tr><td>Plan privado</td><td style="text-align:right">${{ "{:,.0f}".format(patrimonio.plan_privado) }}</td></tr>
+          {% if patrimonio.casa > 0 %}<tr><td>Casa habitación</td><td style="text-align:right">${{ "{:,.0f}".format(patrimonio.casa) }}</td></tr>{% endif %}
+          {% if patrimonio.inmuebles_renta > 0 %}<tr><td>Inmuebles en renta</td><td style="text-align:right">${{ "{:,.0f}".format(patrimonio.inmuebles_renta) }}</td></tr>{% endif %}
+          {% if patrimonio.negocio > 0 %}<tr><td>Negocio</td><td style="text-align:right">${{ "{:,.0f}".format(patrimonio.negocio) }}</td></tr>{% endif %}
+          <tr><th>Total activos</th><th style="text-align:right">${{ "{:,.0f}".format(motor_e.activos_total) }}</th></tr>
+        </table>
+      </td>
+      <td>
+        <table class="data">
+          <tr><th colspan="2">Pasivos</th></tr>
+          {% if patrimonio.hipoteca > 0 %}<tr><td>Hipoteca</td><td style="text-align:right">${{ "{:,.0f}".format(patrimonio.hipoteca) }}</td></tr>{% endif %}
+          {% if patrimonio.saldo_planes > 0 %}<tr><td>Saldo planes</td><td style="text-align:right">${{ "{:,.0f}".format(patrimonio.saldo_planes) }}</td></tr>{% endif %}
+          {% if patrimonio.compromisos > 0 %}<tr><td>Compromisos</td><td style="text-align:right">${{ "{:,.0f}".format(patrimonio.compromisos) }}</td></tr>{% endif %}
+          <tr><th>Total pasivos</th><th style="text-align:right">${{ "{:,.0f}".format(motor_e.pasivos_total) }}</th></tr>
+          <tr><th>Patrimonio neto</th><th style="text-align:right;color:#2a7a50">${{ "{:,.0f}".format(motor_e.patrimonio_neto) }}</th></tr>
+        </table>
+        <p class="note">Solvencia: <strong>{{ motor_e.clasificacion_solvencia }}</strong> · Índice: {{ "%.0f"|format(motor_e.indice_solvencia * 100) }}%</p>
+        {% if motor_b %}
+        <p class="note">Nivel de riqueza: <strong>{{ motor_b.nivel_riqueza | title }}</strong> · Ratio patrimonio/gasto: {{ "%.1f"|format(motor_b.ratio) }}x</p>
+        {% endif %}
+      </td>
+    </tr>
+  </table>
+</div>
+{% endif %}
+
+<!-- RETIRO -->
+{% if retiro and motor_c %}
+<div class="section">
+  <h2>Plan de retiro</h2>
+  <table class="data">
+    <tr>
+      <th>Edad de retiro</th><td>{{ retiro.edad_retiro }} años</td>
+      <th>Mensualidad deseada</th><td>${{ "{:,.0f}".format(retiro.mensualidad_deseada) }}</td>
+    </tr>
+    <tr>
+      <th>Mensualidad posible (patrimonio)</th><td>${{ "{:,.0f}".format(motor_c.mensualidad_posible) }}</td>
+      <th>Grado de avance</th>
+      <td><span class="badge {{ 'badge-green' if motor_c.grado_avance >= 1 else ('badge-gold' if motor_c.grado_avance >= 0.7 else 'badge-red') }}">{{ "%.0f"|format(motor_c.grado_avance * 100) }}%</span></td>
+    </tr>
+    <tr>
+      <th>Pensión total estimada</th><td>${{ "{:,.0f}".format(motor_c.pension_total_mensual) }}</td>
+      <th>Déficit mensual</th>
+      <td {% if motor_c.deficit_mensual > 0 %}style="color:#b04040; font-weight:700"{% endif %}>${{ "{:,.0f}".format(motor_c.deficit_mensual) }}</td>
+    </tr>
+  </table>
+  <table class="data" style="margin-top:8px">
+    <tr><th colspan="3">Fuentes de ingreso en retiro</th></tr>
+    <tr><td>Rentas</td><td style="text-align:right">${{ "{:,.0f}".format(motor_c.fuentes_ingreso.rentas) }}</td><td></td></tr>
+    <tr><td>Pensión (AFORE + esquemas)</td><td style="text-align:right">${{ "{:,.0f}".format(motor_c.fuentes_ingreso.pension) }}</td><td></td></tr>
+    <tr><td>Patrimonio invertido</td><td style="text-align:right">${{ "{:,.0f}".format(motor_c.fuentes_ingreso.patrimonio) }}</td><td></td></tr>
+  </table>
+</div>
+{% endif %}
+
+<!-- PROTECCIÓN -->
+{% if motor_f %}
+<div class="section">
+  <h2>Protección patrimonial</h2>
+  {% if proteccion %}
+  <table class="data">
+    <tr>
+      <th>Seguro de vida</th><td>{{ "Sí" if proteccion.seguro_vida else "No" }}</td>
+      <th>SGMM</th><td>{{ "Sí" if proteccion.sgmm else "No" }}</td>
+    </tr>
+    <tr>
+      <th>Propiedades aseguradas</th>
+      <td>{{ "Sí" if proteccion.propiedades_aseguradas else ("No" if proteccion.propiedades_aseguradas is not none else "No aplica") }}</td>
+      <td colspan="2"></td>
+    </tr>
+  </table>
+  {% endif %}
+  {% if motor_f.recomendaciones %}
+  <h3>Recomendaciones</h3>
+  {% for rec in motor_f.recomendaciones %}
+  <div class="rec-item">{{ rec }}</div>
+  {% endfor %}
+  {% if motor_f.suma_asegurada_vida %}
+  <p class="note">Prima estimada seguro de vida: ${{ "{:,.0f}".format(motor_f.costo_prima_vida) }}/año</p>
+  {% endif %}
+  {% else %}
+  <p>Cobertura de protección adecuada. Sin recomendaciones adicionales.</p>
+  {% endif %}
+</div>
+{% endif %}
+
+<div class="footer">
+  Este documento es informativo y no constituye una recomendación, consejo o sugerencia para la toma de decisiones de inversión. ArIA by Actinver. Calculado con tasa real anual del 1%.
+</div>
+</body>
+</html>

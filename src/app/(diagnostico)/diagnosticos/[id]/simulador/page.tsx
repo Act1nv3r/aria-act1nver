@@ -1,9 +1,10 @@
 "use client";
 
-import { useState, useMemo } from "react";
-import { useRouter, usePathname } from "next/navigation";
+import { useState, useMemo, useEffect } from "react";
+import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { useDiagnosticoStore, type SavedSimulation } from "@/stores/diagnostico-store";
-import { calcularMotorC } from "@/lib/motors";
+import { calcularMotorC, calcularMotorA, calcularMotorB, calcularMotorE, calcularMotorF } from "@/lib/motors";
+import { calcularSaludFinanciera } from "@/lib/motors/salud-scores";
 import { PARAMS } from "@/lib/constants";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -12,17 +13,33 @@ import { GradoAvanceBar } from "@/components/outputs/grado-avance-bar";
 import { DeficitCard } from "@/components/outputs/deficit-card";
 import { FinancialTimeline, type EventoVida } from "@/components/outputs/financial-timeline";
 import { TrayectoriaRetiroChart } from "@/components/outputs/trayectoria-retiro-chart";
+import { RadarSaludFinanciera } from "@/components/outputs/radar-salud-financiera";
 import { formatMXN } from "@/lib/format-currency";
 import { Save, Trash2, RotateCcw, ChevronLeft, Clock } from "lucide-react";
 
 export default function SimuladorPage() {
   const router = useRouter();
   const pathname = usePathname();
+  const searchParams = useSearchParams();
   const id = pathname?.split("/diagnosticos/")[1]?.split("/")[0] || "demo";
-  const { perfil, flujoMensual, patrimonio, retiro, simulaciones_guardadas, addSimulacion, removeSimulacion } = useDiagnosticoStore();
+  const clienteId = searchParams.get("clienteId");
+
+  const {
+    perfil,
+    flujoMensual,
+    patrimonio,
+    retiro,
+    proteccion,
+    simulaciones_guardadas,
+    addSimulacion,
+    removeSimulacion,
+    guardarScoreSalud,
+  } = useDiagnosticoStore();
+
   const [saveLabel, setSaveLabel] = useState("");
   const [showSaveInput, setShowSaveInput] = useState(false);
   const [justSaved, setJustSaved] = useState(false);
+  const [view, setView] = useState<"salud" | "retiro">("salud");
 
   const patrimonioFin =
     (patrimonio?.liquidez ?? 0) +
@@ -81,6 +98,115 @@ export default function SimuladorPage() {
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sliderValues, patrimonioFin]);
+
+  // ── Additional motors for salud financiera ────────────────────
+  const motorA = useMemo(
+    () =>
+      flujoMensual
+        ? calcularMotorA({ ...flujoMensual, liquidez: patrimonio?.liquidez ?? 0 })
+        : null,
+    [flujoMensual, patrimonio]
+  );
+
+  const motorB = useMemo(
+    () =>
+      patrimonio && flujoMensual
+        ? calcularMotorB({
+            liquidez: patrimonio.liquidez,
+            inversiones: patrimonio.inversiones,
+            dotales: patrimonio.dotales,
+            afore: patrimonio.afore,
+            ppr: patrimonio.ppr,
+            plan_privado: patrimonio.plan_privado,
+            seguros_retiro: patrimonio.seguros_retiro,
+            edad,
+            gastos_basicos: flujoMensual.gastos_basicos,
+            obligaciones: flujoMensual.obligaciones,
+            creditos: flujoMensual.creditos,
+          })
+        : null,
+    [patrimonio, flujoMensual, edad]
+  );
+
+  const motorE = useMemo(
+    () =>
+      patrimonio
+        ? calcularMotorE({
+            liquidez: patrimonio.liquidez,
+            inversiones: patrimonio.inversiones,
+            dotales: patrimonio.dotales,
+            afore: patrimonio.afore,
+            ppr: patrimonio.ppr,
+            plan_privado: patrimonio.plan_privado,
+            seguros_retiro: patrimonio.seguros_retiro,
+            casa: patrimonio.casa,
+            inmuebles_renta: patrimonio.inmuebles_renta,
+            tierra: patrimonio.tierra,
+            negocio: patrimonio.negocio,
+            herencia: patrimonio.herencia,
+            hipoteca: patrimonio.hipoteca,
+            saldo_planes: 0,
+            compromisos: 0,
+          })
+        : null,
+    [patrimonio]
+  );
+
+  const motorF = useMemo(() => {
+    if (!motorE || !proteccion || !perfil) return null;
+    const inmuebles_total =
+      (patrimonio?.casa ?? 0) +
+      (patrimonio?.inmuebles_renta ?? 0) +
+      (patrimonio?.tierra ?? 0);
+    return calcularMotorF({
+      seguro_vida: proteccion.seguro_vida ?? false,
+      propiedades_aseguradas: proteccion.propiedades_aseguradas,
+      sgmm: proteccion.sgmm ?? false,
+      dependientes: perfil.dependientes ?? false,
+      patrimonio_neto: motorE.patrimonio_neto,
+      inmuebles_total,
+      edad,
+    });
+  }, [motorE, proteccion, perfil, patrimonio, edad]);
+
+  // ── Salud scores ──────────────────────────────────────────────
+  const saludInput = useMemo(
+    () => ({
+      motorA,
+      motorB,
+      motorE,
+      motorF,
+      patrimonio: patrimonio
+        ? {
+            casa: patrimonio.casa,
+            inmuebles_renta: patrimonio.inmuebles_renta,
+            tierra: patrimonio.tierra,
+            negocio: patrimonio.negocio,
+            herencia: patrimonio.herencia,
+          }
+        : null,
+      proteccion: proteccion ?? null,
+      perfil: perfil ? { dependientes: perfil.dependientes } : null,
+    }),
+    [motorA, motorB, motorE, motorF, patrimonio, proteccion, perfil]
+  );
+
+  const saludBase = useMemo(
+    () => calcularSaludFinanciera({ ...saludInput, motorC: resultadoBase }),
+    [saludInput, resultadoBase]
+  );
+
+  const saludSimulado = useMemo(
+    () => calcularSaludFinanciera({ ...saludInput, motorC: resultadoSimulado }),
+    [saludInput, resultadoSimulado]
+  );
+
+  // ── Persist salud score to store ──────────────────────────────
+  useEffect(() => {
+    if (clienteId && saludBase.score_total > 0) {
+      guardarScoreSalud(clienteId, saludBase.score_total);
+    }
+  }, [clienteId, saludBase.score_total, guardarScoreSalud]);
 
   const resetValues = () => {
     setSliderValues({
@@ -144,273 +270,304 @@ export default function SimuladorPage() {
   return (
     <div className="min-h-screen bg-[#060D1A]">
       <div className="max-w-[1600px] mx-auto px-6 sm:px-8 lg:px-12 py-8">
-      <div className="mb-8">
-        <h1 className="font-bold font-[family-name:var(--font-poppins)] text-[28px] text-white">
-          Simula tu futuro
-        </h1>
-        <p className="font-[family-name:var(--font-open-sans)] text-sm text-[#5A6A85] mt-1">
-          Mueve los controles y observa cómo cambia tu retiro
-        </p>
-      </div>
-
-      {/* Financial Timeline Hero — full width */}
-      <div className="mb-8">
-        <Card>
-          <FinancialTimeline
-            edadActual={edad}
-            edadRetiro={sliderValues.edad_retiro}
-            edadDefuncion={retiroBase.edad_defuncion}
-            patrimonioActual={patrimonioFin + sliderValues.aportacion_extra}
-            ahorroMensual={sliderValues.ahorro}
-            tasaReal={sliderValues.tasa_real / 100}
-            pensionMensual={patrimonio?.ley_73 ?? 35000}
-            rentasMensuales={flujoBase.rentas}
-            mensualidadDeseada={sliderValues.mensualidad_deseada}
-            eventos={eventos}
-            modo="simulador"
-            showMetrics={true}
-            animate={false}
-          />
-        </Card>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        {/* Left: Sliders */}
-        <div className="space-y-6">
-          <Card>
-            <Slider
-              label="Ahorro mensual"
-              min={0}
-              max={Math.max(flujoBase.ahorro * 3, 200000)}
-              step={5000}
-              value={[sliderValues.ahorro]}
-              onChange={(v) =>
-                setSliderValues((s) => ({ ...s, ahorro: v[0] }))
-              }
-              formatValue={(v) => formatMXN(v) + "/mes"}
-            />
-            <p className="mt-1 font-[family-name:var(--font-open-sans)] text-[11px] text-[#5A6A85]">
-              Base: {formatMXN(flujoBase.ahorro)}/mes
-            </p>
-          </Card>
-
-          <Card>
-            <Slider
-              label="Edad de retiro"
-              min={edad + 1}
-              max={70}
-              step={1}
-              value={[sliderValues.edad_retiro]}
-              onChange={(v) =>
-                setSliderValues((s) => ({ ...s, edad_retiro: v[0] }))
-              }
-              formatValue={(v) => `${v} años`}
-            />
-            <p className="mt-1 font-[family-name:var(--font-open-sans)] text-[11px] text-[#5A6A85]">
-              Base: {retiroBase.edad_retiro} años
-            </p>
-          </Card>
-
-          <Card>
-            <Slider
-              label="Mensualidad deseada en retiro"
-              min={10000}
-              max={200000}
-              step={5000}
-              value={[sliderValues.mensualidad_deseada]}
-              onChange={(v) =>
-                setSliderValues((s) => ({
-                  ...s,
-                  mensualidad_deseada: v[0],
-                }))
-              }
-              formatValue={(v) => formatMXN(v) + "/mes"}
-            />
-          </Card>
-
-          <Card>
-            <Slider
-              label="Tasa real anual"
-              min={0}
-              max={5}
-              step={0.5}
-              value={[sliderValues.tasa_real]}
-              onChange={(v) =>
-                setSliderValues((s) => ({ ...s, tasa_real: v[0] }))
-              }
-              formatValue={(v) => `${v}%`}
-            />
-          </Card>
-
-          <Card>
-            <Slider
-              label="Aportación extra única"
-              min={0}
-              max={5000000}
-              step={100000}
-              value={[sliderValues.aportacion_extra]}
-              onChange={(v) =>
-                setSliderValues((s) => ({ ...s, aportacion_extra: v[0] }))
-              }
-              formatValue={(v) => formatMXN(v)}
-            />
-            <p className="mt-1 font-[family-name:var(--font-open-sans)] text-[11px] text-[#5A6A85]">
-              Un monto adicional que podrías invertir hoy
-            </p>
-          </Card>
-
-          <Card>
-            <Slider
-              label="Venta de activo — Edad"
-              min={0}
-              max={retiroBase.edad_defuncion}
-              step={1}
-              value={[sliderValues.venta_activo_edad]}
-              onChange={(v) =>
-                setSliderValues((s) => ({ ...s, venta_activo_edad: v[0] }))
-              }
-              formatValue={(v) => (v === 0 ? "Sin evento" : `${v} años`)}
-            />
-            {sliderValues.venta_activo_edad > 0 && (
-              <div className="mt-3">
-                <Slider
-                  label="Venta de activo — Monto"
-                  min={0}
-                  max={10000000}
-                  step={100000}
-                  value={[sliderValues.venta_activo_monto]}
-                  onChange={(v) =>
-                    setSliderValues((s) => ({ ...s, venta_activo_monto: v[0] }))
-                  }
-                  formatValue={(v) => formatMXN(v)}
-                />
-              </div>
-            )}
-          </Card>
+        <div className="mb-8">
+          <h1 className="font-bold font-[family-name:var(--font-poppins)] text-[28px] text-white">
+            Simula tu futuro
+          </h1>
+          <p className="font-[family-name:var(--font-open-sans)] text-sm text-[#5A6A85] mt-1">
+            Mueve los controles y observa cómo cambia tu salud financiera
+          </p>
         </div>
 
-        {/* Right: Results */}
-        <div className="space-y-6">
+        {/* Financial Timeline Hero — full width */}
+        <div className="mb-8">
           <Card>
-            <GradoAvanceBar porcentaje={resultadoSimulado.grado_avance} />
-            <p
-              className={`mt-2 font-bold font-[family-name:var(--font-poppins)] text-xs ${
-                diffGrado >= 0 ? "text-[#317A70]" : "text-[#8B3A3A]"
-              }`}
-            >
-              {diffGrado >= 0 ? "▲" : "▼"} {Math.abs(diffGrado).toFixed(1)}% vs
-              base
-            </p>
-          </Card>
-
-          <Card>
-            <p className="font-[family-name:var(--font-open-sans)] text-sm text-[#5A6A85]">
-              Mensualidad posible
-            </p>
-            <p className="font-bold font-[family-name:var(--font-poppins)] text-[28px] text-white">
-              {formatMXN(resultadoSimulado.mensualidad_posible)}
-            </p>
-          </Card>
-
-          <Card>
-            <DeficitCard deficit={resultadoSimulado.deficit_mensual} />
-          </Card>
-
-          <Card className="min-h-[380px]">
-            <TrayectoriaRetiroChart
-              saldoInicioJubilacion={resultadoSimulado.saldo_inicio_jubilacion}
-              pensionTotalMensual={resultadoSimulado.pension_total_mensual}
-              mensualidadDeseada={sliderValues.mensualidad_deseada}
+            <FinancialTimeline
+              edadActual={edad}
               edadRetiro={sliderValues.edad_retiro}
               edadDefuncion={retiroBase.edad_defuncion}
-              patrimonioFinancieroActual={patrimonioFin + sliderValues.aportacion_extra}
-              tasaRealAnual={sliderValues.tasa_real / 100}
+              patrimonioActual={patrimonioFin + sliderValues.aportacion_extra}
+              ahorroMensual={sliderValues.ahorro}
+              tasaReal={sliderValues.tasa_real / 100}
+              pensionMensual={patrimonio?.ley_73 ?? 35000}
+              rentasMensuales={flujoBase.rentas}
+              mensualidadDeseada={sliderValues.mensualidad_deseada}
+              eventos={eventos}
+              modo="simulador"
+              showMetrics={true}
+              animate={false}
             />
           </Card>
         </div>
-      </div>
 
-      {/* Action bar */}
-      <div className="flex flex-wrap items-center gap-3 mt-8">
-        <Button
-          variant="ghost"
-          onClick={() => router.push(`/diagnosticos/${id}/presentacion`)}
-        >
-          <ChevronLeft className="w-4 h-4" />
-          Volver al balance
-        </Button>
-        <Button variant="outline" onClick={resetValues}>
-          <RotateCcw className="w-3.5 h-3.5" />
-          Resetear valores
-        </Button>
-
-        <div className="ml-auto flex items-center gap-2">
-          {showSaveInput ? (
-            <div className="flex items-center gap-2">
-              <input
-                type="text"
-                autoFocus
-                value={saveLabel}
-                onChange={(e) => setSaveLabel(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" && saveLabel.trim()) {
-                    handleSaveSimulation();
-                  }
-                  if (e.key === "Escape") {
-                    setShowSaveInput(false);
-                    setSaveLabel("");
-                  }
-                }}
-                placeholder="Nombre de la simulación..."
-                className="bg-[#112038] border border-white/[0.08] rounded-lg px-3 py-2 text-sm text-[#F0F4FA] placeholder:text-[#4A5A72] focus:outline-none focus:border-[#C9A84C]/60 w-[220px]"
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          {/* Left: Sliders */}
+          <div className="space-y-6">
+            <Card>
+              <Slider
+                label="Ahorro mensual"
+                min={0}
+                max={Math.max(flujoBase.ahorro * 3, 200000)}
+                step={5000}
+                value={[sliderValues.ahorro]}
+                onChange={(v) =>
+                  setSliderValues((s) => ({ ...s, ahorro: v[0] }))
+                }
+                formatValue={(v) => formatMXN(v) + "/mes"}
               />
-              <Button
-                variant="accent"
-                size="sm"
-                onClick={handleSaveSimulation}
-                disabled={!saveLabel.trim()}
-              >
-                Guardar
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => { setShowSaveInput(false); setSaveLabel(""); }}
-              >
-                Cancelar
-              </Button>
+              <p className="mt-1 font-[family-name:var(--font-open-sans)] text-[11px] text-[#5A6A85]">
+                Base: {formatMXN(flujoBase.ahorro)}/mes
+              </p>
+            </Card>
+
+            <Card>
+              <Slider
+                label="Edad de retiro"
+                min={edad + 1}
+                max={70}
+                step={1}
+                value={[sliderValues.edad_retiro]}
+                onChange={(v) =>
+                  setSliderValues((s) => ({ ...s, edad_retiro: v[0] }))
+                }
+                formatValue={(v) => `${v} años`}
+              />
+              <p className="mt-1 font-[family-name:var(--font-open-sans)] text-[11px] text-[#5A6A85]">
+                Base: {retiroBase.edad_retiro} años
+              </p>
+            </Card>
+
+            <Card>
+              <Slider
+                label="Mensualidad deseada en retiro"
+                min={10000}
+                max={200000}
+                step={5000}
+                value={[sliderValues.mensualidad_deseada]}
+                onChange={(v) =>
+                  setSliderValues((s) => ({
+                    ...s,
+                    mensualidad_deseada: v[0],
+                  }))
+                }
+                formatValue={(v) => formatMXN(v) + "/mes"}
+              />
+            </Card>
+
+            <Card>
+              <Slider
+                label="Tasa real anual"
+                min={0}
+                max={5}
+                step={0.5}
+                value={[sliderValues.tasa_real]}
+                onChange={(v) =>
+                  setSliderValues((s) => ({ ...s, tasa_real: v[0] }))
+                }
+                formatValue={(v) => `${v}%`}
+              />
+            </Card>
+
+            <Card>
+              <Slider
+                label="Aportación extra única"
+                min={0}
+                max={5000000}
+                step={100000}
+                value={[sliderValues.aportacion_extra]}
+                onChange={(v) =>
+                  setSliderValues((s) => ({ ...s, aportacion_extra: v[0] }))
+                }
+                formatValue={(v) => formatMXN(v)}
+              />
+              <p className="mt-1 font-[family-name:var(--font-open-sans)] text-[11px] text-[#5A6A85]">
+                Un monto adicional que podrías invertir hoy
+              </p>
+            </Card>
+
+            <Card>
+              <Slider
+                label="Venta de activo — Edad"
+                min={0}
+                max={retiroBase.edad_defuncion}
+                step={1}
+                value={[sliderValues.venta_activo_edad]}
+                onChange={(v) =>
+                  setSliderValues((s) => ({ ...s, venta_activo_edad: v[0] }))
+                }
+                formatValue={(v) => (v === 0 ? "Sin evento" : `${v} años`)}
+              />
+              {sliderValues.venta_activo_edad > 0 && (
+                <div className="mt-3">
+                  <Slider
+                    label="Venta de activo — Monto"
+                    min={0}
+                    max={10000000}
+                    step={100000}
+                    value={[sliderValues.venta_activo_monto]}
+                    onChange={(v) =>
+                      setSliderValues((s) => ({ ...s, venta_activo_monto: v[0] }))
+                    }
+                    formatValue={(v) => formatMXN(v)}
+                  />
+                </div>
+              )}
+            </Card>
+          </div>
+
+          {/* Right: Results with tab switcher */}
+          <div className="space-y-4">
+            {/* Tab bar */}
+            <div className="flex gap-1 p-1 bg-[#0A1628] rounded-xl border border-white/[0.06]">
+              {(["salud", "retiro"] as const).map((v) => (
+                <button
+                  key={v}
+                  type="button"
+                  onClick={() => setView(v)}
+                  className={`flex-1 py-2 rounded-lg text-xs font-semibold transition-all ${
+                    view === v
+                      ? "bg-[#1A3154] text-[#F0F4FA]"
+                      : "text-[#5A6A85] hover:text-[#8B9BB4]"
+                  }`}
+                >
+                  {v === "salud" ? "🕸️ Salud Financiera" : "📊 Trayectoria de Retiro"}
+                </button>
+              ))}
             </div>
-          ) : (
-            <Button
-              variant="accent"
-              onClick={() => setShowSaveInput(true)}
-            >
-              <Save className="w-4 h-4" />
-              {justSaved ? "¡Guardada!" : "Guardar simulación"}
-            </Button>
-          )}
-        </div>
-      </div>
 
-      {/* Saved simulations */}
-      {simulaciones_guardadas.length > 0 && (
-        <div className="mt-10">
-          <h2 className="font-bold text-lg text-[#F0F4FA] mb-4 flex items-center gap-2">
-            <Clock className="w-5 h-5 text-[#C9A84C]" />
-            Simulaciones guardadas ({simulaciones_guardadas.length})
-          </h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {simulaciones_guardadas.map((sim) => (
-              <SavedSimulationCard
-                key={sim.id}
-                sim={sim}
-                onLoad={() => loadSimulation(sim)}
-                onDelete={() => removeSimulacion(sim.id)}
-              />
-            ))}
+            {view === "salud" && (
+              <Card>
+                <RadarSaludFinanciera
+                  base={saludBase}
+                  simulado={saludSimulado}
+                  showComparison={saludSimulado.score_total !== saludBase.score_total}
+                />
+              </Card>
+            )}
+
+            {view === "retiro" && (
+              <div className="space-y-6">
+                <Card>
+                  <GradoAvanceBar porcentaje={resultadoSimulado.grado_avance} />
+                  <p
+                    className={`mt-2 font-bold font-[family-name:var(--font-poppins)] text-xs ${
+                      diffGrado >= 0 ? "text-[#317A70]" : "text-[#8B3A3A]"
+                    }`}
+                  >
+                    {diffGrado >= 0 ? "▲" : "▼"} {Math.abs(diffGrado).toFixed(1)}% vs base
+                  </p>
+                </Card>
+
+                <Card>
+                  <p className="font-[family-name:var(--font-open-sans)] text-sm text-[#5A6A85]">
+                    Mensualidad posible
+                  </p>
+                  <p className="font-bold font-[family-name:var(--font-poppins)] text-[28px] text-white">
+                    {formatMXN(resultadoSimulado.mensualidad_posible)}
+                  </p>
+                </Card>
+
+                <Card>
+                  <DeficitCard deficit={resultadoSimulado.deficit_mensual} />
+                </Card>
+
+                <Card className="min-h-[380px]">
+                  <TrayectoriaRetiroChart
+                    saldoInicioJubilacion={resultadoSimulado.saldo_inicio_jubilacion}
+                    pensionTotalMensual={resultadoSimulado.pension_total_mensual}
+                    mensualidadDeseada={sliderValues.mensualidad_deseada}
+                    edadRetiro={sliderValues.edad_retiro}
+                    edadDefuncion={retiroBase.edad_defuncion}
+                    patrimonioFinancieroActual={patrimonioFin + sliderValues.aportacion_extra}
+                    tasaRealAnual={sliderValues.tasa_real / 100}
+                  />
+                </Card>
+              </div>
+            )}
           </div>
         </div>
-      )}
+
+        {/* Action bar */}
+        <div className="flex flex-wrap items-center gap-3 mt-8">
+          <Button
+            variant="ghost"
+            onClick={() => router.push(`/diagnosticos/${id}/presentacion`)}
+          >
+            <ChevronLeft className="w-4 h-4" />
+            Volver al balance
+          </Button>
+          <Button variant="outline" onClick={resetValues}>
+            <RotateCcw className="w-3.5 h-3.5" />
+            Resetear valores
+          </Button>
+
+          <div className="ml-auto flex items-center gap-2">
+            {showSaveInput ? (
+              <div className="flex items-center gap-2">
+                <input
+                  type="text"
+                  autoFocus
+                  value={saveLabel}
+                  onChange={(e) => setSaveLabel(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && saveLabel.trim()) {
+                      handleSaveSimulation();
+                    }
+                    if (e.key === "Escape") {
+                      setShowSaveInput(false);
+                      setSaveLabel("");
+                    }
+                  }}
+                  placeholder="Nombre de la simulación..."
+                  className="bg-[#112038] border border-white/[0.08] rounded-lg px-3 py-2 text-sm text-[#F0F4FA] placeholder:text-[#4A5A72] focus:outline-none focus:border-[#C9A84C]/60 w-[220px]"
+                />
+                <Button
+                  variant="accent"
+                  size="sm"
+                  onClick={handleSaveSimulation}
+                  disabled={!saveLabel.trim()}
+                >
+                  Guardar
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    setShowSaveInput(false);
+                    setSaveLabel("");
+                  }}
+                >
+                  Cancelar
+                </Button>
+              </div>
+            ) : (
+              <Button variant="accent" onClick={() => setShowSaveInput(true)}>
+                <Save className="w-4 h-4" />
+                {justSaved ? "¡Guardada!" : "Guardar simulación"}
+              </Button>
+            )}
+          </div>
+        </div>
+
+        {/* Saved simulations */}
+        {simulaciones_guardadas.length > 0 && (
+          <div className="mt-10">
+            <h2 className="font-bold text-lg text-[#F0F4FA] mb-4 flex items-center gap-2">
+              <Clock className="w-5 h-5 text-[#C9A84C]" />
+              Simulaciones guardadas ({simulaciones_guardadas.length})
+            </h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {simulaciones_guardadas.map((sim) => (
+                <SavedSimulationCard
+                  key={sim.id}
+                  sim={sim}
+                  onLoad={() => loadSimulation(sim)}
+                  onDelete={() => removeSimulacion(sim.id)}
+                />
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -448,7 +605,6 @@ function SavedSimulationCard({
           </button>
         </div>
 
-        {/* Key metrics */}
         <div className="grid grid-cols-2 gap-2 text-xs">
           <div>
             <span className="text-[#5A6A85]">Grado avance</span>

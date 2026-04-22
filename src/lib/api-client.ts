@@ -40,6 +40,11 @@ export async function apiFetch<T>(
         "El sitio no tiene configurada la API en producción. En Vercel: Project → Settings → Environment Variables → añade NEXT_PUBLIC_API_URL con la URL https de tu backend (no uses localhost). Luego redeploy."
       );
     }
+    if (apiLooksLocal) {
+      throw new Error(
+        `No hay API en ${API_URL}. En local: levanta el backend (p. ej. desde la raíz del repo: docker compose up -d db redis api, o en backend/: uvicorn app.main:app --reload --port 8000 con Postgres/Redis). Ver README-BACKEND.md.`
+      );
+    }
     throw new Error("No se pudo conectar al servidor. Verifica tu conexión e intenta de nuevo.");
   }
   if (res.status === 401) {
@@ -140,10 +145,15 @@ export const api = {
         `/api/v1/diagnosticos/${id}/objetivos`,
         { method: "PUT", body: JSON.stringify(data) }
       ),
-    completar: (id: string) =>
+    completar: (id: string, parametros_snapshot?: Record<string, unknown>) =>
       apiFetch<{ id: string; estado: string }>(`/api/v1/diagnosticos/${id}/completar`, {
         method: "PUT",
+        body: JSON.stringify(parametros_snapshot ? { parametros_snapshot } : {}),
       }),
+    getSnapshot: (id: string) =>
+      apiFetch<Record<string, unknown> | null>(`/api/v1/diagnosticos/${id}`).then(
+        (d) => (d as Record<string, unknown>)?.parametros_snapshot as Record<string, unknown> | null ?? null
+      ),
     compartir: (id: string) =>
       apiFetch<{ url: string; token: string; expires_at: string }>(`/api/v1/diagnosticos/${id}/compartir`, {
         method: "POST",

@@ -11,7 +11,7 @@ npm install
 npm run dev
 ```
 
-API local: ver **`README-BACKEND.md`** y `backend/.env.local.example`.
+El front queda en **http://localhost:3001** (`npm run dev` usa ese puerto). API local: **`README-BACKEND.md`** y `backend/.env.local.example` (ajusta `CORS_ORIGINS` si tu front no va en 3001).
 
 ## Despliegue (Vercel + API)
 

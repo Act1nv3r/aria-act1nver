@@ -8,7 +8,7 @@ import AxeBuilder from "@axe-core/playwright";
 
 test.describe("Accesibilidad WCAG", () => {
   test("Página principal sin violaciones críticas", async ({ page }) => {
-    await page.goto("http://localhost:3000");
+    await page.goto("http://localhost:3001");
     const results = await new AxeBuilder({ page })
       .withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"])
       .analyze();
@@ -16,7 +16,7 @@ test.describe("Accesibilidad WCAG", () => {
   });
 
   test("Login sin violaciones críticas", async ({ page }) => {
-    await page.goto("http://localhost:3000/login");
+    await page.goto("http://localhost:3001/login");
     const results = await new AxeBuilder({ page })
       .withTags(["wcag2a", "wcag2aa"])
       .analyze();

@@ -18,6 +18,8 @@ from app.models.patrimonio_financiero import PatrimonioFinanciero
 from app.models.plan_retiro import PlanRetiro
 from app.models.proteccion_patrimonial import ProteccionPatrimonial
 from app.models.resultado_calculo import ResultadoCalculo
+from app.models.perfil_acumulado import PerfilAcumulado
+from app.models.actividad_cliente import ActividadCliente
 from app.schemas.diagnostico import (
     DiagnosticoCreate,
     PerfilInput,
@@ -29,6 +31,11 @@ from app.schemas.diagnostico import (
     StepResponse,
 )
 from app.services.motor_a import calcular_motor_a
+from app.services.motor_b import calcular_motor_b
+from app.services.motor_c import calcular_motor_c
+from app.services.motor_d import calcular_motor_d
+from app.services.motor_e import calcular_motor_e
+from app.services.motor_f import calcular_motor_f
 from app.services.pdf_generator import render_pdf_html, html_to_pdf
 from app.services.wrapped_generator import generate_wrapped_images
 from app.api.v1.cliente_readonly import create_share_token
@@ -39,6 +46,23 @@ from pathlib import Path
 import tempfile
 
 router = APIRouter(prefix="/diagnosticos", tags=["diagnosticos"])
+
+
+async def _upsert_resultado(db: AsyncSession, diagnostico_id: str, motor: str, resultado: dict) -> None:
+    """Insert or replace a ResultadoCalculo row for a given motor."""
+    await db.execute(
+        delete(ResultadoCalculo).where(
+            ResultadoCalculo.diagnostico_id == diagnostico_id,
+            ResultadoCalculo.motor == motor,
+        )
+    )
+    rc = ResultadoCalculo(
+        id=str(uuid4()),
+        diagnostico_id=diagnostico_id,
+        motor=motor,
+        resultado=resultado,
+    )
+    db.add(rc)
 
 
 def _build_wrapped_data(diag: Diagnostico) -> dict:
@@ -83,6 +107,76 @@ def _build_wrapped_data(diag: Diagnostico) -> dict:
 async def _check_cliente_asesor(db: AsyncSession, cliente_id: str, asesor_id: str) -> Cliente | None:
     result = await db.execute(select(Cliente).where(Cliente.id == cliente_id, Cliente.asesor_id == asesor_id, Cliente.activo == True))
     return result.scalar_one_or_none()
+
+
+async def _sync_perfil_acumulado(db: AsyncSession, diag: Diagnostico, asesor_id: str) -> None:
+    """Upsert PerfilAcumulado for the client after a diagnostic is completed."""
+    from uuid import uuid4 as _uuid4
+
+    cliente_id = diag.cliente_id
+    perfil = diag.perfil
+    flujo = diag.flujo_mensual
+    patrimonio = diag.patrimonio
+    proteccion = diag.proteccion
+
+    # Fetch or create PerfilAcumulado
+    result = await db.execute(
+        select(PerfilAcumulado).where(PerfilAcumulado.cliente_id == cliente_id)
+    )
+    pa = result.scalar_one_or_none()
+    if pa is None:
+        pa = PerfilAcumulado(
+            id=str(_uuid4()),
+            cliente_id=cliente_id,
+        )
+        db.add(pa)
+
+    # --- Sync demographic data from PerfilCliente ---
+    if perfil:
+        pa.nombre = perfil.nombre or pa.nombre
+        pa.edad = perfil.edad if perfil.edad else pa.edad
+        pa.genero = perfil.genero or pa.genero
+        pa.ocupacion = perfil.ocupacion or pa.ocupacion
+        pa.dependientes = perfil.dependientes if perfil.dependientes is not None else pa.dependientes
+
+    # --- Sync financial summary from FlujoMensual ---
+    if flujo:
+        pa.ahorro_mensual = float(flujo.ahorro or 0)
+
+    # --- Sync patrimonial data ---
+    if patrimonio:
+        pa.patrimonio_total = (
+            float(patrimonio.liquidez or 0)
+            + float(patrimonio.inversion or 0)
+            + float(patrimonio.bienes_raices or 0)
+            + float(patrimonio.afore or 0)
+            + float(patrimonio.otros_activos or 0)
+        )
+        pa.liquidez_total = float(patrimonio.liquidez or 0)
+
+    # --- Sync protection data ---
+    if proteccion:
+        pa.tiene_seguro_vida = proteccion.seguro_vida
+        pa.tiene_sgmm = proteccion.sgmm
+
+    # --- Update CRM metadata ---
+    pa.ultimo_diagnostico_id = diag.id
+    pa.ultima_actualizacion_diagnostico = datetime.now()
+
+    await db.flush()
+
+    # Log activity
+    actividad = ActividadCliente(
+        id=str(_uuid4()),
+        cliente_id=cliente_id,
+        asesor_id=asesor_id,
+        tipo="diagnostico",
+        titulo="Diagnóstico completado",
+        descripcion=f"Diagnóstico #{diag.id[:8]} completado y perfil acumulado actualizado.",
+        diagnostico_id=diag.id,
+    )
+    db.add(actividad)
+    await db.commit()
 
 
 async def _get_diagnostico(db: AsyncSession, id: str, asesor_id: str) -> Diagnostico | None:
@@ -290,7 +384,30 @@ async def update_patrimonio(
         db.add(patrimonio)
     diag.paso_actual = 3
     await db.flush()
-    return StepResponse(data=data.model_dump(mode="json"), outputs=None)
+
+    # Motor B — nivel de riqueza
+    edad = diag.perfil.edad if diag.perfil else 35
+    gastos_basicos = float(diag.flujo_mensual.gastos_basicos) if diag.flujo_mensual else 0.0
+    obligaciones = float(diag.flujo_mensual.obligaciones) if diag.flujo_mensual else 0.0
+    creditos = float(diag.flujo_mensual.creditos) if diag.flujo_mensual else 0.0
+    output_b = calcular_motor_b(
+        float(data.liquidez), float(data.inversiones), float(data.dotales),
+        float(data.afore), float(data.ppr), float(data.plan_privado), float(data.seguros_retiro),
+        edad, gastos_basicos, obligaciones, creditos,
+    )
+    await _upsert_resultado(db, id, "B", output_b)
+
+    # Motor E — patrimonio neto / solvencia
+    output_e = calcular_motor_e(
+        float(data.liquidez), float(data.inversiones), float(data.dotales),
+        float(data.afore), float(data.ppr), float(data.plan_privado), float(data.seguros_retiro),
+        float(data.casa), float(data.inmuebles_renta), float(data.tierra),
+        float(data.negocio), float(data.herencia),
+        float(data.hipoteca), float(data.saldo_planes), float(data.compromisos),
+    )
+    await _upsert_resultado(db, id, "E", output_e)
+    await db.flush()
+    return StepResponse(data=data.model_dump(mode="json"), outputs={"motorB": output_b, "motorE": output_e})
 
 
 @router.put("/{id}/retiro", response_model=StepResponse)
@@ -317,7 +434,31 @@ async def update_retiro(
         db.add(retiro)
     diag.paso_actual = 4
     await db.flush()
-    return StepResponse(data=data.model_dump(mode="json"), outputs=None)
+
+    # Motor C — proyección de retiro
+    output_c = None
+    if diag.patrimonio and diag.perfil:
+        p = diag.patrimonio
+        perfil = diag.perfil
+        patrimonio_financiero_total = (
+            float(p.liquidez) + float(p.inversiones) + float(p.dotales) +
+            float(p.afore) + float(p.ppr) + float(p.plan_privado) + float(p.seguros_retiro)
+        )
+        saldo_esquemas = float(p.afore) + float(p.ppr) + float(p.plan_privado) + float(p.seguros_retiro)
+        rentas = float(diag.flujo_mensual.rentas) if diag.flujo_mensual else 0.0
+        output_c = calcular_motor_c(
+            patrimonio_financiero_total,
+            saldo_esquemas,
+            float(p.ley_73) if p.ley_73 is not None else None,
+            rentas,
+            perfil.edad,
+            data.edad_retiro,
+            data.edad_defuncion,
+            float(data.mensualidad_deseada),
+        )
+        await _upsert_resultado(db, id, "C", output_c)
+        await db.flush()
+    return StepResponse(data=data.model_dump(mode="json"), outputs={"motorC": output_c} if output_c else None)
 
 
 @router.put("/{id}/objetivos", response_model=StepResponse)
@@ -337,7 +478,27 @@ async def update_objetivos(
     }
     diag.paso_actual = 5
     await db.flush()
-    return StepResponse(data=data.model_dump(mode="json"), outputs=None)
+
+    # Motor D — viabilidad de objetivos
+    output_d = None
+    if diag.patrimonio and diag.perfil and diag.retiro:
+        p = diag.patrimonio
+        patrimonio_financiero = (
+            float(p.liquidez) + float(p.inversiones) + float(p.dotales) +
+            float(p.afore) + float(p.ppr) + float(p.plan_privado) + float(p.seguros_retiro)
+        )
+        output_d = calcular_motor_d(
+            float(data.aportacion_inicial),
+            float(data.aportacion_mensual),
+            [{"nombre": o.nombre, "monto": float(o.monto), "plazo": o.plazo} for o in data.lista],
+            patrimonio_financiero,
+            diag.perfil.edad,
+            diag.retiro.edad_retiro,
+            diag.retiro.edad_defuncion,
+        )
+        await _upsert_resultado(db, id, "D", output_d)
+        await db.flush()
+    return StepResponse(data=data.model_dump(mode="json"), outputs={"motorD": output_d} if output_d else None)
 
 
 @router.put("/{id}/proteccion", response_model=StepResponse)
@@ -364,14 +525,47 @@ async def update_proteccion(
         db.add(proteccion)
     diag.paso_actual = 6
     diag.estado = "completo"
+    diag.completed_at = datetime.now()
     await db.flush()
+
+    # Motor F — protección patrimonial
+    output_f = None
+    if diag.patrimonio and diag.perfil:
+        p = diag.patrimonio
+        inmuebles_total = float(p.casa) + float(p.inmuebles_renta) + float(p.tierra)
+        activos = (
+            float(p.liquidez) + float(p.inversiones) + float(p.dotales) +
+            float(p.afore) + float(p.ppr) + float(p.plan_privado) + float(p.seguros_retiro) +
+            inmuebles_total + float(p.negocio) + float(p.herencia)
+        )
+        pasivos = float(p.hipoteca) + float(p.saldo_planes) + float(p.compromisos)
+        patrimonio_neto = activos - pasivos
+        output_f = calcular_motor_f(
+            bool(data.seguro_vida),
+            data.propiedades_aseguradas,
+            bool(data.sgmm),
+            bool(diag.perfil.dependientes),
+            patrimonio_neto,
+            inmuebles_total,
+            diag.perfil.edad,
+        )
+        await _upsert_resultado(db, id, "F", output_f)
+        await db.flush()
+
     if diag.referral_code_used:
         await db.execute(
             update(ReferralLink)
             .where(ReferralLink.referral_code == diag.referral_code_used)
             .values(conversiones=ReferralLink.conversiones + 1)
         )
-    return StepResponse(data=data.model_dump(), outputs=None)
+
+    # Auto-sync perfil acumulado del cliente
+    try:
+        await _sync_perfil_acumulado(db, diag, current_user.id)
+    except Exception:
+        pass  # No bloquear la respuesta si el sync falla
+
+    return StepResponse(data=data.model_dump(), outputs={"motorF": output_f} if output_f else None)
 
 
 @router.get("/{id}/pdf/{tipo}")
@@ -381,27 +575,177 @@ async def get_diagnostico_pdf(
     db: AsyncSession = Depends(get_db),
     current_user: Asesor = Depends(get_current_user),
 ):
-    """GET /api/v1/diagnosticos/{id}/pdf/{tipo} - tipo: patrimonio|balance|recomendaciones"""
-    if tipo not in ("patrimonio", "balance", "recomendaciones"):
-        raise HTTPException(status_code=400, detail="tipo debe ser patrimonio, balance o recomendaciones")
+    """GET /api/v1/diagnosticos/{id}/pdf/{tipo}
+    tipo: diagnostico | balance | patrimonio | recomendaciones
+    """
+    if tipo not in ("diagnostico", "balance", "patrimonio", "recomendaciones"):
+        raise HTTPException(status_code=400, detail="tipo inválido")
     diag = await _get_diagnostico(db, id, current_user.id)
     if not diag:
         raise HTTPException(status_code=404, detail="Diagnóstico no encontrado")
+
     nombre = diag.perfil.nombre if diag.perfil else "Cliente"
-    data = {}
-    if diag.patrimonio and tipo == "patrimonio":
-        p = diag.patrimonio
-        data["patrimonio"] = {
-            "liquidez": float(p.liquidez), "inversiones": float(p.inversiones), "dotales": float(p.dotales),
-            "afore": float(p.afore), "ppr": float(p.ppr), "casa": float(p.casa),
-            "inmuebles_renta": float(p.inmuebles_renta), "negocio": float(p.negocio), "hipoteca": float(p.hipoteca),
+    data: dict = {}
+
+    # Build motors data
+    p = diag.patrimonio
+    f = diag.flujo_mensual
+    perfil = diag.perfil
+    retiro = diag.retiro
+
+    motor_a_out = motor_b_out = motor_c_out = motor_e_out = motor_f_out = None
+
+    if f:
+        liquidez_val = float(p.liquidez) if p else None
+        motor_a_out = calcular_motor_a(
+            float(f.ahorro), float(f.rentas), float(f.otros),
+            float(f.gastos_basicos), float(f.obligaciones), float(f.creditos),
+            liquidez_val,
+        )
+
+    if p:
+        edad = perfil.edad if perfil else 35
+        gastos_basicos = float(f.gastos_basicos) if f else 0.0
+        obligaciones = float(f.obligaciones) if f else 0.0
+        creditos = float(f.creditos) if f else 0.0
+        motor_b_out = calcular_motor_b(
+            float(p.liquidez), float(p.inversiones), float(p.dotales),
+            float(p.afore), float(p.ppr), float(p.plan_privado), float(p.seguros_retiro),
+            edad, gastos_basicos, obligaciones, creditos,
+        )
+        motor_e_out = calcular_motor_e(
+            float(p.liquidez), float(p.inversiones), float(p.dotales),
+            float(p.afore), float(p.ppr), float(p.plan_privado), float(p.seguros_retiro),
+            float(p.casa), float(p.inmuebles_renta), float(p.tierra),
+            float(p.negocio), float(p.herencia),
+            float(p.hipoteca), float(p.saldo_planes), float(p.compromisos),
+        )
+
+    if p and perfil and retiro:
+        patrimonio_financiero_total = (
+            float(p.liquidez) + float(p.inversiones) + float(p.dotales) +
+            float(p.afore) + float(p.ppr) + float(p.plan_privado) + float(p.seguros_retiro)
+        )
+        saldo_esquemas = float(p.afore) + float(p.ppr) + float(p.plan_privado) + float(p.seguros_retiro)
+        rentas = float(f.rentas) if f else 0.0
+        motor_c_out = calcular_motor_c(
+            patrimonio_financiero_total, saldo_esquemas,
+            float(p.ley_73) if p.ley_73 is not None else None,
+            rentas, perfil.edad, retiro.edad_retiro,
+            retiro.edad_defuncion, float(retiro.mensualidad_deseada),
+        )
+
+    if p and perfil and diag.proteccion:
+        inmuebles_total = float(p.casa) + float(p.inmuebles_renta) + float(p.tierra)
+        patrimonio_neto_val = motor_e_out["patrimonio_neto"] if motor_e_out else 0.0
+        motor_f_out = calcular_motor_f(
+            bool(diag.proteccion.seguro_vida),
+            diag.proteccion.propiedades_aseguradas,
+            bool(diag.proteccion.sgmm),
+            bool(perfil.dependientes),
+            patrimonio_neto_val,
+            inmuebles_total,
+            perfil.edad,
+        )
+
+    # Populate template data
+    if motor_a_out:
+        data["motor_a"] = motor_a_out
+    if motor_b_out:
+        data["motor_b"] = motor_b_out
+    if motor_c_out:
+        data["motor_c"] = motor_c_out
+    if motor_e_out:
+        data["motor_e"] = motor_e_out
+    if motor_f_out:
+        data["motor_f"] = motor_f_out
+    if perfil:
+        data["perfil"] = {
+            "nombre": perfil.nombre, "edad": perfil.edad,
+            "genero": perfil.genero, "ocupacion": perfil.ocupacion,
+            "dependientes": perfil.dependientes,
         }
+    if f:
+        data["flujo"] = {
+            "ahorro": float(f.ahorro), "rentas": float(f.rentas), "otros": float(f.otros),
+            "gastos_basicos": float(f.gastos_basicos), "obligaciones": float(f.obligaciones),
+            "creditos": float(f.creditos),
+        }
+    if p:
+        data["patrimonio"] = {
+            "liquidez": float(p.liquidez), "inversiones": float(p.inversiones),
+            "dotales": float(p.dotales), "afore": float(p.afore),
+            "ppr": float(p.ppr), "plan_privado": float(p.plan_privado),
+            "seguros_retiro": float(p.seguros_retiro),
+            "ley_73": float(p.ley_73) if p.ley_73 else None,
+            "casa": float(p.casa), "inmuebles_renta": float(p.inmuebles_renta),
+            "tierra": float(p.tierra), "negocio": float(p.negocio),
+            "herencia": float(p.herencia), "hipoteca": float(p.hipoteca),
+            "saldo_planes": float(p.saldo_planes), "compromisos": float(p.compromisos),
+        }
+    if retiro:
+        data["retiro"] = {
+            "edad_retiro": retiro.edad_retiro,
+            "mensualidad_deseada": float(retiro.mensualidad_deseada),
+            "edad_defuncion": retiro.edad_defuncion,
+        }
+    if diag.objetivos_json:
+        data["objetivos"] = diag.objetivos_json
+    if diag.proteccion:
+        data["proteccion"] = {
+            "seguro_vida": diag.proteccion.seguro_vida,
+            "propiedades_aseguradas": diag.proteccion.propiedades_aseguradas,
+            "sgmm": diag.proteccion.sgmm,
+        }
+
     try:
         html = render_pdf_html(tipo, nombre, data)
         pdf_bytes = html_to_pdf(html)
-        return Response(content=pdf_bytes, media_type="application/pdf", headers={"Content-Disposition": f"attachment; filename=aria_{tipo}_{id[:8]}.pdf"})
+        return Response(
+            content=pdf_bytes,
+            media_type="application/pdf",
+            headers={"Content-Disposition": f"attachment; filename=aria_{tipo}_{id[:8]}.pdf"},
+        )
     except RuntimeError as e:
         raise HTTPException(status_code=503, detail=str(e))
+
+
+@router.put("/{id}/completar")
+async def completar_diagnostico(
+    id: str,
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+    current_user: Asesor = Depends(get_current_user),
+):
+    """
+    Marca el diagnóstico como completado y persiste el snapshot de la sesión.
+
+    Body (JSON, todos los campos opcionales):
+      parametros_snapshot: dict con el estado completo de la sesión frontend
+        (outputs, sesion_insights, criterios_trayectoria, pareja_*, datos_fuente,
+         completitud_pct, sesion_duracion_minutos, etc.)
+    """
+    diag = await _get_diagnostico(db, id, current_user.id)
+    if not diag:
+        raise HTTPException(status_code=404, detail="Diagnóstico no encontrado")
+
+    body: dict = {}
+    try:
+        body = await request.json()
+    except Exception:
+        pass  # empty body is fine
+
+    parametros_snapshot = body.get("parametros_snapshot") if body else None
+
+    if diag.estado != "completo":
+        diag.estado = "completo"
+        diag.completed_at = datetime.now()
+
+    if parametros_snapshot:
+        diag.parametros_snapshot = parametros_snapshot
+
+    await db.commit()
+    return {"id": diag.id, "estado": diag.estado}
 
 
 @router.post("/{id}/compartir")
@@ -415,7 +759,7 @@ async def compartir_diagnostico(
     if not diag:
         raise HTTPException(status_code=404, detail="Diagnóstico no encontrado")
     token, expires_at = create_share_token(id, 30)
-    base_url = settings.cors_origins.split(",")[0].strip() if settings.cors_origins else "http://localhost:3000"
+    base_url = settings.cors_origins.split(",")[0].strip() if settings.cors_origins else "http://localhost:3001"
     url = f"{base_url}/cliente/{token}"
     return {"url": url, "token": token, "expires_at": expires_at.isoformat()}
 

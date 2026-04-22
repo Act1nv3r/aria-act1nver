@@ -355,7 +355,7 @@ export default function AdminDashboardPage() {
         <Card>
           <h3 className="font-bold text-base text-white mb-4 flex items-center gap-2">
             <Zap className="w-4 h-4 text-[#3B82F6]" />
-            CRM — Motor de seguimiento
+            Motor de seguimiento
           </h3>
           <div className="grid grid-cols-2 gap-3 mb-4">
             <div className="bg-[#3B82F6]/5 border border-[#3B82F6]/20 rounded-xl p-3 text-center">

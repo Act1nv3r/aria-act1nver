@@ -15,7 +15,7 @@ services:
       - REDIS_URL=redis://redis:6379/0
       - JWT_PRIVATE_KEY_PATH=/app/keys/private.pem
       - JWT_PUBLIC_KEY_PATH=/app/keys/public.pem
-      - CORS_ORIGINS=${CORS_ORIGINS:-http://localhost:3000}
+      - CORS_ORIGINS=${CORS_ORIGINS:-http://localhost:3001,http://127.0.0.1:3001}
       - API_BASE_URL=${API_BASE_URL:-http://localhost:8000}
     depends_on:
       db:

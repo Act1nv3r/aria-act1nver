@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuthStore } from "@/stores/auth-store";
@@ -12,6 +12,7 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   const router = useRouter();
+  const pathname = usePathname();
   const logout = useAuthStore((s) => s.logout);
   const user = useAuthStore((s) => s.user);
 
@@ -40,7 +41,7 @@ export default function DashboardLayout({
         }}
       >
         {/* Left: Logo */}
-        <Link href="/crm" className="flex items-center gap-3">
+        <Link href="/dashboard" className="flex items-center gap-3">
           <div className="w-8 h-8 bg-[#C9A84C]/10 border border-[#C9A84C]/30 rounded-[8px] flex items-center justify-center">
             <span className="text-[#C9A84C] font-bold text-sm">A</span>
           </div>
@@ -53,21 +54,23 @@ export default function DashboardLayout({
         {/* Center: Nav pills (desktop only) */}
         <nav className="hidden lg:flex items-center gap-1">
           <Link
-            href="/crm"
-            className="px-4 py-1.5 rounded-full text-sm font-semibold text-[#F0F4FA] bg-[#1A3154] transition-all"
-          >
-            CRM
-          </Link>
-          <Link
             href="/dashboard"
-            className="px-4 py-1.5 rounded-full text-sm font-medium text-[#8B9BB4] hover:text-[#F0F4FA] hover:bg-[#1A3154]/50 transition-all"
+            className={`px-4 py-1.5 rounded-full text-sm font-medium transition-all ${
+              pathname?.startsWith("/dashboard") || pathname?.startsWith("/crm")
+                ? "font-semibold text-[#F0F4FA] bg-[#1A3154]"
+                : "text-[#8B9BB4] hover:text-[#F0F4FA] hover:bg-[#1A3154]/50"
+            }`}
           >
             Mis Clientes
           </Link>
           {user?.rol === "admin" && (
             <Link
               href="/admin"
-              className="px-4 py-1.5 rounded-full text-sm font-medium text-[#8B9BB4] hover:text-[#F0F4FA] hover:bg-[#1A3154]/50 transition-all"
+              className={`px-4 py-1.5 rounded-full text-sm font-medium transition-all ${
+                pathname?.startsWith("/admin")
+                  ? "font-semibold text-[#F0F4FA] bg-[#1A3154]"
+                  : "text-[#8B9BB4] hover:text-[#F0F4FA] hover:bg-[#1A3154]/50"
+              }`}
             >
               Admin
             </Link>

@@ -47,8 +47,8 @@ function runMotorsForPersona(
   patrimonio: { liquidez: number; inversiones: number; dotales: number; afore: number; ppr: number; plan_privado: number; seguros_retiro: number; ley_73: number | null; casa: number; inmuebles_renta: number; tierra: number; negocio: number; herencia: number; hipoteca: number; saldo_planes: number; compromisos: number },
   retiro: { edad_retiro: number; mensualidad_deseada: number; edad_defuncion: number } | null,
   objetivos: { aportacion_inicial: number; aportacion_mensual: number; lista: Array<{ nombre: string; monto: number; plazo: number }> } | null,
-  proteccion: { seguro_vida: boolean; propiedades_aseguradas: boolean | null; sgmm: boolean } | null,
-  perfil: { edad: number; dependientes: boolean }
+  proteccion: { seguro_vida: boolean | null; propiedades_aseguradas: boolean | null; sgmm: boolean | null } | null,
+  perfil: { edad: number; dependientes: boolean | null }
 ): MotorOutputs {
   const motorA = calcularMotorA({ ...flujo, liquidez: patrimonio.liquidez });
   const motorB = calcularMotorB({
@@ -96,10 +96,10 @@ function runMotorsForPersona(
   let motorF: MotorOutputs["motorF"] = null;
   if (proteccion) {
     motorF = calcularMotorF({
-      seguro_vida: proteccion.seguro_vida,
+      seguro_vida: proteccion.seguro_vida ?? false,
       propiedades_aseguradas: proteccion.propiedades_aseguradas,
-      sgmm: proteccion.sgmm,
-      dependientes: perfil.dependientes,
+      sgmm: proteccion.sgmm ?? false,
+      dependientes: perfil.dependientes ?? false,
       patrimonio_neto: motorE.patrimonio_neto,
       inmuebles_total: patrimonio.casa + patrimonio.inmuebles_renta + patrimonio.tierra,
       edad: perfil.edad,
@@ -166,14 +166,14 @@ export function OutputPanel({ variant = "sidebar" }: OutputPanelProps) {
           patrimonio: patTit,
           retiro: retiro ?? { edad_retiro: 65, mensualidad_deseada: 50000, edad_defuncion: 90 },
           objetivos: objetivos ?? { aportacion_inicial: 0, aportacion_mensual: 0, lista: [] },
-          proteccion: proteccion ?? { seguro_vida: false, propiedades_aseguradas: null, sgmm: false },
+          proteccion: proteccion ? { ...proteccion, seguro_vida: proteccion.seguro_vida ?? false, sgmm: proteccion.sgmm ?? false } : { seguro_vida: false, propiedades_aseguradas: null, sgmm: false },
         },
         {
           flujo: pareja_flujoMensual,
           patrimonio: pareja_patrimonio,
           retiro: pareja_retiro ?? { edad_retiro: 65, mensualidad_deseada: 50000, edad_defuncion: 90 },
           objetivos: pareja_objetivos ?? { aportacion_inicial: 0, aportacion_mensual: 0, lista: [] },
-          proteccion: pareja_proteccion ?? { seguro_vida: false, propiedades_aseguradas: null, sgmm: false },
+          proteccion: pareja_proteccion ? { ...pareja_proteccion, seguro_vida: pareja_proteccion.seguro_vida ?? false, sgmm: pareja_proteccion.sgmm ?? false } : { seguro_vida: false, propiedades_aseguradas: null, sgmm: false },
         },
         ownership
       );
@@ -183,7 +183,7 @@ export function OutputPanel({ variant = "sidebar" }: OutputPanelProps) {
         hogar.retiro,
         hogar.objetivos,
         hogar.proteccion,
-        { edad: Math.round((perfil.edad + pareja_perfil.edad) / 2), dependientes: perfil.dependientes || pareja_perfil.dependientes }
+        { edad: Math.round((perfil.edad + pareja_perfil.edad) / 2), dependientes: (perfil.dependientes ?? false) || (pareja_perfil.dependientes ?? false) }
       );
       updateOutputs("titular", titularOut);
       updateOutputs("pareja", parejaOut);
@@ -236,10 +236,10 @@ export function OutputPanel({ variant = "sidebar" }: OutputPanelProps) {
       }
       if (proteccion) {
         const motorF = calcularMotorF({
-          seguro_vida: proteccion.seguro_vida,
+          seguro_vida: proteccion.seguro_vida ?? false,
           propiedades_aseguradas: proteccion.propiedades_aseguradas,
-          sgmm: proteccion.sgmm,
-          dependientes: perfil.dependientes,
+          sgmm: proteccion.sgmm ?? false,
+          dependientes: perfil.dependientes ?? false,
           patrimonio_neto: motorE.patrimonio_neto,
           inmuebles_total: patrimonio.casa + patrimonio.inmuebles_renta + patrimonio.tierra,
           edad: perfil.edad,
@@ -281,14 +281,14 @@ export function OutputPanel({ variant = "sidebar" }: OutputPanelProps) {
           patrimonio,
           retiro: retiro ?? { edad_retiro: 65, mensualidad_deseada: 50000, edad_defuncion: 90 },
           objetivos: objetivos ?? { aportacion_inicial: 0, aportacion_mensual: 0, lista: [] },
-          proteccion: proteccion ?? { seguro_vida: false, propiedades_aseguradas: null, sgmm: false },
+          proteccion: proteccion ? { ...proteccion, seguro_vida: proteccion.seguro_vida ?? false, sgmm: proteccion.sgmm ?? false } : { seguro_vida: false, propiedades_aseguradas: null, sgmm: false },
         },
         {
           flujo: pareja_flujoMensual!,
           patrimonio: pareja_patrimonio,
           retiro: pareja_retiro ?? { edad_retiro: 65, mensualidad_deseada: 50000, edad_defuncion: 90 },
           objetivos: pareja_objetivos ?? { aportacion_inicial: 0, aportacion_mensual: 0, lista: [] },
-          proteccion: pareja_proteccion ?? { seguro_vida: false, propiedades_aseguradas: null, sgmm: false },
+          proteccion: pareja_proteccion ? { ...pareja_proteccion, seguro_vida: pareja_proteccion.seguro_vida ?? false, sgmm: pareja_proteccion.sgmm ?? false } : { seguro_vida: false, propiedades_aseguradas: null, sgmm: false },
         },
         ownership ?? {}
       );

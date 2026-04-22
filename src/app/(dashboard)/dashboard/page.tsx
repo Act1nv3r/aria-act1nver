@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import {
   UserPlus,
+  ClipboardPlus,
   Users,
   User,
   UsersRound,
@@ -13,6 +14,8 @@ import {
   Pencil,
   Trash2,
   BarChart3,
+  TrendingUp,
+  CheckCircle2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -22,6 +25,7 @@ import { Input } from "@/components/ui/input";
 import { api } from "@/lib/api-client";
 import { labelForPaso } from "@/lib/diagnostico-steps";
 import { useDiagnosticoStore } from "@/stores/diagnostico-store";
+import { QuickMetrics } from "@/components/crm/quick-metrics";
 
 type ClienteEstado = "nuevo" | "borrador" | "completo";
 
@@ -187,7 +191,7 @@ export default function DashboardPage() {
       setNuevoNombre("");
       setModalOpen(false);
       setModalStep("modo");
-      router.push(`/diagnosticos/${d.id}/sesion`);
+      router.push(`/diagnosticos/${d.id}/sesion?clienteId=${c.id}`);
     } catch {
       router.push("/diagnosticos/demo/paso/1");
     }
@@ -198,7 +202,7 @@ export default function DashboardPage() {
     try {
       const refCode = getReferralCode();
       const d = await api.diagnosticos.create(cliente.id, "individual", refCode);
-      router.push(`/diagnosticos/${d.id}/paso/1`);
+      router.push(`/diagnosticos/${d.id}/sesion?clienteId=${cliente.id}`);
       await refreshClientes();
     } catch {
       router.push("/diagnosticos/demo/paso/1");
@@ -206,17 +210,7 @@ export default function DashboardPage() {
   };
 
   const handleCardClick = (cliente: ClienteItem) => {
-    if (cliente.estado === "completo" && cliente.diagnosticoId) {
-      router.push(`/diagnosticos/${cliente.diagnosticoId}/completado`);
-      return;
-    }
-    if (cliente.estado === "borrador" && cliente.diagnosticoId) {
-      if (cliente.modo) setModo(cliente.modo);
-      const paso = Math.min(6, Math.max(1, cliente.pasoActual ?? 1));
-      router.push(`/diagnosticos/${cliente.diagnosticoId}/paso/${paso}`);
-      return;
-    }
-    void handleNuevoDiagnosticoForCliente(cliente);
+    router.push(`/crm/${cliente.id}`);
   };
 
   const handleEditFromCard = (cliente: ClienteItem) => {
@@ -263,49 +257,50 @@ export default function DashboardPage() {
   return (
     <div className="max-w-[1600px] mx-auto px-6 sm:px-8 lg:px-12 py-8">
 
-      {/* Top stats bar */}
-      {totalClientes > 0 && (
-        <div className="flex flex-wrap gap-3 mb-6 animate-slide-up">
-          {[
-            { label: "Total clientes", value: totalClientes },
-            { label: "En progreso", value: enProgreso },
-            { label: "Completados", value: completados },
-          ].map(({ label, value }) => (
-            <div
-              key={label}
-              className="bg-[#0C1829] border border-white/[0.06] rounded-[12px] px-4 py-3 flex items-center gap-3"
-            >
-              <span className="text-[#C9A84C] font-bold text-lg leading-none">{value}</span>
-              <span className="text-[#8B9BB4] text-xs">{label}</span>
-            </div>
-          ))}
+      {/* Welcome banner — tool explanation */}
+      <div className="mb-8 rounded-[20px] overflow-hidden border border-[#C9A84C]/15"
+        style={{ background: "linear-gradient(135deg, #0C1829 0%, #112038 100%)" }}>
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 px-6 py-5">
+          <div className="w-11 h-11 rounded-[14px] bg-[#C9A84C]/10 border border-[#C9A84C]/20 flex items-center justify-center shrink-0">
+            <TrendingUp className="h-5 w-5 text-[#C9A84C]" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-[#F0F4FA] font-semibold text-sm leading-snug">
+              Convierte una conversación de 15 minutos en un diagnóstico financiero completo
+            </p>
+            <p className="text-[#8B9BB4] text-xs mt-1 leading-relaxed">
+              Registra los datos de tu cliente, ArIA calcula su situación patrimonial y genera un reporte profesional listo para presentar — sin hojas de cálculo.
+            </p>
+          </div>
         </div>
-      )}
+      </div>
 
       {/* Header row */}
-      <div className="flex flex-col sm:flex-row sm:items-center gap-4 mb-6">
-        <div className="flex flex-1 items-center gap-4">
-          <h1 className="font-bold font-[family-name:var(--font-poppins)] text-2xl text-[#F0F4FA] shrink-0">
+      <div className="flex items-center gap-3 mb-6">
+        <div className="shrink-0">
+          <h1 className="font-bold font-[family-name:var(--font-poppins)] text-xl text-[#F0F4FA] leading-tight">
             Mis clientes
           </h1>
-          {totalClientes > 0 && (
-            <div className="relative flex-1 max-w-[280px]">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-[#4A5A72]" />
-              <input
-                type="text"
-                placeholder="Buscar cliente..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="w-full bg-[#0C1829] border border-white/[0.08] rounded-full pl-9 pr-4 py-2
-                           text-sm text-[#F0F4FA] placeholder:text-[#4A5A72]
-                           focus:outline-none focus:border-[#C9A84C]/40
-                           transition-colors duration-200"
-              />
-            </div>
-          )}
+          <p className="text-[11px] text-[#5A6A85] mt-0.5">{totalClientes} cliente{totalClientes !== 1 ? "s" : ""}</p>
         </div>
+        {totalClientes > 0 && (
+          <div className="flex-1 relative mx-2">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-[#4A5A72]" />
+            <input
+              type="text"
+              placeholder="Buscar cliente..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="w-full bg-[#0C1829] border border-white/[0.08] rounded-full pl-9 pr-4 py-2
+                         text-sm text-[#F0F4FA] placeholder:text-[#4A5A72]
+                         focus:outline-none focus:border-[#C9A84C]/40
+                         transition-colors duration-200"
+            />
+          </div>
+        )}
         <Button
           variant="accent"
+          size="sm"
           onClick={() => setModalOpen(true)}
           className="flex items-center gap-2 shrink-0"
         >
@@ -313,6 +308,19 @@ export default function DashboardPage() {
           Nuevo cliente
         </Button>
       </div>
+
+      {/* Quick metrics */}
+      {totalClientes > 0 && (
+        <div className="mb-6 animate-slide-up">
+          <QuickMetrics
+            metrics={[
+              { label: "Total clientes", value: totalClientes, icon: <Users />, sublabel: "en tu cartera" },
+              { label: "En progreso", value: enProgreso, color: "#F59E0B", icon: <BarChart3 />, sublabel: "diagnósticos activos" },
+              { label: "Completados", value: completados, color: "#10B981", icon: <CheckCircle2 />, sublabel: "diagnósticos listos" },
+            ]}
+          />
+        </div>
+      )}
 
       {/* Content */}
       {loading ? (
@@ -348,7 +356,7 @@ export default function DashboardPage() {
           <p className="text-sm text-[#8B9BB4] mt-2">
             Crea tu primer diagnóstico financiero
           </p>
-          <Button variant="accent" onClick={() => setModalOpen(true)} className="mt-6">
+          <Button variant="accent" size="sm" onClick={() => setModalOpen(true)} className="mt-6 flex items-center gap-2">
             <UserPlus className="h-4 w-4" />
             Nuevo cliente
           </Button>
@@ -426,11 +434,23 @@ export default function DashboardPage() {
               {/* Bottom row: hints + actions */}
               <div className="flex items-center justify-between gap-2 mt-4 pt-4 border-t border-white/[0.04]">
                 <p className="text-[11px] text-[#5A6A85] min-w-0">
-                  {cliente.estado === "completo" && "Resultados"}
-                  {cliente.estado === "borrador" && "Continuar diagnóstico"}
-                  {cliente.estado === "nuevo" && "Nuevo diagnóstico"}
+                  Ver perfil
                 </p>
                 <div className="flex items-center gap-0.5 shrink-0">
+                  {cliente.estado === "borrador" && cliente.diagnosticoId && (
+                    <button
+                      type="button"
+                      aria-label="Continuar diagnóstico"
+                      title="Continuar diagnóstico"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleEditFromCard(cliente);
+                      }}
+                      className="p-2 rounded-lg text-[#8B9BB4] hover:text-[#C9A84C] hover:bg-white/[0.04] transition-colors"
+                    >
+                      <Pencil className="h-4 w-4" />
+                    </button>
+                  )}
                   <button
                     type="button"
                     aria-label="Nuevo diagnóstico"
@@ -441,22 +461,8 @@ export default function DashboardPage() {
                     }}
                     className="p-2 rounded-lg text-[#8B9BB4] hover:text-[#C9A84C] hover:bg-white/[0.04] transition-colors"
                   >
-                    <UserPlus className="h-4 w-4" />
+                    <ClipboardPlus className="h-4 w-4" />
                   </button>
-                  {cliente.diagnosticoId && (
-                    <button
-                      type="button"
-                      aria-label="Editar diagnóstico"
-                      title="Editar"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleEditFromCard(cliente);
-                      }}
-                      className="p-2 rounded-lg text-[#8B9BB4] hover:text-[#C9A84C] hover:bg-white/[0.04] transition-colors"
-                    >
-                      <Pencil className="h-4 w-4" />
-                    </button>
-                  )}
                   <button
                     type="button"
                     aria-label="Eliminar cliente"

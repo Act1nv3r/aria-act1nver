@@ -6,7 +6,7 @@ interface Perfil {
   edad: number;
   genero: string;
   ocupacion: string;
-  dependientes: boolean;
+  dependientes: boolean | null;
 }
 
 interface FlujoMensual {
@@ -43,6 +43,20 @@ interface Retiro {
   edad_defuncion: number;
 }
 
+export interface CriterioActivo {
+  vende: boolean;
+  edad_venta?: number;
+  valor_venta?: number;
+}
+
+export interface CriteriosTrayectoria {
+  casa: CriterioActivo;
+  tierra: CriterioActivo;
+  inmuebles_renta: CriterioActivo;
+  negocio: CriterioActivo;
+  herencia: { edad_recepcion?: number };
+}
+
 interface Objetivo {
   nombre: string;
   monto: number;
@@ -56,9 +70,9 @@ interface Objetivos {
 }
 
 interface Proteccion {
-  seguro_vida: boolean;
+  seguro_vida: boolean | null;
   propiedades_aseguradas: boolean | null;
-  sgmm: boolean;
+  sgmm: boolean | null;
 }
 
 interface Outputs {
@@ -84,6 +98,11 @@ export interface SessionInsight {
   contexto_seguimiento?: string;
   accion_sugerida?: string;
   señal_detectada?: string;
+  clienteId?: string;
+  // Task management
+  estado_tarea: "pendiente" | "en_proceso" | "completada" | "descartada";
+  justificacion_descarte?: string;
+  fecha_completada?: number;
 }
 
 export interface SavedSimulation {
@@ -117,6 +136,63 @@ export interface SavedDocument {
   diagnostico_id?: string;
 }
 
+export interface ClienteSnapshot {
+  cliente_id: string;
+  diagnostico_id: string;
+  completed_at: number;
+  perfil: {
+    nombre: string;
+    edad: number;
+    genero: string;
+    ocupacion: string;
+    dependientes: boolean | null;
+  };
+  flujoMensual: {
+    ahorro: number;
+    rentas: number;
+    otros: number;
+    gastos_basicos: number;
+    obligaciones: number;
+    creditos: number;
+  };
+  patrimonio: {
+    liquidez: number;
+    inversiones: number;
+    dotales: number;
+    afore: number;
+    ppr: number;
+    plan_privado: number;
+    seguros_retiro: number;
+    ley_73: number | null;
+    casa: number;
+    inmuebles_renta: number;
+    tierra: number;
+    negocio: number;
+    herencia: number;
+    hipoteca: number;
+  };
+  retiro: {
+    edad_retiro: number;
+    mensualidad_deseada: number;
+  };
+  proteccion: {
+    seguro_vida: boolean | null;
+    propiedades_aseguradas: boolean | null;
+    sgmm: boolean | null;
+  };
+  oportunidades: Array<{
+    id: string;
+    titulo: string;
+    descripcion: string;
+    producto_sugerido: string;
+    categoria: string;
+    prioridad: string;
+    confianza: number;
+    estado: "pendiente" | "en_proceso" | "completada" | "descartada";
+    created_at: number;
+  }>;
+}
+
 export interface ExtractedField {
   campo: string;
   valor: string | number | boolean;
@@ -146,6 +222,7 @@ interface DiagnosticoStore {
   pareja_proteccion: Proteccion | null;
   ownership: Record<string, OwnershipValue>;
   outputs: Outputs;
+  criterios_trayectoria: CriteriosTrayectoria;
 
   // v2 session fields
   sesion_duracion_minutos: number;
@@ -157,6 +234,9 @@ interface DiagnosticoStore {
   simulaciones_guardadas: SavedSimulation[];
   documentos_guardados: SavedDocument[];
   diagnosticos_completados: Record<string, { nombre: string; completed_at: number; modo: string }>;
+  perfiles_completados: Record<string, ClienteSnapshot>;
+  currentClienteId: string | null;
+  salud_scores: Record<string, number>; // clienteId → score 0-100
 
   setPaso: (paso: number) => void;
   nextStep: () => void;
@@ -181,8 +261,10 @@ interface DiagnosticoStore {
   // v2 actions
   setSesionInicio: () => void;
   setDatosFuente: (fuente: "voz" | "manual" | "mixto") => void;
+  setCurrentClienteId: (clienteId: string) => void;
   updateCompletitud: () => void;
-  addSessionInsight: (insight: Omit<SessionInsight, "id" | "created_at">) => void;
+  addSessionInsight: (insight: Omit<SessionInsight, "id" | "created_at" | "estado_tarea">) => void;
+  updateInsightEstado: (id: string, estado: SessionInsight["estado_tarea"], justificacion?: string) => void;
   addExtractedField: (field: Omit<ExtractedField, "timestamp">) => void;
   acceptExtractedField: (campo: string) => void;
   updateExtractedFieldValue: (campo: string, valor: string | number | boolean) => void;
@@ -192,19 +274,25 @@ interface DiagnosticoStore {
   addDocumento: (doc: Omit<SavedDocument, "id" | "created_at">) => void;
   removeDocumento: (id: string) => void;
   marcarDiagnosticoCompleto: (diagnosticoId: string, nombre: string, modo: string) => void;
+  guardarSnapshotCliente: (clienteId: string, diagnosticoId: string) => void;
+  agregarOportunidadesSnapshot: (clienteId: string, oportunidades: ClienteSnapshot["oportunidades"]) => void;
+  actualizarEstadoOportunidadSnapshot: (clienteId: string, oportunidadId: string, estado: ClienteSnapshot["oportunidades"][number]["estado"]) => void;
+  guardarScoreSalud: (clienteId: string, score: number) => void;
+  updateCriteriosTrayectoria: (data: Partial<CriteriosTrayectoria>) => void;
+  resetSession: () => void;
   reset: () => void;
 }
 
-const initialState = {
+// Session-only data reset when a new session starts (does NOT include cross-session persistent data)
+const sessionBlank = {
   pasoActual: 1,
   pasosCompletados: [] as number[],
-  modo: "individual" as const,
   perfil: {
     nombre: "",
-    edad: 18,
-    genero: "H",
-    ocupacion: "asalariado",
-    dependientes: false,
+    edad: 0,
+    genero: "",
+    ocupacion: "",
+    dependientes: null as null,
   },
   flujoMensual: {
     ahorro: 0,
@@ -222,7 +310,7 @@ const initialState = {
     ppr: 0,
     plan_privado: 0,
     seguros_retiro: 0,
-    ley_73: null,
+    ley_73: null as null,
     casa: 0,
     inmuebles_renta: 0,
     tierra: 0,
@@ -243,33 +331,24 @@ const initialState = {
     lista: [] as Array<{ nombre: string; monto: number; plazo: number }>,
   },
   proteccion: {
-    seguro_vida: false,
-    propiedades_aseguradas: null,
-    sgmm: false,
+    seguro_vida: null as null,
+    propiedades_aseguradas: null as null,
+    sgmm: null as null,
   },
   outputs: {
-    motorA: null,
-    motorB: null,
-    motorC: null,
-    motorD: null,
-    motorE: null,
-    motorF: null,
+    motorA: null as null,
+    motorB: null as null,
+    motorC: null as null,
+    motorD: null as null,
+    motorE: null as null,
+    motorF: null as null,
   },
-  sesion_duracion_minutos: 0,
-  datos_fuente: "manual" as const,
-  completitud_pct: 0,
-  sesion_insights: [] as SessionInsight[],
-  extracted_fields: [] as ExtractedField[],
-  sesion_inicio: null as number | null,
-  simulaciones_guardadas: [] as SavedSimulation[],
-  documentos_guardados: [] as SavedDocument[],
-  diagnosticos_completados: {} as Record<string, { nombre: string; completed_at: number; modo: string }>,
-  pareja_perfil: null,
-  pareja_flujoMensual: null,
-  pareja_patrimonio: null,
-  pareja_retiro: null,
-  pareja_objetivos: null,
-  pareja_proteccion: null,
+  pareja_perfil: null as null,
+  pareja_flujoMensual: null as null,
+  pareja_patrimonio: null as null,
+  pareja_retiro: null as null,
+  pareja_objetivos: null as null,
+  pareja_proteccion: null as null,
   ownership: {
     casa: "compartido" as OwnershipValue,
     inmuebles_renta: "titular" as OwnershipValue,
@@ -280,15 +359,39 @@ const initialState = {
     saldo_planes: "titular" as OwnershipValue,
     compromisos: "titular" as OwnershipValue,
   },
+  sesion_duracion_minutos: 0,
+  datos_fuente: "manual" as const,
+  completitud_pct: 0,
+  extracted_fields: [] as ExtractedField[],
+  sesion_inicio: null as number | null,
+  criterios_trayectoria: {
+    casa: { vende: false },
+    tierra: { vende: false },
+    inmuebles_renta: { vende: false },
+    negocio: { vende: false },
+    herencia: {},
+  } as CriteriosTrayectoria,
+};
+
+const initialState = {
+  ...sessionBlank,
+  modo: "individual" as const,
+  sesion_insights: [] as SessionInsight[],
+  simulaciones_guardadas: [] as SavedSimulation[],
+  documentos_guardados: [] as SavedDocument[],
+  diagnosticos_completados: {} as Record<string, { nombre: string; completed_at: number; modo: string }>,
+  perfiles_completados: {} as Record<string, ClienteSnapshot>,
+  currentClienteId: null as string | null,
+  salud_scores: {} as Record<string, number>,
 };
 
 const parejaDemo = {
   pareja_perfil: {
     nombre: "",
-    edad: 18,
-    genero: "M",
-    ocupacion: "asalariado",
-    dependientes: false,
+    edad: 0,
+    genero: "",
+    ocupacion: "",
+    dependientes: null as null,
   },
   pareja_flujoMensual: {
     ahorro: 0,
@@ -327,9 +430,9 @@ const parejaDemo = {
     lista: [] as Array<{ nombre: string; monto: number; plazo: number }>,
   },
   pareja_proteccion: {
-    seguro_vida: false,
+    seguro_vida: null as null,
     propiedades_aseguradas: null,
-    sgmm: false,
+    sgmm: null as null,
   },
 };
 
@@ -424,7 +527,7 @@ export const useDiagnosticoStore = create<DiagnosticoStore>()(
       updateCompletitud: () =>
         set((s) => {
           const defaults: Record<string, unknown> = {
-            nombre: "", edad: 18, genero: "H", ocupacion: "asalariado", dependientes: false,
+            nombre: "", edad: 0, genero: "", ocupacion: "", dependientes: false,
             ahorro: 0, rentas: 0, otros: 0, gastos_basicos: 0, obligaciones: 0, creditos: 0,
             liquidez: 0, inversiones: 0, dotales: 0,
             afore: 0, ppr: 0, plan_privado: 0, seguros_retiro: 0, ley_73: null,
@@ -464,12 +567,32 @@ export const useDiagnosticoStore = create<DiagnosticoStore>()(
           }
           return { completitud_pct: total > 0 ? Math.round((filled / total) * 100) : 0 };
         }),
+      setCurrentClienteId: (clienteId) => set({ currentClienteId: clienteId }),
       addSessionInsight: (insight) =>
         set((s) => ({
           sesion_insights: [
             ...s.sesion_insights,
-            { ...insight, id: crypto.randomUUID(), created_at: Date.now() },
+            {
+              ...insight,
+              id: crypto.randomUUID(),
+              created_at: Date.now(),
+              clienteId: insight.clienteId ?? s.currentClienteId ?? undefined,
+              estado_tarea: "pendiente" as const,
+            },
           ],
+        })),
+      updateInsightEstado: (id, estado, justificacion) =>
+        set((s) => ({
+          sesion_insights: s.sesion_insights.map((i) =>
+            i.id === id
+              ? {
+                  ...i,
+                  estado_tarea: estado,
+                  justificacion_descarte: justificacion,
+                  fecha_completada: estado === "completada" || estado === "descartada" ? Date.now() : i.fecha_completada,
+                }
+              : i
+          ),
         })),
       addExtractedField: (field) =>
         set((s) => ({
@@ -575,12 +698,110 @@ export const useDiagnosticoStore = create<DiagnosticoStore>()(
             [diagnosticoId]: { nombre, completed_at: Date.now(), modo },
           },
         })),
+      guardarSnapshotCliente: (clienteId, diagnosticoId) =>
+        set((s) => {
+          const snap: ClienteSnapshot = {
+            cliente_id: clienteId,
+            diagnostico_id: diagnosticoId,
+            completed_at: Date.now(),
+            perfil: {
+              nombre: s.perfil?.nombre ?? "Cliente",
+              edad: s.perfil?.edad ?? 0,
+              genero: s.perfil?.genero ?? "",
+              ocupacion: s.perfil?.ocupacion ?? "",
+              dependientes: s.perfil?.dependientes ?? null,
+            },
+            flujoMensual: s.flujoMensual ?? { ahorro: 0, rentas: 0, otros: 0, gastos_basicos: 0, obligaciones: 0, creditos: 0 },
+            patrimonio: {
+              liquidez: s.patrimonio?.liquidez ?? 0,
+              inversiones: s.patrimonio?.inversiones ?? 0,
+              dotales: s.patrimonio?.dotales ?? 0,
+              afore: s.patrimonio?.afore ?? 0,
+              ppr: s.patrimonio?.ppr ?? 0,
+              plan_privado: s.patrimonio?.plan_privado ?? 0,
+              seguros_retiro: s.patrimonio?.seguros_retiro ?? 0,
+              ley_73: s.patrimonio?.ley_73 ?? null,
+              casa: s.patrimonio?.casa ?? 0,
+              inmuebles_renta: s.patrimonio?.inmuebles_renta ?? 0,
+              tierra: s.patrimonio?.tierra ?? 0,
+              negocio: s.patrimonio?.negocio ?? 0,
+              herencia: s.patrimonio?.herencia ?? 0,
+              hipoteca: s.patrimonio?.hipoteca ?? 0,
+            },
+            retiro: {
+              edad_retiro: s.retiro?.edad_retiro ?? 65,
+              mensualidad_deseada: s.retiro?.mensualidad_deseada ?? 0,
+            },
+            proteccion: {
+              seguro_vida: s.proteccion?.seguro_vida ?? null,
+              propiedades_aseguradas: s.proteccion?.propiedades_aseguradas ?? null,
+              sgmm: s.proteccion?.sgmm ?? null,
+            },
+            oportunidades: s.perfiles_completados[clienteId]?.oportunidades ?? [],
+          };
+          return {
+            perfiles_completados: {
+              ...s.perfiles_completados,
+              [clienteId]: snap,
+            },
+          };
+        }),
+      agregarOportunidadesSnapshot: (clienteId, oportunidades) =>
+        set((s) => {
+          const existing = s.perfiles_completados[clienteId];
+          // If no snapshot exists yet, create a minimal one so oportunidades aren't lost
+          const base: ClienteSnapshot = existing ?? {
+            cliente_id: clienteId,
+            diagnostico_id: "",
+            completed_at: Date.now(),
+            perfil: { nombre: s.perfil?.nombre ?? "Cliente", edad: s.perfil?.edad ?? 0, genero: s.perfil?.genero ?? "", ocupacion: s.perfil?.ocupacion ?? "", dependientes: s.perfil?.dependientes ?? null },
+            flujoMensual: s.flujoMensual ?? { ahorro: 0, rentas: 0, otros: 0, gastos_basicos: 0, obligaciones: 0, creditos: 0 },
+            patrimonio: { liquidez: s.patrimonio?.liquidez ?? 0, inversiones: s.patrimonio?.inversiones ?? 0, dotales: s.patrimonio?.dotales ?? 0, afore: s.patrimonio?.afore ?? 0, ppr: s.patrimonio?.ppr ?? 0, plan_privado: s.patrimonio?.plan_privado ?? 0, seguros_retiro: s.patrimonio?.seguros_retiro ?? 0, ley_73: s.patrimonio?.ley_73 ?? null, casa: s.patrimonio?.casa ?? 0, inmuebles_renta: s.patrimonio?.inmuebles_renta ?? 0, tierra: s.patrimonio?.tierra ?? 0, negocio: s.patrimonio?.negocio ?? 0, herencia: s.patrimonio?.herencia ?? 0, hipoteca: s.patrimonio?.hipoteca ?? 0 },
+            retiro: { edad_retiro: s.retiro?.edad_retiro ?? 65, mensualidad_deseada: s.retiro?.mensualidad_deseada ?? 0 },
+            proteccion: { seguro_vida: s.proteccion?.seguro_vida ?? null, propiedades_aseguradas: s.proteccion?.propiedades_aseguradas ?? null, sgmm: s.proteccion?.sgmm ?? null },
+            oportunidades: [],
+          };
+          const existingIds = new Set(base.oportunidades.map((o) => o.id));
+          const newOps = oportunidades.filter((o) => !existingIds.has(o.id));
+          if (newOps.length === 0) return {};
+          return {
+            perfiles_completados: {
+              ...s.perfiles_completados,
+              [clienteId]: { ...base, oportunidades: [...base.oportunidades, ...newOps] },
+            },
+          };
+        }),
+      actualizarEstadoOportunidadSnapshot: (clienteId, oportunidadId, estado) =>
+        set((s) => {
+          const existing = s.perfiles_completados[clienteId];
+          if (!existing) return {};
+          return {
+            perfiles_completados: {
+              ...s.perfiles_completados,
+              [clienteId]: {
+                ...existing,
+                oportunidades: existing.oportunidades.map((o) =>
+                  o.id === oportunidadId ? { ...o, estado } : o
+                ),
+              },
+            },
+          };
+        }),
+      guardarScoreSalud: (clienteId, score) =>
+        set((s) => ({
+          salud_scores: { ...s.salud_scores, [clienteId]: score },
+        })),
+      updateCriteriosTrayectoria: (data) =>
+        set((s) => ({
+          criterios_trayectoria: { ...s.criterios_trayectoria, ...data },
+        })),
+      resetSession: () => set(sessionBlank),
       reset: () => set(initialState),
     }),
     {
       name: "diagnostico-storage",
       storage: createJSONStorage(() =>
-        typeof window !== "undefined" ? sessionStorage : { getItem: () => null, setItem: () => {}, removeItem: () => {} }
+        typeof window !== "undefined" ? localStorage : { getItem: () => null, setItem: () => {}, removeItem: () => {} }
       ),
     }
   )

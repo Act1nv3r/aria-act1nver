@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { BarChart3, PenLine, ChevronRight, Database } from "lucide-react";
+import { BarChart3, PenLine, ChevronRight, Database, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface SessionProgressProps {
@@ -12,6 +12,7 @@ interface SessionProgressProps {
   totalDatos: number;
   onGenerarBalance: () => void;
   onStopRecording?: () => void;
+  saving?: boolean;
 }
 
 export function SessionProgress({
@@ -22,6 +23,7 @@ export function SessionProgress({
   totalDatos,
   onGenerarBalance,
   onStopRecording,
+  saving = false,
 }: SessionProgressProps) {
   const router = useRouter();
 
@@ -74,11 +76,15 @@ export function SessionProgress({
           variant="accent"
           size="sm"
           onClick={onGenerarBalance}
-          disabled={completitudPct < 25}
+          disabled={completitudPct < 25 || saving}
         >
-          <BarChart3 className="w-3.5 h-3.5" />
-          Generar balance
-          <ChevronRight className="w-3.5 h-3.5" />
+          {saving ? (
+            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+          ) : (
+            <BarChart3 className="w-3.5 h-3.5" />
+          )}
+          {saving ? "Guardando…" : "Generar Balance Patrimonial"}
+          {!saving && <ChevronRight className="w-3.5 h-3.5" />}
         </Button>
       </div>
     </div>

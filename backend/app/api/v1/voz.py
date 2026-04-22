@@ -171,6 +171,7 @@ async def websocket_transcribir(websocket: WebSocket):
         "&punctuate=true"
         "&diarize=true"
         "&smart_format=true"
+        "&numerals=true"       # force numeric digits ("45") not words ("cuarenta y cinco")
         "&interim_results=true"
         "&utterance_end_ms=1000"
     )

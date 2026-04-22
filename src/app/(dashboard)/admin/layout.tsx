@@ -49,7 +49,7 @@ export default function AdminLayout({
               href={href}
               className={`flex items-center gap-3 px-4 py-3 rounded-lg font-[family-name:var(--font-poppins)] text-sm transition-colors ${
                 pathname === href
-                  ? "bg-[#317A70]/30 text-[#E6C78A]"
+                  ? "bg-[#1A3154] text-[#C9A84C]"
                   : "text-[#5A6A85] hover:text-white hover:bg-[#314566]/30"
               }`}
             >
@@ -59,7 +59,11 @@ export default function AdminLayout({
           ))}
           <Link
             href="/admin/aviso-privacidad"
-            className="flex items-center gap-3 px-4 py-3 rounded-lg font-[family-name:var(--font-poppins)] text-sm text-[#5A6A85] hover:text-white hover:bg-[#314566]/30 transition-colors"
+            className={`flex items-center gap-3 px-4 py-3 rounded-lg font-[family-name:var(--font-poppins)] text-sm transition-colors ${
+              pathname === "/admin/aviso-privacidad"
+                ? "bg-[#1A3154] text-[#C9A84C]"
+                : "text-[#5A6A85] hover:text-white hover:bg-[#314566]/30"
+            }`}
           >
             <Shield className="h-5 w-5" />
             Aviso privacidad

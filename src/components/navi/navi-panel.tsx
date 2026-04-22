@@ -125,7 +125,7 @@ export function NaviPanel({
       contextoCliente: {
         edad: store.perfil?.edad,
         ocupacion: store.perfil?.ocupacion,
-        dependientes: store.perfil?.dependientes,
+        dependientes: store.perfil?.dependientes ?? undefined,
         nombre: store.perfil?.nombre,
       },
       skipFields: skipOverride ?? skippedRef.current,

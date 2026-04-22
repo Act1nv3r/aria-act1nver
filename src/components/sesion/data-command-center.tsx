@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import {
   Check, ChevronDown, ChevronRight, Sparkles, AlertTriangle,
-  User, Wallet, Building2, Palmtree, Target, Shield, Lightbulb,
+  User, Wallet, Building2, Palmtree, Target, Shield, Lightbulb, X, Pencil,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { useDiagnosticoStore, type ExtractedField } from "@/stores/diagnostico-store";
@@ -34,7 +34,17 @@ interface DataCommandCenterProps {
   sesionMinutos: number;
   maxMinutos?: number;
   extractedFields: ExtractedField[];
+  onAcceptField?: (campo: string) => void;
+  onDismissField?: (campo: string) => void;
+  onSetField?: (campo: string, valor: string | number | boolean) => void;
 }
+
+const BOOLEAN_CAMPOS = ["dependientes", "seguro_vida", "propiedades_aseguradas", "sgmm"];
+const CURRENCY_CAMPOS = [
+  "ahorro", "rentas", "gastos_basicos", "obligaciones", "otros", "creditos",
+  "liquidez", "inversiones", "dotales", "afore", "ppr", "plan_privado",
+  "seguros_retiro", "casa", "inmuebles_renta", "tierra", "negocio", "herencia",
+];
 
 function CategoryRing({ filled, total, size = 28 }: { filled: number; total: number; size?: number }) {
   const r = (size - 4) / 2;
@@ -75,6 +85,9 @@ export function DataCommandCenter({
   sesionMinutos,
   maxMinutos = 20,
   extractedFields,
+  onAcceptField,
+  onDismissField,
+  onSetField,
 }: DataCommandCenterProps) {
   const store = useDiagnosticoStore();
   const [expandedCats, setExpandedCats] = useState<Set<string>>(new Set(["perfil", "flujo"]));
@@ -83,19 +96,53 @@ export function DataCommandCenter({
   const [recentlyFilled, setRecentlyFilled] = useState<Set<string>>(new Set());
   const [skippedFields, setSkippedFields] = useState<string[]>([]);
   const [suggestionTransition, setSuggestionTransition] = useState(false);
+  const [editingField, setEditingField] = useState<string | null>(null);
+  const [editingValue, setEditingValue] = useState<string>("");
+  const editInputRef = useRef<HTMLInputElement>(null);
   const opsRef = useRef<Oportunidad[]>([]);
   const prevFieldCountRef = useRef(0);
   const prevFaltantesRef = useRef<string[]>([]);
+
+  const startEditing = (campo: string, currentValue: unknown) => {
+    setEditingField(campo);
+    if (currentValue === true) setEditingValue("true");
+    else if (currentValue === false) setEditingValue("false");
+    else if (currentValue !== null && currentValue !== undefined && currentValue !== 0 && currentValue !== "") {
+      setEditingValue(String(currentValue));
+    } else {
+      setEditingValue("");
+    }
+    setTimeout(() => editInputRef.current?.focus(), 30);
+  };
+
+  const commitEdit = (campo: string) => {
+    const raw = editingValue.trim();
+    if (raw === "") { setEditingField(null); return; }
+    let finalValue: string | number | boolean;
+    if (BOOLEAN_CAMPOS.includes(campo)) {
+      finalValue = raw === "true";
+    } else if (CURRENCY_CAMPOS.includes(campo) || campo === "edad" || campo === "ley_73") {
+      const num = parseFloat(raw.replace(/[,\s$]/g, ""));
+      finalValue = isNaN(num) ? raw : num;
+    } else {
+      finalValue = raw;
+    }
+    onSetField?.(campo, finalValue);
+    setEditingField(null);
+    setEditingValue("");
+  };
+
+  const cancelEdit = () => { setEditingField(null); setEditingValue(""); };
 
   const categories: CategoryDef[] = [
     {
       id: "perfil", nombre: "Perfil del cliente", icon: User,
       fields: [
         { nombre: "Nombre", campo: "nombre", preguntaSugerida: "¿Me podría dar su nombre completo?", getValue: () => store.perfil?.nombre, isCompleted: () => !!store.perfil?.nombre },
-        { nombre: "Edad", campo: "edad", preguntaSugerida: "¿Qué edad tiene actualmente?", getValue: () => store.perfil?.edad, isCompleted: () => (store.perfil?.edad ?? 18) !== 18 },
+        { nombre: "Edad", campo: "edad", preguntaSugerida: "¿Qué edad tiene actualmente?", getValue: () => store.perfil?.edad, isCompleted: () => (store.perfil?.edad ?? 0) > 0 },
         { nombre: "Género", campo: "genero", preguntaSugerida: "Para el perfil, ¿podría indicarme su género?", getValue: () => store.perfil?.genero, isCompleted: () => !!store.perfil?.genero },
         { nombre: "Ocupación", campo: "ocupacion", preguntaSugerida: "¿A qué se dedica profesionalmente?", getValue: () => store.perfil?.ocupacion, isCompleted: () => !!store.perfil?.ocupacion },
-        { nombre: "Dependientes", campo: "dependientes", preguntaSugerida: "¿Tiene dependientes económicos, hijos o familia que dependa de usted?", getValue: () => store.perfil?.dependientes, isCompleted: () => store.perfil?.dependientes !== undefined },
+        { nombre: "Dependientes", campo: "dependientes", preguntaSugerida: "¿Tiene dependientes económicos, hijos o familia que dependa de usted?", getValue: () => store.perfil?.dependientes, isCompleted: () => store.perfil?.dependientes !== undefined && store.perfil?.dependientes !== null },
       ],
     },
     {
@@ -124,7 +171,11 @@ export function DataCommandCenter({
         { nombre: "PPR", campo: "ppr", preguntaSugerida: "¿Tiene un Plan Personal de Retiro?", getValue: () => store.patrimonio?.ppr, isCompleted: () => (store.patrimonio?.ppr ?? 0) > 0 },
         { nombre: "Plan privado", campo: "plan_privado", preguntaSugerida: "¿Su empresa le ofrece algún plan de pensión privado?", getValue: () => store.patrimonio?.plan_privado, isCompleted: () => (store.patrimonio?.plan_privado ?? 0) > 0 },
         { nombre: "Seguros retiro", campo: "seguros_retiro", preguntaSugerida: "¿Tiene algún seguro con beneficio de retiro?", getValue: () => store.patrimonio?.seguros_retiro, isCompleted: () => (store.patrimonio?.seguros_retiro ?? 0) > 0 },
-        { nombre: "Ley 73", campo: "ley_73", preguntaSugerida: "¿Cotiza bajo la Ley 73 del IMSS? ¿Conoce su pensión estimada?", getValue: () => store.patrimonio?.ley_73, isCompleted: () => store.patrimonio?.ley_73 !== null && store.patrimonio?.ley_73 !== undefined },
+        // Ley 73 only applies to workers who enrolled in IMSS before July 1997 (age ≥ ~46).
+        // Hide the field when we know the client is younger to avoid confusion.
+        ...((store.perfil?.edad ?? 0) === 0 || (store.perfil?.edad ?? 0) >= 46
+          ? [{ nombre: "Ley 73", campo: "ley_73", preguntaSugerida: "¿Cotiza bajo la Ley 73 del IMSS? ¿Conoce su pensión estimada?", getValue: () => store.patrimonio?.ley_73, isCompleted: () => store.patrimonio?.ley_73 !== null && store.patrimonio?.ley_73 !== undefined }]
+          : []),
       ],
     },
     {
@@ -140,15 +191,26 @@ export function DataCommandCenter({
     {
       id: "proteccion", nombre: "Protección", icon: Shield,
       fields: [
-        { nombre: "Seguro de vida", campo: "seguro_vida", preguntaSugerida: "¿Cuenta con un seguro de vida?", getValue: () => store.proteccion?.seguro_vida, isCompleted: () => !!store.proteccion?.seguro_vida },
+        { nombre: "Seguro de vida", campo: "seguro_vida", preguntaSugerida: "¿Cuenta con un seguro de vida?", getValue: () => store.proteccion?.seguro_vida, isCompleted: () => store.proteccion?.seguro_vida !== undefined && store.proteccion?.seguro_vida !== null },
         { nombre: "Propiedades aseguradas", campo: "propiedades_aseguradas", preguntaSugerida: "¿Sus propiedades están aseguradas?", getValue: () => store.proteccion?.propiedades_aseguradas, isCompleted: () => store.proteccion?.propiedades_aseguradas !== null && store.proteccion?.propiedades_aseguradas !== undefined },
-        { nombre: "SGMM", campo: "sgmm", preguntaSugerida: "¿Tiene Seguro de Gastos Médicos Mayores?", getValue: () => store.proteccion?.sgmm, isCompleted: () => !!store.proteccion?.sgmm },
+        { nombre: "SGMM", campo: "sgmm", preguntaSugerida: "¿Tiene Seguro de Gastos Médicos Mayores?", getValue: () => store.proteccion?.sgmm, isCompleted: () => store.proteccion?.sgmm !== undefined && store.proteccion?.sgmm !== null },
       ],
     },
   ];
 
   const totalFields = categories.reduce((s, c) => s + c.fields.length, 0);
   const totalFilled = categories.reduce((s, c) => s + c.fields.filter((f) => f.isCompleted()).length, 0);
+
+  // All campos that have a pending (unaccepted) extraction with enough confidence
+  const pendingCampos = categories
+    .flatMap((c) => c.fields.map((f) => f.campo))
+    .filter((campo) =>
+      extractedFields.some((e) => e.campo === campo && !e.aceptado && e.confianza >= 0.7)
+    );
+
+  const handleAcceptAll = () => {
+    pendingCampos.forEach((campo) => onAcceptField?.(campo));
+  };
 
   // Track recently filled fields for animation
   useEffect(() => {
@@ -215,7 +277,7 @@ export function DataCommandCenter({
       contextoCliente: {
         edad: store.perfil?.edad,
         ocupacion: store.perfil?.ocupacion,
-        dependientes: store.perfil?.dependientes,
+        dependientes: store.perfil?.dependientes ?? undefined,
         nombre: store.perfil?.nombre,
       },
       skipFields: skipOverride ?? skippedRef.current,
@@ -264,12 +326,15 @@ export function DataCommandCenter({
     };
     const result = await detectarOportunidades(transcripcionRef.current, opsRef.current, storeSnapshot);
 
-    // Persist AI-detected opportunities as session insights for CRM follow-up
+    // Persist all detected opportunities as session insights for CRM follow-up
     for (const op of result) {
-      if (op.fuente === "ai" && !storedInsightIdsRef.current.has(op.oportunidad)) {
+      if (!storedInsightIdsRef.current.has(op.oportunidad)) {
         storedInsightIdsRef.current.add(op.oportunidad);
+        // AI opportunities with contexto_seguimiento → tipo "seguimiento" (post-sale follow-up)
+        // Everything else → tipo "oportunidad" (cross-sell)
+        const tipo = op.fuente === "ai" && op.contexto_seguimiento ? "seguimiento" : "oportunidad";
         store.addSessionInsight({
-          tipo: op.contexto_seguimiento ? "seguimiento" : "oportunidad",
+          tipo,
           texto: op.oportunidad + (op.razon ? ` — ${op.razon}` : ""),
           producto_sugerido: op.producto_sugerido,
           confianza: op.confianza,
@@ -391,7 +456,7 @@ export function DataCommandCenter({
         )}
       </div>
 
-      {/* Summary bar: missing count + time warning */}
+      {/* Summary bar: missing count + time warning + confirm-all */}
       <div className="shrink-0 flex items-center justify-between px-4 py-2 bg-[#0A1628] border-b border-white/[0.06]">
         <div className="flex items-center gap-4">
           <span className="text-xs text-[#8B9BB4]">
@@ -403,12 +468,24 @@ export function DataCommandCenter({
             </span>
           )}
         </div>
-        {minutosRestantes <= 5 && missingCount > 0 && (
-          <div className="flex items-center gap-1.5 text-[#EF4444]">
-            <AlertTriangle className="w-3 h-3" />
-            <span className="text-[11px] font-semibold">{Math.ceil(minutosRestantes)} min restantes</span>
-          </div>
-        )}
+        <div className="flex items-center gap-3">
+          {pendingCampos.length > 0 && (
+            <button
+              type="button"
+              onClick={handleAcceptAll}
+              className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-semibold text-[#10B981] bg-[#10B981]/10 hover:bg-[#10B981]/20 border border-[#10B981]/25 hover:border-[#10B981]/50 transition-colors"
+            >
+              <Check className="w-3 h-3" />
+              Confirmar {pendingCampos.length > 1 ? `todos (${pendingCampos.length})` : "dato"}
+            </button>
+          )}
+          {minutosRestantes <= 5 && missingCount > 0 && (
+            <div className="flex items-center gap-1.5 text-[#EF4444]">
+              <AlertTriangle className="w-3 h-3" />
+              <span className="text-[11px] font-semibold">{Math.ceil(minutosRestantes)} min restantes</span>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Main scrollable area: all categories + fields */}
@@ -460,53 +537,130 @@ export function DataCommandCenter({
                       (e) => e.campo === field.campo && !e.aceptado && e.confianza >= 0.7
                     );
                     const wasRecentlyFilled = recentlyFilled.has(field.campo) && completed;
+                    const isEditing = editingField === field.campo;
+                    const isBool = BOOLEAN_CAMPOS.includes(field.campo);
 
                     return (
                       <div
                         key={field.campo}
-                        className={`rounded-lg px-3 py-2.5 transition-all duration-500 ${
-                          wasRecentlyFilled
+                        className={`rounded-lg px-3 py-2.5 transition-all duration-300 ${
+                          isEditing
+                            ? "bg-[#0F1E36] border border-[#C9A84C]/40"
+                            : wasRecentlyFilled
                             ? "bg-[#10B981]/10 border border-[#10B981]/30 animate-pulse"
                             : completed
-                            ? "bg-[#1A3154]/30"
+                            ? "bg-[#1A3154]/30 hover:bg-[#1A3154]/50 cursor-pointer group"
                             : pendingExtract
                             ? "bg-[#C9A84C]/[0.06] border border-[#C9A84C]/20"
-                            : "bg-transparent"
+                            : "bg-transparent hover:bg-[#0C1829] cursor-pointer"
                         }`}
+                        onClick={() => {
+                          if (!isEditing && !pendingExtract) {
+                            startEditing(field.campo, completed ? value : "");
+                          }
+                        }}
                       >
-                        {completed ? (
+                        {/* ── Edit mode ── */}
+                        {isEditing ? (
+                          isBool ? (
+                            <div className="flex items-center gap-2">
+                              <Pencil className="w-3 h-3 text-[#C9A84C] shrink-0" />
+                              <span className="text-xs text-[#8B9BB4] flex-1">{field.nombre}</span>
+                              <button
+                                type="button"
+                                onClick={(e) => { e.stopPropagation(); onSetField?.(field.campo, true); setEditingField(null); setEditingValue(""); }}
+                                className={`px-2.5 py-1 rounded text-xs font-semibold border transition-colors ${editingValue === "true" ? "bg-[#10B981]/20 border-[#10B981]/50 text-[#10B981]" : "border-white/[0.1] text-[#8B9BB4] hover:border-[#10B981]/30 hover:text-[#10B981]"}`}
+                              >Sí</button>
+                              <button
+                                type="button"
+                                onClick={(e) => { e.stopPropagation(); onSetField?.(field.campo, false); setEditingField(null); setEditingValue(""); }}
+                                className={`px-2.5 py-1 rounded text-xs font-semibold border transition-colors ${editingValue === "false" ? "bg-[#EF4444]/10 border-[#EF4444]/40 text-[#EF4444]" : "border-white/[0.1] text-[#8B9BB4] hover:border-[#EF4444]/30 hover:text-[#EF4444]"}`}
+                              >No</button>
+                              <button
+                                type="button"
+                                onMouseDown={(e) => e.preventDefault()}
+                                onClick={(e) => { e.stopPropagation(); cancelEdit(); }}
+                                className="w-5 h-5 rounded flex items-center justify-center text-[#5A6A85] hover:text-[#EF4444] transition-colors"
+                              ><X className="w-3 h-3" /></button>
+                            </div>
+                          ) : (
+                            <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
+                              <Pencil className="w-3 h-3 text-[#C9A84C] shrink-0" />
+                              <span className="text-xs text-[#8B9BB4] shrink-0">{field.nombre}</span>
+                              <input
+                                ref={editInputRef}
+                                type={CURRENCY_CAMPOS.includes(field.campo) || field.campo === "edad" || field.campo === "ley_73" ? "number" : "text"}
+                                value={editingValue}
+                                onChange={(e) => setEditingValue(e.target.value)}
+                                onKeyDown={(e) => {
+                                  if (e.key === "Enter") commitEdit(field.campo);
+                                  if (e.key === "Escape") cancelEdit();
+                                }}
+                                placeholder={CURRENCY_CAMPOS.includes(field.campo) ? "Monto MXN" : ""}
+                                className="flex-1 min-w-0 bg-[#060D1A] border border-[#C9A84C]/40 rounded px-2 py-0.5 text-xs text-[#F0F4FA] outline-none focus:border-[#C9A84C]/80 placeholder:text-[#3A4A5A]"
+                              />
+                              <button
+                                type="button"
+                                onMouseDown={(e) => e.preventDefault()}
+                                onClick={(e) => { e.stopPropagation(); commitEdit(field.campo); }}
+                                className="shrink-0 w-6 h-6 rounded flex items-center justify-center bg-[#10B981]/10 hover:bg-[#10B981]/25 border border-[#10B981]/30 text-[#10B981] transition-colors"
+                              ><Check className="w-3 h-3" /></button>
+                              <button
+                                type="button"
+                                onMouseDown={(e) => e.preventDefault()}
+                                onClick={(e) => { e.stopPropagation(); cancelEdit(); }}
+                                className="shrink-0 w-6 h-6 rounded flex items-center justify-center bg-white/[0.04] border border-white/[0.08] text-[#5A6A85] hover:text-[#EF4444] transition-colors"
+                              ><X className="w-3 h-3" /></button>
+                            </div>
+                          )
+                        ) : completed ? (
+                          /* ── Completed ── */
                           <div className="flex items-center gap-2.5">
-                            <Check className="w-4 h-4 text-[#10B981] shrink-0" />
+                            <Check className="w-4 h-4 text-[#10B981] shrink-0 group-hover:opacity-0 transition-opacity" />
+                            <Pencil className="w-3.5 h-3.5 text-[#C9A84C] shrink-0 absolute opacity-0 group-hover:opacity-100 transition-opacity" />
                             <span className="text-xs text-[#8B9BB4] flex-1">{field.nombre}</span>
-                            <span className="text-sm text-[#F0F4FA] font-semibold">
+                            <span className="text-sm text-[#F0F4FA] font-semibold group-hover:text-[#C9A84C] transition-colors">
                               {formatValue(field.campo, value)}
                             </span>
+                            <Pencil className="w-3 h-3 text-[#C9A84C]/0 group-hover:text-[#C9A84C]/60 shrink-0 transition-colors" />
                           </div>
                         ) : pendingExtract ? (
-                          <div>
-                            <div className="flex items-center gap-2.5">
-                              <div className="w-4 h-4 rounded-full border-2 border-[#C9A84C] flex items-center justify-center shrink-0">
-                                <div className="w-1.5 h-1.5 rounded-full bg-[#C9A84C] animate-pulse" />
-                              </div>
-                              <span className="text-xs text-[#C9A84C] font-medium flex-1">{field.nombre}</span>
-                              <span className="text-sm text-[#C9A84C] font-bold">
-                                {formatValue(field.campo, pendingExtract.valor)}
-                              </span>
-                              <span className="text-[10px] text-[#8B9BB4] px-1.5 py-0.5 rounded bg-[#1A3154]">
-                                {Math.round(pendingExtract.confianza * 100)}%
-                              </span>
+                          /* ── Pending (ArIA detected, awaiting confirm) ── */
+                          <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
+                            <div className="w-4 h-4 rounded-full border-2 border-[#C9A84C] flex items-center justify-center shrink-0">
+                              <div className="w-1.5 h-1.5 rounded-full bg-[#C9A84C] animate-pulse" />
                             </div>
-                            <p className="text-[10px] text-[#8B9BB4] mt-1 ml-[26px]">
-                              Detectado por ArIA — pendiente de confirmar
-                            </p>
+                            <span className="text-xs text-[#C9A84C] font-medium flex-1 truncate">{field.nombre}</span>
+                            <span className="text-sm text-[#F0F4FA] font-semibold">
+                              {formatValue(field.campo, pendingExtract.valor)}
+                            </span>
+                            <button
+                              type="button"
+                              title="Editar valor"
+                              onClick={(e) => { e.stopPropagation(); startEditing(field.campo, pendingExtract.valor); }}
+                              className="shrink-0 w-6 h-6 rounded-md flex items-center justify-center text-[#5A6A85] hover:text-[#C9A84C] hover:bg-[#C9A84C]/10 border border-transparent hover:border-[#C9A84C]/25 transition-colors"
+                            ><Pencil className="w-3 h-3" /></button>
+                            <button
+                              type="button"
+                              title="Confirmar"
+                              onClick={(e) => { e.stopPropagation(); onAcceptField?.(field.campo); }}
+                              className="shrink-0 w-6 h-6 rounded-md flex items-center justify-center bg-[#10B981]/10 hover:bg-[#10B981]/25 border border-[#10B981]/30 hover:border-[#10B981]/60 transition-colors"
+                            ><Check className="w-3 h-3 text-[#10B981]" /></button>
+                            <button
+                              type="button"
+                              title="Descartar"
+                              onClick={(e) => { e.stopPropagation(); onDismissField?.(field.campo); }}
+                              className="shrink-0 w-6 h-6 rounded-md flex items-center justify-center bg-white/[0.04] hover:bg-[#EF4444]/10 border border-white/[0.08] hover:border-[#EF4444]/30 transition-colors"
+                            ><X className="w-3 h-3 text-[#5A6A85] hover:text-[#EF4444]" /></button>
                           </div>
                         ) : (
+                          /* ── Empty — click to enter ── */
                           <div>
                             <div className="flex items-center gap-2.5">
                               <div className="w-4 h-4 rounded border border-[#4A5A72]/50 shrink-0" />
                               <span className="text-xs text-[#5A6A85] flex-1">{field.nombre}</span>
-                              <span className="text-[10px] text-[#EF4444]/70 font-medium px-1.5 py-0.5 rounded-full bg-[#EF4444]/[0.06]">
-                                Falta
+                              <span className="text-[10px] text-[#C9A84C]/50 font-medium px-1.5 py-0.5 rounded border border-[#C9A84C]/20 hover:border-[#C9A84C]/40 hover:text-[#C9A84C]/80 transition-colors">
+                                + Ingresar
                               </span>
                             </div>
                             <p className="text-[11px] text-[#4A5A72] mt-1 ml-[26px] italic">

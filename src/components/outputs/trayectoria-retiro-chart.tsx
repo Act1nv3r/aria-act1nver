@@ -23,6 +23,8 @@ interface TrayectoriaRetiroChartProps {
   edadDefuncion: number;
   patrimonioFinancieroActual?: number;
   tasaRealAnual?: number;
+  compact?: boolean;
+  chartHeight?: number;
 }
 
 function formatYAxis(value: number): string {
@@ -40,6 +42,8 @@ export function TrayectoriaRetiroChart({
   edadDefuncion,
   patrimonioFinancieroActual,
   tasaRealAnual = PARAMS.TASA_REAL_ANUAL,
+  compact = false,
+  chartHeight,
 }: TrayectoriaRetiroChartProps) {
   const { trayectoria, disposicionMensual, ahorroPotencial } = useMemo(() => {
     const tasa_mensual = tasaRealAnual / 12;
@@ -115,27 +119,33 @@ export function TrayectoriaRetiroChart({
       );
   const total = patrimonioFinanciero + ahorroPotencial;
 
+  const resolvedChartHeight = chartHeight ?? (compact ? 200 : 360);
+
   return (
     <div className="space-y-4 min-w-0">
-      <div>
-        <h4 className="font-bold font-[family-name:var(--font-poppins)] text-sm text-white">
-          Trayectoria al momento del retiro
-        </h4>
-        <p className="font-[family-name:var(--font-open-sans)] text-xs text-[#5A6A85] mt-0.5">
-          (Sobre patrimonio financiero)
-        </p>
-      </div>
+      {!compact && (
+        <>
+          <div>
+            <h4 className="font-bold font-[family-name:var(--font-poppins)] text-sm text-white">
+              Trayectoria al momento del retiro
+            </h4>
+            <p className="font-[family-name:var(--font-open-sans)] text-xs text-[#5A6A85] mt-0.5">
+              (Sobre patrimonio financiero)
+            </p>
+          </div>
 
-      <div className="flex items-baseline gap-2">
-        <span className="font-[family-name:var(--font-open-sans)] text-xs text-[#5A6A85]">
-          Disposición mensual:
-        </span>
-        <span className="font-bold font-[family-name:var(--font-poppins)] text-base text-[#E6C78A]">
-          {formatMXN(disposicionMensual)}
-        </span>
-      </div>
+          <div className="flex items-baseline gap-2">
+            <span className="font-[family-name:var(--font-open-sans)] text-xs text-[#5A6A85]">
+              Disposición mensual:
+            </span>
+            <span className="font-bold font-[family-name:var(--font-poppins)] text-base text-[#E6C78A]">
+              {formatMXN(disposicionMensual)}
+            </span>
+          </div>
+        </>
+      )}
 
-      <div className="h-[360px] w-full">
+      <div style={{ height: resolvedChartHeight }} className="w-full">
         <ResponsiveContainer width="100%" height="100%">
           <BarChart
             layout="vertical"
@@ -177,32 +187,34 @@ export function TrayectoriaRetiroChart({
         </ResponsiveContainer>
       </div>
 
-      <div className="flex flex-wrap gap-6 pt-2 border-t border-[#5A6A85]/20">
-        <div>
-          <p className="font-[family-name:var(--font-open-sans)] text-[10px] text-[#5A6A85]">
-            Patrimonio Financiero
-          </p>
-          <p className="font-bold font-[family-name:var(--font-poppins)] text-sm text-white">
-            {formatMXN(patrimonioFinanciero)}
-          </p>
+      {!compact && (
+        <div className="flex flex-wrap gap-6 pt-2 border-t border-[#5A6A85]/20">
+          <div>
+            <p className="font-[family-name:var(--font-open-sans)] text-[10px] text-[#5A6A85]">
+              Patrimonio Financiero
+            </p>
+            <p className="font-bold font-[family-name:var(--font-poppins)] text-sm text-white">
+              {formatMXN(patrimonioFinanciero)}
+            </p>
+          </div>
+          <div>
+            <p className="font-[family-name:var(--font-open-sans)] text-[10px] text-[#5A6A85]">
+              Ahorro Potencial
+            </p>
+            <p className="font-bold font-[family-name:var(--font-poppins)] text-sm text-[#317A70]">
+              {formatMXN(ahorroPotencial)}
+            </p>
+          </div>
+          <div>
+            <p className="font-[family-name:var(--font-open-sans)] text-[10px] text-[#5A6A85]">
+              Total
+            </p>
+            <p className="font-bold font-[family-name:var(--font-poppins)] text-sm text-[#E6C78A]">
+              {formatMXN(total)}
+            </p>
+          </div>
         </div>
-        <div>
-          <p className="font-[family-name:var(--font-open-sans)] text-[10px] text-[#5A6A85]">
-            Ahorro Potencial
-          </p>
-          <p className="font-bold font-[family-name:var(--font-poppins)] text-sm text-[#317A70]">
-            {formatMXN(ahorroPotencial)}
-          </p>
-        </div>
-        <div>
-          <p className="font-[family-name:var(--font-open-sans)] text-[10px] text-[#5A6A85]">
-            Total
-          </p>
-          <p className="font-bold font-[family-name:var(--font-poppins)] text-sm text-[#E6C78A]">
-            {formatMXN(total)}
-          </p>
-        </div>
-      </div>
+      )}
     </div>
   );
 }

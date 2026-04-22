@@ -934,9 +934,9 @@ export function DiagnosticoPDFTemplate() {
     if (!proteccion || !motorE) return null;
     const inmuebles_total = (patrimonio?.casa ?? 0) + (patrimonio?.inmuebles_renta ?? 0) + (patrimonio?.tierra ?? 0);
     return calcularMotorF({
-      seguro_vida: proteccion.seguro_vida,
+      seguro_vida: proteccion.seguro_vida ?? false,
       propiedades_aseguradas: proteccion.propiedades_aseguradas,
-      sgmm: proteccion.sgmm,
+      sgmm: proteccion.sgmm ?? false,
       dependientes: perfil?.dependientes ?? false,
       patrimonio_neto: motorE.patrimonio_neto,
       inmuebles_total,

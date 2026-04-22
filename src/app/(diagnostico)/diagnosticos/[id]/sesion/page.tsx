@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
-import { useParams, useRouter } from "next/navigation";
-import { Mic, MicOff, Square, ArrowLeft, Check, Undo2 } from "lucide-react";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
+import { Mic, MicOff, Square, ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Modal } from "@/components/ui/modal";
@@ -15,13 +15,9 @@ import { useDiagnosticoStore } from "@/stores/diagnostico-store";
 import { useDeepgram, type TranscriptLine } from "@/hooks/use-deepgram";
 import { extraerEntidadesLocal, extraerConHaiku, shouldAutoAccept } from "@/lib/voz-nlu";
 import { getDatosFaltantes } from "@/lib/navi-engine";
-
-interface ToastItem {
-  id: string;
-  campo: string;
-  valor: string;
-  visible: boolean;
-}
+import { guardarSesionEnCRM } from "@/lib/guardar-sesion-crm";
+import { detectarOportunidades } from "@/lib/navi-opportunities";
+import { bulkCreateOportunidades } from "@/lib/crm-api";
 
 function ProgressRing({
   pct,
@@ -63,48 +59,10 @@ function ProgressRing({
   );
 }
 
-function AutoExtractToast({
-  toast,
-  onUndo,
-  onDismiss,
-}: {
-  toast: ToastItem;
-  onUndo: () => void;
-  onDismiss: () => void;
-}) {
-  useEffect(() => {
-    const timer = setTimeout(onDismiss, 4000);
-    return () => clearTimeout(timer);
-  }, [onDismiss]);
-
-  return (
-    <div
-      className={`flex items-center gap-3 px-4 py-2.5 rounded-xl bg-[#0C1829] border-l-4 border-l-[#10B981] border border-white/[0.06] shadow-lg max-w-xs ${
-        toast.visible ? "animate-toast-in" : "animate-toast-out"
-      }`}
-    >
-      <Check className="w-4 h-4 text-[#10B981] shrink-0" />
-      <div className="flex-1 min-w-0">
-        <p className="text-xs text-[#F0F4FA] font-medium truncate">
-          {toast.campo}: <span className="font-bold">{toast.valor}</span>
-        </p>
-        <p className="text-[10px] text-[#8B9BB4]">Capturado automáticamente</p>
-      </div>
-      <button
-        type="button"
-        onClick={onUndo}
-        className="shrink-0 flex items-center gap-1 text-[10px] text-[#8B9BB4] hover:text-[#F0F4FA] transition-colors"
-      >
-        <Undo2 className="w-3 h-3" />
-        Deshacer
-      </button>
-    </div>
-  );
-}
-
 export default function SesionPage() {
   const params = useParams();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const diagnosticoId = params.id as string;
 
   const store = useDiagnosticoStore();
@@ -114,24 +72,53 @@ export default function SesionPage() {
     patrimonio,
     retiro,
     proteccion,
+    pareja_perfil,
+    pareja_flujoMensual,
+    pareja_patrimonio,
+    pareja_retiro,
+    pareja_proteccion,
+    outputs,
+    criterios_trayectoria,
+    modo,
     completitud_pct,
     extracted_fields,
+    sesion_insights,
     sesion_inicio,
     datos_fuente,
+    currentClienteId,
     setSesionInicio,
     setDatosFuente,
+    setCurrentClienteId,
     updateCompletitud,
     addExtractedField,
     acceptExtractedField,
     updateExtractedFieldValue,
     applyExtractedField,
+    addSessionInsight,
+    marcarDiagnosticoCompleto,
+    addDocumento,
+    guardarSnapshotCliente,
+    agregarOportunidadesSnapshot,
   } = store;
+
+  // Reset session form data when a new session loads (keeps insights/simulaciones/docs intact)
+  const resetSession = useDiagnosticoStore((s) => s.resetSession);
+  useEffect(() => {
+    resetSession();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [diagnosticoId]);
+
+  // Register which client this session belongs to so insights are keyed correctly
+  useEffect(() => {
+    const clienteId = searchParams.get("clienteId");
+    if (clienteId) setCurrentClienteId(clienteId);
+  }, [searchParams, setCurrentClienteId]);
 
   const [consentModalOpen, setConsentModalOpen] = useState(false);
   const [consent, setConsent] = useState(false);
   const [sesionMinutos, setSesionMinutos] = useState(0);
   const [completionModalOpen, setCompletionModalOpen] = useState(false);
-  const [toasts, setToasts] = useState<ToastItem[]>([]);
+  const [saving, setSaving] = useState(false);
 
   const onTranscript = useCallback((lines: TranscriptLine[]) => {
     void lines;
@@ -161,22 +148,18 @@ export default function SesionPage() {
     updateCompletitud();
   }, [perfil, flujoMensual, patrimonio, retiro, proteccion, updateCompletitud]);
 
-  const showToast = useCallback((campo: string, valor: string) => {
-    const id = `${campo}-${Date.now()}`;
-    setToasts((prev) => [...prev.slice(-2), { id, campo, valor, visible: true }]);
-  }, []);
-
-  const dismissToast = useCallback((id: string) => {
-    setToasts((prev) =>
-      prev.map((t) => (t.id === id ? { ...t, visible: false } : t))
-    );
-    setTimeout(() => {
-      setToasts((prev) => prev.filter((t) => t.id !== id));
-    }, 250);
-  }, []);
 
   // --- LAYER 1: Instant regex extraction on every new final transcript line ---
   const lastProcessedIdxRef = useRef(0);
+
+  // Reset processed-line index every time a NEW recording session starts
+  const prevIsRecordingRef = useRef(false);
+  useEffect(() => {
+    if (isRecording && !prevIsRecordingRef.current) {
+      lastProcessedIdxRef.current = 0;
+    }
+    prevIsRecordingRef.current = isRecording;
+  }, [isRecording]);
 
   useEffect(() => {
     if (!isRecording) return;
@@ -193,9 +176,12 @@ export default function SesionPage() {
     const faltantes = getDatosFaltantes({
       perfil, flujoMensual, patrimonio, retiro, proteccion,
     });
-    if (faltantes.length === 0) return;
+    // Always include "nombre" even when already set — allows the advisor or client
+    // to correct a misheard name at any point during the session.
+    const faltantesConNombre = faltantes.includes("nombre") ? faltantes : [...faltantes, "nombre"];
+    if (faltantesConNombre.length === 0) return;
 
-    const sugerencias = extraerEntidadesLocal(recentText, faltantes);
+    const sugerencias = extraerEntidadesLocal(recentText, faltantesConNombre);
     processExtractions(sugerencias);
   }, [
     isRecording, transcript, perfil, flujoMensual, patrimonio, retiro, proteccion,
@@ -210,10 +196,10 @@ export default function SesionPage() {
       const action = shouldAutoAccept(s.confianza);
       if (action === "ignore") continue;
 
-      // Skip if this field was already accepted
+      // Skip if this field was already accepted with the same value
       const currentFields = extractedFieldsRef.current;
       const existing = currentFields.find((f) => f.campo === s.campo && f.aceptado);
-      if (existing) continue;
+      if (existing && String(existing.valor) === String(s.valor)) continue;
 
       const field = {
         campo: s.campo,
@@ -228,10 +214,9 @@ export default function SesionPage() {
       if (action === "auto") {
         applyExtractedField({ ...field, timestamp: Date.now() });
         setDatosFuente("voz");
-        showToast(s.campo, String(s.valor));
       }
     }
-  }, [addExtractedField, applyExtractedField, setDatosFuente, showToast]);
+  }, [addExtractedField, applyExtractedField, setDatosFuente]);
 
   // --- LAYER 2: Claude Haiku deep analysis every ~8 seconds on ALL transcript text ---
   const haikuTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -264,7 +249,9 @@ export default function SesionPage() {
       if (allText.length <= lastHaikuTextLenRef.current) return;
 
       const { perfil: p, flujoMensual: f, patrimonio: pat, retiro: r, proteccion: pro } = storeRef.current;
-      const faltantes = getDatosFaltantes({ perfil: p, flujoMensual: f, patrimonio: pat, retiro: r, proteccion: pro });
+      const faltantesBase = getDatosFaltantes({ perfil: p, flujoMensual: f, patrimonio: pat, retiro: r, proteccion: pro });
+      // Always include "nombre" so Haiku can detect name corrections mid-session
+      const faltantes = faltantesBase.includes("nombre") ? faltantesBase : [...faltantesBase, "nombre"];
       if (faltantes.length === 0) return;
 
       haikuRunningRef.current = true;
@@ -327,19 +314,158 @@ export default function SesionPage() {
     if (field) applyExtractedField({ ...field, valor });
   };
 
+  // Manual entry by the advisor — creates a synthetic extracted field and applies it
+  const handleSetField = useCallback((campo: string, valor: string | number | boolean) => {
+    const field = {
+      campo,
+      valor,
+      confianza: 1.0,
+      texto_fuente: "manual",
+      aceptado: true,
+    };
+    addExtractedField(field);
+    applyExtractedField({ ...field, timestamp: Date.now() });
+    setDatosFuente("mixto");
+  }, [addExtractedField, applyExtractedField, setDatosFuente]);
+
   const handleDismissField = (campo: string) => {
     addExtractedField({
       campo, valor: "", confianza: 0, texto_fuente: "", aceptado: false,
     });
   };
 
-  const handleGenerarBalance = () => {
+  const handleGenerarBalance = async () => {
     if (completitud_pct < 25) {
       setCompletionModalOpen(true);
       return;
     }
     if (isRecording) stopRecording();
-    router.push(`/diagnosticos/${diagnosticoId}/presentacion`);
+
+    const clienteId = searchParams.get("clienteId") ?? currentClienteId;
+    setSaving(true);
+
+    // 1. Persist ALL data: diagnostic sections + full session snapshot + CRM.
+    //    Awaited before navigation so the backend is consistent before the user
+    //    continues. Per-section failures are caught internally; we continue.
+    await guardarSesionEnCRM({
+      diagnosticoId,
+      clienteId,
+      transcriptText: fullTranscriptText,
+      sesionMinutos,
+      completitud_pct,
+      datos_fuente,
+      modo,
+      // Titular
+      perfil: perfil as Record<string, unknown> | null,
+      flujoMensual: flujoMensual as Record<string, unknown> | null,
+      patrimonio: patrimonio as Record<string, unknown> | null,
+      retiro: retiro as Record<string, unknown> | null,
+      proteccion: proteccion as Record<string, unknown> | null,
+      // Pareja (null if individual mode)
+      pareja_perfil: pareja_perfil as Record<string, unknown> | null,
+      pareja_flujoMensual: pareja_flujoMensual as Record<string, unknown> | null,
+      pareja_patrimonio: pareja_patrimonio as Record<string, unknown> | null,
+      pareja_retiro: pareja_retiro as Record<string, unknown> | null,
+      pareja_proteccion: pareja_proteccion as Record<string, unknown> | null,
+      // Motor outputs already computed client-side
+      outputs: outputs as Record<string, unknown> | null,
+      // Structured session intelligence
+      sesion_insights: sesion_insights.map((i) => ({
+        id: i.id,
+        tipo: i.tipo,
+        texto: i.texto,
+        producto_sugerido: i.producto_sugerido,
+        confianza: i.confianza,
+        fase: i.fase,
+        created_at: i.created_at,
+        señal_detectada: i.señal_detectada,
+        contexto_seguimiento: i.contexto_seguimiento,
+        accion_sugerida: i.accion_sugerida,
+      })),
+      criterios_trayectoria: criterios_trayectoria as Record<string, unknown> | null,
+    });
+
+    // 2. Mark diagnostic complete in local store + persist client snapshot (sync)
+    marcarDiagnosticoCompleto(diagnosticoId, perfil?.nombre || "Cliente", modo);
+    if (clienteId) guardarSnapshotCliente(clienteId, diagnosticoId);
+
+    // 3. Register document entry in local Zustand store (same-session fallback)
+    addDocumento({
+      tipo: "balance",
+      nombre_archivo: `Balance_${(perfil?.nombre || "Cliente").replace(/\s+/g, "_")}_${new Date().toLocaleDateString("es-MX", { day: "2-digit", month: "2-digit", year: "numeric" }).replace(/\//g, "-")}.pdf`,
+      cliente_nombre: perfil?.nombre || "Cliente",
+      diagnostico_id: diagnosticoId,
+    });
+
+    // 4. Detect + persist opportunities.
+    //    We race against a 5s timeout so the LLM call doesn't hold up navigation
+    //    indefinitely. If it finishes in time → backend gets the data now. If not,
+    //    presentacion-b will retry on mount (backend deduplicates by title).
+    if (clienteId) {
+      const storeSnapshot = { perfil, flujoMensual, patrimonio, retiro, proteccion };
+      const transcriptInsights = sesion_insights
+        .filter((i) => i.tipo === "oportunidad")
+        .map((i) => i.texto)
+        .join(" ");
+
+      const opsTask = detectarOportunidades(transcriptInsights, [], storeSnapshot).then((ops) => {
+        if (ops.length === 0) return;
+        for (const op of ops) {
+          const alreadyRecorded = sesion_insights.some(
+            (si) => si.tipo === "oportunidad" && si.producto_sugerido === op.producto_sugerido
+          );
+          if (!alreadyRecorded) {
+            addSessionInsight({
+              tipo: "oportunidad",
+              texto: `${op.oportunidad}: ${op.razon}`,
+              producto_sugerido: op.producto_sugerido,
+              confianza: op.confianza,
+              fase: "presentacion",
+              clienteId,
+            });
+          }
+        }
+        // Local snapshot (cross-session persistence in localStorage)
+        agregarOportunidadesSnapshot(
+          clienteId,
+          ops.map((op) => ({
+            id: op.id,
+            titulo: op.oportunidad,
+            descripcion: op.razon,
+            producto_sugerido: op.producto_sugerido,
+            categoria: op.categoria,
+            prioridad: op.prioridad,
+            confianza: op.confianza,
+            estado: "pendiente" as const,
+            created_at: op.detected_at,
+          }))
+        );
+        // Backend CRM (idempotent — deduplicates by title)
+        void bulkCreateOportunidades(
+          clienteId,
+          ops.map((op) => ({
+            tipo: "oportunidad" as const,
+            categoria: op.categoria,
+            prioridad: op.prioridad,
+            fuente: op.fuente ?? "datos",
+            titulo: op.oportunidad,
+            descripcion: op.razon,
+            producto_sugerido: op.producto_sugerido,
+            señal_detectada: op.señal_detectada,
+            contexto_seguimiento: op.contexto_seguimiento,
+            accion_sugerida: op.accion_sugerida,
+            confianza: op.confianza,
+          })),
+          diagnosticoId
+        );
+      });
+
+      // Wait up to 5 seconds; if LLM is slower the call continues after navigation
+      await Promise.race([opsTask, new Promise<void>((r) => setTimeout(r, 5000))]);
+    }
+
+    // 5. Navigate — setSaving stays true; component unmounts on push
+    router.push(`/diagnosticos/${diagnosticoId}/presentacion-b${clienteId ? `?clienteId=${clienteId}` : ""}`);
   };
 
   const datosFaltantes = getDatosFaltantes({
@@ -370,7 +496,7 @@ export default function SesionPage() {
         style={{ background: "rgba(12,24,41,0.95)", backdropFilter: "blur(16px)" }}
       >
         <div className="flex items-center gap-3">
-          <Link href="/crm" className="text-[#8B9BB4] hover:text-[#F0F4FA] transition-colors">
+          <Link href="/dashboard" className="text-[#8B9BB4] hover:text-[#F0F4FA] transition-colors">
             <ArrowLeft className="w-4 h-4" />
           </Link>
           <div className="w-9 h-9 rounded-full bg-[#1A3154] border border-[#C9A84C]/20 flex items-center justify-center">
@@ -426,11 +552,14 @@ export default function SesionPage() {
       {/* Main content: Command Center (left) + Transcription (right) */}
       <div className="flex-1 flex overflow-hidden">
         {/* LEFT — Data Command Center (62%) */}
-        <div className="w-[62%] flex flex-col border-r border-white/[0.06]">
+        <div className="w-[62%] flex flex-col border-r border-white/[0.06] overflow-hidden">
           <DataCommandCenter
             transcripcion={fullTranscriptText}
             sesionMinutos={sesionMinutos}
             extractedFields={extracted_fields}
+            onAcceptField={handleAcceptField}
+            onDismissField={handleDismissField}
+            onSetField={handleSetField}
           />
         </div>
 
@@ -469,19 +598,8 @@ export default function SesionPage() {
         totalDatos={totalDatosCapturados}
         onGenerarBalance={handleGenerarBalance}
         onStopRecording={isRecording ? handleStop : undefined}
+        saving={saving}
       />
-
-      {/* Toast notifications */}
-      <div className="fixed top-4 right-4 z-50 flex flex-col gap-2">
-        {toasts.map((t) => (
-          <AutoExtractToast
-            key={t.id}
-            toast={t}
-            onUndo={() => { handleDismissField(t.campo); dismissToast(t.id); }}
-            onDismiss={() => dismissToast(t.id)}
-          />
-        ))}
-      </div>
 
       {/* Consent Modal */}
       <Modal open={consentModalOpen} onClose={() => setConsentModalOpen(false)} title="Captura por voz">
@@ -514,7 +632,10 @@ export default function SesionPage() {
             <Button variant="ghost" onClick={() => { setCompletionModalOpen(false); router.push(`/diagnosticos/${diagnosticoId}/paso/1`); }} className="flex-1">
               Completar manualmente
             </Button>
-            <Button variant="accent" onClick={() => { setCompletionModalOpen(false); if (isRecording) stopRecording(); router.push(`/diagnosticos/${diagnosticoId}/presentacion`); }} className="flex-1">
+            <Button variant="accent" onClick={() => {
+              setCompletionModalOpen(false);
+              void handleGenerarBalance();
+            }} className="flex-1">
               Generar con lo que tenemos
             </Button>
           </div>

@@ -34,7 +34,7 @@ async def get_referral_redirect(
     if not link:
         raise HTTPException(status_code=404, detail="Referral no encontrado")
     await db.execute(update(ReferralLink).where(ReferralLink.id == link.id).values(clicks=ReferralLink.clicks + 1))
-    base_url = settings.cors_origins.split(",")[0].strip() if settings.cors_origins else "http://localhost:3000"
+    base_url = settings.cors_origins.split(",")[0].strip() if settings.cors_origins else "http://localhost:3001"
     asesor_nombre = ""
     if link.diagnostico and link.diagnostico.cliente and link.diagnostico.cliente.asesor:
         asesor_nombre = link.diagnostico.cliente.asesor.nombre or ""

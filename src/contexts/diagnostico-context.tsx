@@ -120,9 +120,11 @@ export function DiagnosticoProvider({ children }: { children: React.ReactNode })
         if (d.proteccion) {
           const pr = d.proteccion as Record<string, unknown>;
           updateProteccion({
-            seguro_vida: Boolean(pr.seguro_vida),
+            // Preserve null so unanswered fields stay in "faltantes" and NLU keeps trying.
+            // Boolean(null) = false would incorrectly mark the field as answered.
+            seguro_vida: pr.seguro_vida == null ? null : Boolean(pr.seguro_vida),
             propiedades_aseguradas: pr.propiedades_aseguradas == null ? null : Boolean(pr.propiedades_aseguradas),
-            sgmm: Boolean(pr.sgmm),
+            sgmm: pr.sgmm == null ? null : Boolean(pr.sgmm),
           });
         }
       })

@@ -113,7 +113,7 @@ Tras cambiar variables, haz **Redeploy** en el último deployment.
 En **`backend/.env.local`** (o donde definas variables del API), ajusta **`CORS_ORIGINS`** separando orígenes con comas **sin espacios** (o con espacios si tu código los recorta — el split actual es por `,`):
 
 ```env
-CORS_ORIGINS=http://localhost:3000,https://aria-actinver.vercel.app
+CORS_ORIGINS=http://localhost:3001,https://aria-actinver.vercel.app
 ```
 
 Incluye tu dominio Vercel real y, si usas previews, añade esas URLs o un origen que FastAPI acepte.

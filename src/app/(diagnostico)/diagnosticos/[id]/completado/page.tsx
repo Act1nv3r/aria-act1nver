@@ -6,7 +6,7 @@ import { useParams } from "next/navigation";
 import { CheckCircle } from "lucide-react";
 import confetti from "canvas-confetti";
 import { Button } from "@/components/ui/button";
-import { OutputPanel } from "@/components/diagnostico/output-panel";
+import { BalanceResultsScreen } from "@/components/diagnostico/balance-results-screen";
 import { useDiagnosticoStore } from "@/stores/diagnostico-store";
 import { useDiagnosticoId } from "@/contexts/diagnostico-context";
 import { generarBalancePDF, generarDiagnosticoPDF } from "@/lib/pdf-generator";
@@ -115,7 +115,7 @@ export default function CompletadoPage() {
                   )
                 }
               >
-                Descarga tu Balance Financiero
+                Descarga tu Balance Patrimonial
               </Button>
             </div>
 
@@ -126,6 +126,16 @@ export default function CompletadoPage() {
             <Link href={`/diagnosticos/${id}/simulador`}>
               <Button variant="secondary" size="lg">
                 Simular escenarios
+              </Button>
+            </Link>
+
+            <Link href={`/diagnosticos/${id}/presentacion-b`}>
+              <Button
+                variant="outline"
+                size="lg"
+                className="border-[#C9A84C]/30 text-[#C9A84C] hover:bg-[#C9A84C]/10 hover:border-[#C9A84C]/50"
+              >
+                ✦ Ver Presentación Premium
               </Button>
             </Link>
 
@@ -141,7 +151,7 @@ export default function CompletadoPage() {
 
             <Link href="/crm">
               <Button variant="ghost" size="lg">
-                Volver al CRM
+                Mis Clientes
               </Button>
             </Link>
           </div>
@@ -150,7 +160,7 @@ export default function CompletadoPage() {
 
       {/* Results panel — full width command center */}
       <div className="max-w-[1600px] mx-auto px-6 sm:px-8 lg:px-12 pb-24">
-        <OutputPanel variant="full" />
+        <BalanceResultsScreen />
       </div>
 
       {/* Hidden PDF templates for html2canvas capture */}
@@ -180,22 +190,7 @@ export default function CompletadoPage() {
               )
             }
           >
-            Descarga tu Balance Financiero
-          </Button>
-
-          <Button
-            variant="accent"
-            size="sm"
-            onClick={() =>
-              generarDiagnosticoPDF(
-                perfil?.nombre ?? "Cliente",
-                isApiMode && id
-                  ? { diagnosticoId: id, token: getAccessToken() ?? undefined }
-                  : undefined
-              )
-            }
-          >
-            Descarga tu Diagnóstico Financiero
+            Descarga tu Balance Patrimonial
           </Button>
 
           <Link href={`/diagnosticos/${id}/simulador`}>
@@ -206,7 +201,7 @@ export default function CompletadoPage() {
 
           <Link href="/crm">
             <Button variant="ghost" size="sm">
-              ← CRM
+              ← Mis Clientes
             </Button>
           </Link>
         </div>

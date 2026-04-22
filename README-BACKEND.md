@@ -34,7 +34,7 @@ uvicorn app.main:app --reload --port 8000
 
 ### 5. Frontend
 
-Next.js usa **`.env.local`** en la raíz del repo (ya documentado en `.env.local.example`):
+Next.js usa **`.env.local`** en la raíz del repo (ya documentado en `.env.local.example`). `npm run dev` sirve la app en **http://localhost:3001**.
 
 ```bash
 # En la raíz del proyecto

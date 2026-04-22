@@ -296,7 +296,7 @@ export default function DiagnosticoLayout({
               className="flex items-center gap-2 px-3 py-2 rounded-[8px] text-[#8B9BB4] hover:text-[#F0F4FA] hover:bg-[#1A3154]/50 transition-colors text-xs"
             >
               <ArrowLeft className="w-3.5 h-3.5" />
-              Volver al CRM
+              Volver a Mis Clientes
             </Link>
           </div>
         </aside>
@@ -306,7 +306,7 @@ export default function DiagnosticoLayout({
 
           {/* Mobile header */}
           {!isCompletado && (
-            <div className="lg:hidden sticky top-0 z-50 bg-[#0C1829]/95 border-b border-white/[0.06]"
+            <div className="lg:hidden sticky top-0 z-[60] bg-[#0C1829]/95 border-b border-white/[0.06]"
                  style={{ backdropFilter: "blur(16px)" }}>
               <div className="flex items-center justify-between px-4 py-3">
                 <Link href="/crm" className="flex items-center gap-2">
@@ -360,7 +360,7 @@ export default function DiagnosticoLayout({
           {/* Page header — sticky, desktop + mobile */}
           {!isCompletado && currentStep && (
             <div
-              className="sticky lg:top-0 top-0 z-40 px-6 py-4 lg:px-8 border-b border-white/[0.06]"
+              className="sticky lg:top-0 top-0 z-[50] px-6 py-4 lg:px-8 border-b border-white/[0.06]"
               style={{
                 background: "rgba(6,13,26,0.8)",
                 backdropFilter: "blur(20px)",
