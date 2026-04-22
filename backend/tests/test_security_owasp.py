@@ -9,14 +9,17 @@ from app.main import app
 from app.core.security import create_access_token
 
 
-@pytest.fixture
+# One shared client for the whole module — avoids recreating the asyncpg
+# connection pool on every test (which causes "another operation is in progress"
+# when pytest-asyncio reuses the same event loop across tests).
+@pytest.fixture(scope="module")
 async def client():
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url="http://test") as ac:
         yield ac
 
 
-@pytest.fixture
+@pytest.fixture(scope="module")
 async def auth_headers(client):
     """Login as maria and return Authorization headers."""
     r = await client.post(
