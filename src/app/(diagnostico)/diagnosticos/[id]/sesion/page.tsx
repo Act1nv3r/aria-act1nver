@@ -368,7 +368,7 @@ export default function SesionPage() {
       pareja_retiro: pareja_retiro as Record<string, unknown> | null,
       pareja_proteccion: pareja_proteccion as Record<string, unknown> | null,
       // Motor outputs already computed client-side
-      outputs: outputs as Record<string, unknown> | null,
+      outputs: outputs as unknown as Record<string, unknown> | null,
       // Structured session intelligence
       sesion_insights: sesion_insights.map((i) => ({
         id: i.id,
@@ -382,7 +382,7 @@ export default function SesionPage() {
         contexto_seguimiento: i.contexto_seguimiento,
         accion_sugerida: i.accion_sugerida,
       })),
-      criterios_trayectoria: criterios_trayectoria as Record<string, unknown> | null,
+      criterios_trayectoria: criterios_trayectoria as unknown as Record<string, unknown> | null,
     });
 
     // 2. Mark diagnostic complete in local store + persist client snapshot (sync)
