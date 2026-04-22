@@ -11,12 +11,12 @@ services:
     ports:
       - "8000:8000"
     environment:
-      - DATABASE_URL=postgresql+asyncpg://aria:${DB_PASSWORD:-aria_secret}@db:5432/aria
+      - DATABASE_URL=postgresql+asyncpg://aria:${DB_PASSWORD}@db:5432/aria
       - REDIS_URL=redis://redis:6379/0
       - JWT_PRIVATE_KEY_PATH=/app/keys/private.pem
       - JWT_PUBLIC_KEY_PATH=/app/keys/public.pem
-      - CORS_ORIGINS=${CORS_ORIGINS:-http://localhost:3001,http://127.0.0.1:3001}
-      - API_BASE_URL=${API_BASE_URL:-http://localhost:8000}
+      - CORS_ORIGINS=${CORS_ORIGINS}
+      - API_BASE_URL=${API_BASE_URL}
     depends_on:
       db:
         condition: service_healthy
@@ -39,7 +39,7 @@ services:
     image: postgres:16-alpine
     environment:
       - POSTGRES_USER=aria
-      - POSTGRES_PASSWORD=${DB_PASSWORD:-aria_secret}
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
       - POSTGRES_DB=aria
     volumes:
       - postgres_data:/var/lib/postgresql/data
