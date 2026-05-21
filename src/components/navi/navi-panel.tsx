@@ -327,7 +327,7 @@ export function NaviPanel({
                       <div key={i} className="w-1.5 h-1.5 rounded-full bg-[#4A5A72] animate-bounce" style={{ animationDelay: `${i * 150}ms` }} />
                     ))}
                   </div>
-                  <p className="text-xs text-[#5A6A85]">ArIA está analizando la conversación...</p>
+                  <p className="text-xs text-[#5A6A85]">Actinver Banca Privada está analizando la conversación...</p>
                 </div>
               </div>
             )}

@@ -106,7 +106,7 @@ export function calcularSaludFinanciera(input: SaludInput): SaludFinancieraResul
 
   // ── 4. Inmuebles ──────────────────────────────────────────────
   {
-    const noFin = input.motorE?.noFinanciero ?? 0;
+    const noFin = input.motorE?.no_financiero ?? 0;
     const activos = input.motorE?.activos_total ?? 0;
     const noFinPct = activos > 0 ? noFin / activos : 0;
     let score = 40;
@@ -195,7 +195,7 @@ export function calcularSaludFinanciera(input: SaludInput): SaludFinancieraResul
 
   // ── 8. Sucesión ───────────────────────────────────────────────
   {
-    const noFin = input.motorE?.noFinanciero ?? 0;
+    const noFin = input.motorE?.no_financiero ?? 0;
     const negocio = input.patrimonio?.negocio ?? 0;
     const herencia = input.patrimonio?.herencia ?? 0;
     const patrimonioNeto = input.motorE?.patrimonio_neto ?? 0;

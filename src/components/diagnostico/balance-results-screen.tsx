@@ -19,10 +19,10 @@ import { ProteccionDetallada } from "@/components/outputs/proteccion-detallada";
 import { TrayectoriaFuentes } from "@/components/outputs/trayectoria-fuentes";
 import { CriteriosTrayectoriaSection } from "@/components/outputs/criterios-trayectoria";
 
-function SectionHeader({ letter, title, subtitle }: { letter: string; title: string; subtitle?: string }) {
+function SectionHeader({ label, title, subtitle }: { label: string; title: string; subtitle?: string }) {
   return (
     <div className="mb-6">
-      <p className="text-xs font-semibold text-[#C9A96E] uppercase tracking-widest mb-1">{letter}</p>
+      <p className="text-[10px] font-bold text-[#C9A84C]/70 uppercase tracking-widest mb-1">{label}</p>
       <h2 className="text-2xl font-bold text-white">{title}</h2>
       {subtitle && <p className="text-sm text-[#8899BB] mt-1">{subtitle}</p>}
       <div className="h-px bg-[#243555] mt-4" />
@@ -30,8 +30,12 @@ function SectionHeader({ letter, title, subtitle }: { letter: string; title: str
   );
 }
 
-function Section({ children }: { children: React.ReactNode }) {
-  return <div className="mb-16">{children}</div>;
+function Section({ id, children }: { id?: string; children: React.ReactNode }) {
+  return (
+    <div id={id} className="mb-16" style={{ scrollMarginTop: "60px" }}>
+      {children}
+    </div>
+  );
 }
 
 export function BalanceResultsScreen() {
@@ -65,13 +69,15 @@ export function BalanceResultsScreen() {
 
     const motorC = retiro
       ? calcularMotorC({
-          patrimonio_financiero_total: patrimonioFin,
-          saldo_esquemas: patrimonio.afore + patrimonio.ppr + patrimonio.plan_privado + patrimonio.seguros_retiro,
-          saldo_esquemas_pension: patrimonio.afore,
-          saldo_esquemas_voluntarios: patrimonio.ppr + patrimonio.plan_privado + patrimonio.seguros_retiro,
+          liquidez: patrimonio.liquidez,
+          inversiones: patrimonio.inversiones,
+          dotales: patrimonio.dotales,
+          afore: patrimonio.afore,
+          ppr: patrimonio.ppr,
+          plan_privado: patrimonio.plan_privado,
+          seguros_retiro: patrimonio.seguros_retiro,
           ley_73: patrimonio.ley_73,
           rentas: flujoMensual.rentas,
-          ingresos_negocio: flujoMensual.otros,
           edad: perfil.edad,
           edad_retiro: retiro.edad_retiro,
           edad_defuncion: retiro.edad_defuncion,
@@ -97,10 +103,13 @@ export function BalanceResultsScreen() {
           seguro_vida: proteccion.seguro_vida ?? false,
           propiedades_aseguradas: proteccion.propiedades_aseguradas,
           sgmm: proteccion.sgmm ?? false,
-          dependientes: perfil.dependientes ?? false,
-          patrimonio_neto: motorE.patrimonio_neto,
-          inmuebles_total: patrimonio.casa + patrimonio.inmuebles_renta,
+          dependientes: perfil.dependientes ? 1 : 0,
+          inversiones: patrimonio.inversiones,
+          dotales: patrimonio.dotales,
+          gastos_mensuales: flujoMensual.gastos_basicos + flujoMensual.obligaciones + flujoMensual.creditos,
           edad: perfil.edad,
+          inmuebles_total: patrimonio.casa + patrimonio.inmuebles_renta,
+          rentas_mensuales: flujoMensual.rentas,
         })
       : null;
 
@@ -119,10 +128,21 @@ export function BalanceResultsScreen() {
 
   return (
     <div className="space-y-0">
-      {/* A — Resumen Ejecutivo */}
-      <Section>
+
+      {/* C — Balance Patrimonial (primero — lo más importante para el cliente) */}
+      <Section id="sec-patrimonio">
         <SectionHeader
-          letter="A"
+          label="Balance General"
+          title="Resultado del Diagnóstico Patrimonial"
+          subtitle="Composición detallada de activos, pasivos y patrimonio neto"
+        />
+        <PatrimonioBreakdown patrimonio={patrimonio} motorE={motorE} />
+      </Section>
+
+      {/* A — Resumen Ejecutivo */}
+      <Section id="sec-resumen">
+        <SectionHeader
+          label="Perspectiva Integral"
           title="Resumen Ejecutivo"
           subtitle="Panorama integral de tu situación patrimonial y financiera"
         />
@@ -139,10 +159,53 @@ export function BalanceResultsScreen() {
         )}
       </Section>
 
-      {/* B — Plan de Acción */}
-      <Section>
+      {/* D — Fuentes de Flujo Disponible */}
+      <Section id="sec-flujo">
         <SectionHeader
-          letter="B"
+          label="Flujo Mensual"
+          title="Fuentes de Flujo Disponible"
+          subtitle="Análisis de ingresos, gastos y rentabilidad de tus fuentes de flujo"
+        />
+        <FlujoDisponibleSection
+          motorA={motorA}
+          flujoMensual={flujoMensual}
+          patrimonio={{ inmuebles_renta: patrimonio.inmuebles_renta, negocio: patrimonio.negocio }}
+        />
+      </Section>
+
+      {/* G — Trayectoria Patrimonial */}
+      {motorC && retiro && (
+        <Section id="sec-retiro">
+          <SectionHeader
+            label="Proyección al Retiro"
+            title="Trayectoria Patrimonial"
+            subtitle="Proyección de ingresos en retiro por fuente y capital humano"
+          />
+          <TrayectoriaFuentes
+            motorC={motorC}
+            motorA={motorA}
+            motorD={motorD}
+            motorE={motorE}
+            perfil={perfil}
+            retiro={retiro}
+          />
+        </Section>
+      )}
+
+      {/* E — Potencial del Balance */}
+      <Section id="sec-potencial">
+        <SectionHeader
+          label="Estructura Patrimonial"
+          title="Potencial del Balance"
+          subtitle="Solvencia, estructura patrimonial y distribución de activos"
+        />
+        <PotencialBalanceSection motorE={motorE} patrimonio={patrimonio} />
+      </Section>
+
+      {/* B — Plan de Acción */}
+      <Section id="sec-plan">
+        <SectionHeader
+          label="Recomendaciones"
           title="Plan de Acción"
           subtitle="Situación actual, riesgo y recomendaciones por área patrimonial"
         />
@@ -177,45 +240,11 @@ export function BalanceResultsScreen() {
         )}
       </Section>
 
-      {/* C — Diagnóstico Patrimonial */}
-      <Section>
-        <SectionHeader
-          letter="C"
-          title="Resultado del Diagnóstico Patrimonial"
-          subtitle="Composición detallada de activos, pasivos y patrimonio neto"
-        />
-        <PatrimonioBreakdown patrimonio={patrimonio} motorE={motorE} />
-      </Section>
-
-      {/* D — Fuentes de Flujo Disponible */}
-      <Section>
-        <SectionHeader
-          letter="D"
-          title="Fuentes de Flujo Disponible"
-          subtitle="Análisis de ingresos, gastos y rentabilidad de tus fuentes de flujo"
-        />
-        <FlujoDisponibleSection
-          motorA={motorA}
-          flujoMensual={flujoMensual}
-          patrimonio={{ inmuebles_renta: patrimonio.inmuebles_renta, negocio: patrimonio.negocio }}
-        />
-      </Section>
-
-      {/* E — Potencial del Balance */}
-      <Section>
-        <SectionHeader
-          letter="E"
-          title="Potencial del Balance"
-          subtitle="Solvencia, estructura patrimonial y distribución de activos"
-        />
-        <PotencialBalanceSection motorE={motorE} patrimonio={patrimonio} />
-      </Section>
-
       {/* F — Protección Patrimonial */}
       {motorF && (
-        <Section>
+        <Section id="sec-proteccion">
           <SectionHeader
-            letter="F"
+            label="Cobertura y Riesgos"
             title="Protección Patrimonial"
             subtitle="Cobertura de seguros e impacto potencial en tu balance y flujo"
           />
@@ -233,29 +262,10 @@ export function BalanceResultsScreen() {
         </Section>
       )}
 
-      {/* G — Trayectoria Patrimonial */}
-      {motorC && retiro && (
-        <Section>
-          <SectionHeader
-            letter="G"
-            title="Trayectoria Patrimonial"
-            subtitle="Proyección de ingresos en retiro por fuente y capital humano"
-          />
-          <TrayectoriaFuentes
-            motorC={motorC}
-            motorA={motorA}
-            motorD={motorD}
-            motorE={motorE}
-            perfil={perfil}
-            retiro={retiro}
-          />
-        </Section>
-      )}
-
-      {/* H — Criterios de Trayectoria */}
-      <Section>
+      {/* H — Criterios de Trayectoria (Anexo) */}
+      <Section id="sec-criterios">
         <SectionHeader
-          letter="H"
+          label="Supuestos y Criterios"
           title="Anexo: Criterios de tu Trayectoria Patrimonial"
           subtitle="Supuestos sobre venta de activos y aportaciones utilizados en la proyección"
         />
@@ -272,6 +282,7 @@ export function BalanceResultsScreen() {
           aportacion_mensual={objetivos?.aportacion_mensual ?? 0}
         />
       </Section>
+
     </div>
   );
 }

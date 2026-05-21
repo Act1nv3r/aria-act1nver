@@ -81,13 +81,15 @@ export function WealthStoryScreen({ onDownloadPDF }: Props) {
 
     const motorC = retiro
       ? calcularMotorC({
-          patrimonio_financiero_total: patrimonioFin,
-          saldo_esquemas: patrimonio.afore + patrimonio.ppr + patrimonio.plan_privado + patrimonio.seguros_retiro,
-          saldo_esquemas_pension: patrimonio.afore,
-          saldo_esquemas_voluntarios: patrimonio.ppr + patrimonio.plan_privado + patrimonio.seguros_retiro,
+          liquidez: patrimonio.liquidez,
+          inversiones: patrimonio.inversiones,
+          dotales: patrimonio.dotales,
+          afore: patrimonio.afore,
+          ppr: patrimonio.ppr,
+          plan_privado: patrimonio.plan_privado,
+          seguros_retiro: patrimonio.seguros_retiro,
           ley_73: patrimonio.ley_73,
           rentas: flujoMensual.rentas,
-          ingresos_negocio: flujoMensual.otros,
           edad: perfil.edad,
           edad_retiro: retiro.edad_retiro,
           edad_defuncion: retiro.edad_defuncion,
@@ -154,13 +156,15 @@ export function WealthStoryScreen({ onDownloadPDF }: Props) {
 
   const baseInputSimulador = retiro
     ? {
-        patrimonio_financiero_total: patrimonioFin,
-        saldo_esquemas: patrimonio.afore + patrimonio.ppr + patrimonio.plan_privado + patrimonio.seguros_retiro,
-        saldo_esquemas_pension: patrimonio.afore,
-        saldo_esquemas_voluntarios: patrimonio.ppr + patrimonio.plan_privado + patrimonio.seguros_retiro,
+        liquidez: patrimonio.liquidez,
+        inversiones: patrimonio.inversiones,
+        dotales: patrimonio.dotales,
+        afore: patrimonio.afore,
+        ppr: patrimonio.ppr,
+        plan_privado: patrimonio.plan_privado,
+        seguros_retiro: patrimonio.seguros_retiro,
         ley_73: patrimonio.ley_73,
         rentas: flujoMensual.rentas,
-        ingresos_negocio: flujoMensual.otros,
         edad: perfil.edad,
         edad_retiro: retiro.edad_retiro,
         edad_defuncion: retiro.edad_defuncion,
@@ -225,8 +229,13 @@ export function WealthStoryScreen({ onDownloadPDF }: Props) {
           motorA={motorA}
           motorB={motorB}
           motorC={motorC ?? calcularMotorC({
-            patrimonio_financiero_total: patrimonioFin,
-            saldo_esquemas: 0,
+            liquidez: 0,
+            inversiones: 0,
+            dotales: 0,
+            afore: 0,
+            ppr: 0,
+            plan_privado: 0,
+            seguros_retiro: 0,
             ley_73: null,
             rentas: 0,
             edad: perfil.edad,

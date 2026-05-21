@@ -94,7 +94,7 @@ export function Paso6Proteccion() {
     } else {
       notifySaved();
     }
-    router.push(`/diagnosticos/${id}/completado`);
+    router.push(`/diagnosticos/${id}/presentacion-b`);
   };
 
   const onSubmitPareja = async (dataT: FormData, dataP: FormData) => {
@@ -113,7 +113,7 @@ export function Paso6Proteccion() {
     } else {
       notifySaved();
     }
-    router.push(`/diagnosticos/${id}/completado`);
+    router.push(`/diagnosticos/${id}/presentacion-b`);
   };
 
   const parejaSubmit = handleSubmit(async (dataT) => {

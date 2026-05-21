@@ -58,7 +58,7 @@ export function PatrimonioBreakdown({ patrimonio, motorE }: Props) {
   // Bar proportions for stacked bar
   const total = motorE.activos_total;
   const finPct = total > 0 ? (motorE.financiero / total) * 100 : 0;
-  const noFinPct = total > 0 ? (motorE.noFinanciero / total) * 100 : 0;
+  const noFinPct = total > 0 ? (motorE.no_financiero / total) * 100 : 0;
 
   return (
     <div className="space-y-5">
@@ -90,7 +90,7 @@ export function PatrimonioBreakdown({ patrimonio, motorE }: Props) {
           <Row label="Herencia" value={patrimonio.herencia} />
           <div className="mt-2 pt-2 border-t border-[#243555] flex justify-between">
             <span className="text-xs text-[#8899BB]">Total No Financiero</span>
-            <span className="text-sm font-bold text-[#C9A96E]">{formatMXN(motorE.noFinanciero)}</span>
+            <span className="text-sm font-bold text-[#C9A96E]">{formatMXN(motorE.no_financiero)}</span>
           </div>
         </div>
 

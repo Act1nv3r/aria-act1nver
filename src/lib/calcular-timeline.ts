@@ -22,7 +22,11 @@ export interface TimelineInput {
   patrimonioActual: number;
   ahorroMensual: number;
   tasaReal?: number;
-  pensionMensual: number;
+  /** Edad a partir de la cual aplica la tasa real. Antes de esta edad tasa=0. */
+  edadInicioRendimientos?: number;
+  /** Rango de edad en que se aporta el ahorro mensual. Por defecto: [edadActual, edadRetiro]. */
+  rangoAhorro?: [number, number];
+  pensionMensual: number | null;
   rentasMensuales: number;
   mensualidadDeseada: number;
   eventos?: EventoVida[];
@@ -41,7 +45,9 @@ export interface TimelineOutput {
 }
 
 export function calcularTimeline(input: TimelineInput): TimelineOutput {
-  const tasa = (input.tasaReal ?? PARAMS.TASA_REAL_ANUAL) / 12;
+  const tasaAnual = input.tasaReal ?? PARAMS.TASA_REAL_ANUAL;
+  const edadInicio = input.edadInicioRendimientos ?? input.edadActual;
+  const [ahorroDesde, ahorroHasta] = input.rangoAhorro ?? [input.edadActual, input.edadRetiro];
   const eventos = input.eventos ?? [];
 
   const puntos: TimelinePoint[] = [];
@@ -58,16 +64,21 @@ export function calcularTimeline(input: TimelineInput): TimelineOutput {
     const edadAnno = Math.round(edadExacta * 100) / 100;
     const esRetiro = edadExacta >= input.edadRetiro;
 
+    // Apply tasa only after edadInicioRendimientos
+    const tasaEfectiva = edadExacta >= edadInicio ? tasaAnual / 12 : 0;
+
     if (mes > 0) {
-      const interes = saldo * tasa;
+      const interes = saldo * tasaEfectiva;
+      const ahorroActivo = edadExacta >= ahorroDesde && edadExacta <= ahorroHasta;
       if (!esRetiro) {
-        saldo = saldo + interes + input.ahorroMensual;
+        saldo = saldo + interes + (ahorroActivo ? input.ahorroMensual : 0);
       } else {
         const gastoNeto = Math.max(
-          input.mensualidadDeseada - input.pensionMensual - input.rentasMensuales,
+          input.mensualidadDeseada - (input.pensionMensual ?? 0) - input.rentasMensuales,
           0
         );
-        saldo = saldo + interes - gastoNeto;
+        // En retiro: retiro del capital menos cualquier aportación que siga activa
+        saldo = saldo + interes - gastoNeto + (ahorroActivo ? input.ahorroMensual : 0);
       }
     }
 
@@ -105,7 +116,7 @@ export function calcularTimeline(input: TimelineInput): TimelineOutput {
       );
 
       const ingresoRetiro = esRetiro
-        ? input.pensionMensual + input.rentasMensuales
+        ? (input.pensionMensual ?? 0) + input.rentasMensuales
         : undefined;
 
       puntos.push({
@@ -124,16 +135,18 @@ export function calcularTimeline(input: TimelineInput): TimelineOutput {
   }
 
   const mesesJub = (input.edadDefuncion - input.edadRetiro) * 12;
+  // During retirement, returns always apply (edadRetiro >= edadInicioRendimientos in normal use)
+  const tasaJub = tasaAnual / 12;
   let mensualidadPosible: number;
-  if (tasa > 0 && mesesJub > 0) {
+  if (tasaJub > 0 && mesesJub > 0) {
     mensualidadPosible =
-      (saldoRetiro * tasa) / (1 - Math.pow(1 + tasa, -mesesJub));
+      (saldoRetiro * tasaJub) / (1 - Math.pow(1 + tasaJub, -mesesJub));
   } else {
     mensualidadPosible = mesesJub > 0 ? saldoRetiro / mesesJub : 0;
   }
 
   const totalMensual =
-    mensualidadPosible + input.pensionMensual + input.rentasMensuales;
+    mensualidadPosible + (input.pensionMensual ?? 0) + input.rentasMensuales;
   const gradoAvance =
     input.mensualidadDeseada > 0 ? totalMensual / input.mensualidadDeseada : 1;
   const deficit = input.mensualidadDeseada - totalMensual;

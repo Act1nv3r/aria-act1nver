@@ -39,7 +39,7 @@ export default function ClienteReadonlyPage() {
     return (
       <div className="min-h-screen bg-[#0A0E12] flex flex-col items-center justify-center p-8">
         <Link href="/" className="font-bold font-[family-name:var(--font-poppins)] text-xl text-white mb-8">
-          Actinver<span className="text-[#E6C78A]">·</span> ArIA
+          Actinver Banca Privada
         </Link>
         <h2 className="font-bold font-[family-name:var(--font-poppins)] text-2xl text-[#E6C78A] mb-4">
           Este enlace ha expirado
@@ -86,7 +86,7 @@ export default function ClienteReadonlyPage() {
     <div className="min-h-screen bg-[#0A0E12]">
       <header className="py-8 flex justify-center">
         <Link href="/" className="font-bold font-[family-name:var(--font-poppins)] text-2xl text-white">
-          Actinver<span className="text-[#E6C78A]">·</span> ArIA
+          Actinver Banca Privada
         </Link>
       </header>
 

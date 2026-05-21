@@ -150,7 +150,7 @@ export function TranscriptionLive({
           </div>
 
           <p className="text-[11px] text-[#4A5A72] leading-relaxed">
-            ArIA escuchará la conversación y extraerá datos automáticamente.
+            Actinver Banca Privada escuchará la conversación y extraerá datos automáticamente.
             <br />El audio se procesa en tiempo real y no se almacena.
           </p>
         </div>
@@ -173,7 +173,7 @@ export function TranscriptionLive({
             ))}
           </div>
           <p className="text-sm text-[#8B9BB4]">Escuchando la conversación...</p>
-          <p className="text-[11px] text-[#4A5A72]">Habla con naturalidad, ArIA capturará los datos</p>
+          <p className="text-[11px] text-[#4A5A72]">Habla con naturalidad, Actinver Banca Privada capturará los datos</p>
         </div>
       </div>
     );

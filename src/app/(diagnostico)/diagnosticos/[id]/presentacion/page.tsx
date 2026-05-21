@@ -168,63 +168,63 @@ export default function PresentacionPage() {
     confetti.reset();
   }, []);
 
-  // ── Reconstruct store from backend snapshot if local state was cleared ──────
-  // This makes the page work after a page refresh, device change, or cache clear.
-  // We only hydrate if the critical financial data is missing from the local store.
+  // ── Reconstruct store from backend snapshot ──────────────────────────────────
+  // Always runs on mount so the PDF template always has the right name,
+  // even if the user navigated here directly from the CRM dashboard.
   useEffect(() => {
-    const needsHydration = !perfil?.nombre || !flujoMensual || !patrimonio;
-    if (!needsHydration || !isApiMode) return;
+    if (!isApiMode || !diagnosticoId) return;
 
     api.diagnosticos.get(diagnosticoId).then((diag) => {
       const snap = (diag as Record<string, unknown>)?.parametros_snapshot as Record<string, unknown> | null;
-
-      // Hydrate from section data (always authoritative)
-      const backendPerfil = (diag as Record<string, unknown>).perfil as Record<string, unknown> | undefined;
-      const backendFlujo = (diag as Record<string, unknown>).flujoMensual as Record<string, unknown> | undefined;
-      const backendPatrimonio = (diag as Record<string, unknown>).patrimonio as Record<string, unknown> | undefined;
-      const backendRetiro = (diag as Record<string, unknown>).retiro as Record<string, unknown> | undefined;
-      const backendProteccion = (diag as Record<string, unknown>).proteccion as Record<string, unknown> | undefined;
 
       const { updatePerfil, updateFlujoMensual, updatePatrimonio, updateRetiro, updateProteccion,
               updateParejaPerfil, updateParejaFlujoMensual, updateParejaPatrimonio, updateParejaRetiro, updateParejaProteccion,
               updateCriteriosTrayectoria, addSessionInsight: addInsight, setModo } = useDiagnosticoStore.getState();
 
-      if (backendPerfil) updatePerfil(backendPerfil as Parameters<typeof updatePerfil>[0]);
-      if (backendFlujo) updateFlujoMensual(backendFlujo as Parameters<typeof updateFlujoMensual>[0]);
-      if (backendPatrimonio) updatePatrimonio(backendPatrimonio as Parameters<typeof updatePatrimonio>[0]);
-      if (backendRetiro) updateRetiro(backendRetiro as Parameters<typeof updateRetiro>[0]);
-      if (backendProteccion) updateProteccion(backendProteccion as Parameters<typeof updateProteccion>[0]);
+      // Primary source: parametros_snapshot (where guardarSesionEnCRM saves all data)
+      if (snap) {
+        if (snap.perfil)       updatePerfil(snap.perfil as Parameters<typeof updatePerfil>[0]);
+        if (snap.flujoMensual) updateFlujoMensual(snap.flujoMensual as Parameters<typeof updateFlujoMensual>[0]);
+        if (snap.patrimonio)   updatePatrimonio(snap.patrimonio as Parameters<typeof updatePatrimonio>[0]);
+        if (snap.retiro)       updateRetiro(snap.retiro as Parameters<typeof updateRetiro>[0]);
+        if (snap.proteccion)   updateProteccion(snap.proteccion as Parameters<typeof updateProteccion>[0]);
+        if (snap.modo)         setModo(snap.modo as "individual" | "pareja");
+        if (snap.criterios_trayectoria) updateCriteriosTrayectoria(snap.criterios_trayectoria as Parameters<typeof updateCriteriosTrayectoria>[0]);
+        if (snap.pareja_perfil)       updateParejaPerfil(snap.pareja_perfil as Parameters<typeof updateParejaPerfil>[0]);
+        if (snap.pareja_flujoMensual) updateParejaFlujoMensual(snap.pareja_flujoMensual as Parameters<typeof updateParejaFlujoMensual>[0]);
+        if (snap.pareja_patrimonio)   updateParejaPatrimonio(snap.pareja_patrimonio as Parameters<typeof updateParejaPatrimonio>[0]);
+        if (snap.pareja_retiro)       updateParejaRetiro(snap.pareja_retiro as Parameters<typeof updateParejaRetiro>[0]);
+        if (snap.pareja_proteccion)   updateParejaProteccion(snap.pareja_proteccion as Parameters<typeof updateParejaProteccion>[0]);
 
-      if (!snap) return;
-
-      // Restore from snapshot what the section endpoints don't cover
-      if (snap.modo) setModo(snap.modo as "individual" | "pareja");
-      if (snap.criterios_trayectoria) updateCriteriosTrayectoria(snap.criterios_trayectoria as Parameters<typeof updateCriteriosTrayectoria>[0]);
-      if (snap.pareja_perfil) updateParejaPerfil(snap.pareja_perfil as Parameters<typeof updateParejaPerfil>[0]);
-      if (snap.pareja_flujoMensual) updateParejaFlujoMensual(snap.pareja_flujoMensual as Parameters<typeof updateParejaFlujoMensual>[0]);
-      if (snap.pareja_patrimonio) updateParejaPatrimonio(snap.pareja_patrimonio as Parameters<typeof updateParejaPatrimonio>[0]);
-      if (snap.pareja_retiro) updateParejaRetiro(snap.pareja_retiro as Parameters<typeof updateParejaRetiro>[0]);
-      if (snap.pareja_proteccion) updateParejaProteccion(snap.pareja_proteccion as Parameters<typeof updateParejaProteccion>[0]);
-
-      // Restore session insights (oportunidades, contexto, etc.)
-      if (Array.isArray(snap.sesion_insights)) {
-        const currentInsights = useDiagnosticoStore.getState().sesion_insights;
-        for (const ins of snap.sesion_insights as Array<Record<string, unknown>>) {
-          const already = currentInsights.some((ci) => ci.id === ins.id);
-          if (!already) {
-            addInsight({
-              tipo: ins.tipo as "oportunidad" | "insight" | "contexto" | "seguimiento",
-              texto: ins.texto as string,
-              producto_sugerido: ins.producto_sugerido as string | undefined,
-              confianza: (ins.confianza as number) ?? 0,
-              fase: ins.fase as "conversacion" | "simulacion" | "presentacion",
-              señal_detectada: ins.señal_detectada as string | undefined,
-              contexto_seguimiento: ins.contexto_seguimiento as string | undefined,
-              accion_sugerida: ins.accion_sugerida as string | undefined,
-            });
+        if (Array.isArray(snap.sesion_insights)) {
+          const currentInsights = useDiagnosticoStore.getState().sesion_insights;
+          for (const ins of snap.sesion_insights as Array<Record<string, unknown>>) {
+            const already = currentInsights.some((ci) => ci.id === ins.id);
+            if (!already) {
+              addInsight({
+                tipo: ins.tipo as "oportunidad" | "insight" | "contexto" | "seguimiento",
+                texto: ins.texto as string,
+                producto_sugerido: ins.producto_sugerido as string | undefined,
+                confianza: (ins.confianza as number) ?? 0,
+                fase: ins.fase as "conversacion" | "simulacion" | "presentacion",
+                señal_detectada: ins.señal_detectada as string | undefined,
+                contexto_seguimiento: ins.contexto_seguimiento as string | undefined,
+                accion_sugerida: ins.accion_sugerida as string | undefined,
+              });
+            }
           }
         }
       }
+
+      // Fallback: individual section fields (older diagnostics without snapshot)
+      const state = useDiagnosticoStore.getState();
+      const diagR = diag as Record<string, unknown>;
+      if (!state.perfil?.nombre && diagR.perfil)      updatePerfil(diagR.perfil as Parameters<typeof updatePerfil>[0]);
+      if (!state.flujoMensual && diagR.flujoMensual)  updateFlujoMensual(diagR.flujoMensual as Parameters<typeof updateFlujoMensual>[0]);
+      if (!state.patrimonio && diagR.patrimonio)       updatePatrimonio(diagR.patrimonio as Parameters<typeof updatePatrimonio>[0]);
+      if (!state.retiro && diagR.retiro)               updateRetiro(diagR.retiro as Parameters<typeof updateRetiro>[0]);
+      if (!state.proteccion && diagR.proteccion)       updateProteccion(diagR.proteccion as Parameters<typeof updateProteccion>[0]);
+
     }).catch(() => {
       // Reconstruction is best-effort; never block the UI
     });
@@ -410,19 +410,26 @@ export default function PresentacionPage() {
       seguro_vida: proteccion.seguro_vida ?? false,
       propiedades_aseguradas: proteccion.propiedades_aseguradas,
       sgmm: proteccion.sgmm ?? false,
-      dependientes: perfil.dependientes ?? false,
-      patrimonio_neto: motorE.patrimonio_neto,
-      inmuebles_total,
+      dependientes: perfil.dependientes ? 1 : 0,
+      inversiones: patrimonio?.inversiones ?? 0,
+      dotales: patrimonio?.dotales ?? 0,
+      gastos_mensuales: (flujoMensual?.gastos_basicos ?? 0) + (flujoMensual?.obligaciones ?? 0) + (flujoMensual?.creditos ?? 0),
       edad: perfil.edad,
+      inmuebles_total,
+      rentas_mensuales: flujoMensual?.rentas ?? 0,
     });
-  }, [motorE, proteccion, perfil, patrimonio]);
+  }, [motorE, proteccion, perfil, patrimonio, flujoMensual]);
 
   const motorCBase = useMemo(() => {
     if (!perfil || !retiro || !patrimonio || !flujoMensual) return null;
-    const patrimonioFin = (patrimonio.liquidez ?? 0) + (patrimonio.inversiones ?? 0) + (patrimonio.dotales ?? 0);
     return calcularMotorC({
-      patrimonio_financiero_total: patrimonioFin,
-      saldo_esquemas: (patrimonio.afore ?? 0) + (patrimonio.ppr ?? 0) + (patrimonio.plan_privado ?? 0) + (patrimonio.seguros_retiro ?? 0),
+      liquidez: patrimonio.liquidez ?? 0,
+      inversiones: patrimonio.inversiones ?? 0,
+      dotales: patrimonio.dotales ?? 0,
+      afore: patrimonio.afore ?? 0,
+      ppr: patrimonio.ppr ?? 0,
+      plan_privado: patrimonio.plan_privado ?? 0,
+      seguros_retiro: patrimonio.seguros_retiro ?? 0,
       ley_73: patrimonio.ley_73,
       rentas: flujoMensual.rentas,
       edad: perfil.edad,
@@ -452,7 +459,7 @@ export default function PresentacionPage() {
             <span className="text-[#060D1A] text-xl font-bold">A</span>
           </div>
           <h2 className="text-xl font-bold text-[#F0F4FA] mb-2">
-            ArIA está componiendo tu Balance Patrimonial...
+            Actinver Banca Privada está componiendo tu Balance Patrimonial...
           </h2>
           <p className="text-sm text-[#8B9BB4]">
             Procesando datos de {nombre}
@@ -539,7 +546,7 @@ export default function PresentacionPage() {
               </button>
               {clienteId && (
                 <Link
-                  href={`/crm/${clienteId}`}
+                  href={`/customers/${clienteId}`}
                   className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-[#F0F4FA] hover:bg-white/[0.06]"
                   onClick={() => setMenuOpen(false)}
                 >
@@ -561,7 +568,7 @@ export default function PresentacionPage() {
                 onClick={() => {
                   setMenuOpen(false);
                   if (isRecording) stopRecording();
-                  router.push(`/diagnosticos/${diagnosticoId}/completado${clienteId ? `?clienteId=${encodeURIComponent(clienteId)}` : ""}`);
+                  router.push(`/diagnosticos/${diagnosticoId}/presentacion-b${clienteId ? `?clienteId=${encodeURIComponent(clienteId)}` : ""}`);
                 }}
               >
                 <CalendarCheck className="w-4 h-4 text-[#C9A84C] shrink-0" />
@@ -662,11 +669,13 @@ export default function PresentacionPage() {
               pensionMensual={
                 (() => {
                   const mc = calcularMotorC({
-                    patrimonio_financiero_total:
-                      (patrimonio.liquidez ?? 0) + (patrimonio.inversiones ?? 0) + (patrimonio.dotales ?? 0),
-                    saldo_esquemas:
-                      (patrimonio.afore ?? 0) + (patrimonio.ppr ?? 0) +
-                      (patrimonio.plan_privado ?? 0) + (patrimonio.seguros_retiro ?? 0),
+                    liquidez: patrimonio.liquidez ?? 0,
+                    inversiones: patrimonio.inversiones ?? 0,
+                    dotales: patrimonio.dotales ?? 0,
+                    afore: patrimonio.afore ?? 0,
+                    ppr: patrimonio.ppr ?? 0,
+                    plan_privado: patrimonio.plan_privado ?? 0,
+                    seguros_retiro: patrimonio.seguros_retiro ?? 0,
                     ley_73: patrimonio.ley_73,
                     rentas: flujoMensual.rentas,
                     edad: perfil.edad,
@@ -674,7 +683,7 @@ export default function PresentacionPage() {
                     edad_defuncion: retiro.edad_defuncion,
                     mensualidad_deseada: retiro.mensualidad_deseada,
                   });
-                  return mc.pension_total_mensual;
+                  return mc.pension_fija_total;
                 })()
               }
               rentasMensuales={flujoMensual.rentas}
@@ -772,7 +781,7 @@ export default function PresentacionPage() {
             onClick={() => {
               if (isRecording) stopRecording();
               if (clienteId) void registrarBalanceGenerado(clienteId, diagnosticoId, "compartido");
-              router.push(`/diagnosticos/${diagnosticoId}/completado${clienteId ? `?clienteId=${encodeURIComponent(clienteId)}` : ""}`);
+              router.push(`/diagnosticos/${diagnosticoId}/presentacion-b${clienteId ? `?clienteId=${encodeURIComponent(clienteId)}` : ""}`);
             }}
           >
             <Share className="w-3.5 h-3.5 shrink-0" />

@@ -180,7 +180,7 @@ export default function AdminDashboardPage() {
       {/* Header */}
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <h1 className="font-bold text-[28px] text-white">ArIA v2 — Centro de Control</h1>
+          <h1 className="font-bold text-[28px] text-white">Actinver Banca Privada — Centro de Control</h1>
           <p className="text-sm text-[#5A6A85] mt-1">Vista ejecutiva del companion conversacional</p>
         </div>
         <div className="flex gap-2">

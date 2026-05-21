@@ -56,7 +56,7 @@ const PageFooter = ({ page, total }: { page: number; total: number }) => (
     <div>
       <span style={{ fontSize: "14px", fontWeight: 700, color: C.navy }}>Actinver</span>
       <span style={{ color: C.gold, fontSize: "14px", marginLeft: "4px" }}>·</span>
-      <span style={{ fontSize: "10px", color: C.gold, letterSpacing: "3px", marginLeft: "4px" }}>ArIA</span>
+      <span style={{ fontSize: "10px", color: C.gold, letterSpacing: "3px", marginLeft: "4px" }}>Banca Privada</span>
     </div>
     <span style={{ fontSize: "10px", color: C.textMuted }}>Página {page} de {total}</span>
   </div>
@@ -292,15 +292,15 @@ function Page3Retiro({
 }: {
   clientName: string;
   motorC: {
-    pension_total_mensual: number;
+    pension_fija_total: number;
     grado_avance: number;
-    fuentes_ingreso: { rentas: number; pension: number; patrimonio: number };
+    fuentes_ingreso: { rentas: number; afore: number; voluntarios: number; ley_73: number; pension: number; patrimonio: number };
     deficit_mensual: number;
   };
   retiro: { mensualidad_deseada: number };
 }) {
   const calidad = retiro.mensualidad_deseada;
-  const pension = motorC.pension_total_mensual;
+  const pension = motorC.pension_fija_total;
   const grado_pct = Math.min(motorC.grado_avance * 100, 100);
 
   // Segments proportional
@@ -400,18 +400,18 @@ function Page4IndicePatrimonial({
 }: {
   clientName: string;
   motorC: {
-    pension_total_mensual: number;
+    pension_fija_total: number;
     deficit_mensual: number;
     aportacion_necesaria: number | null;
     saldo_inicio_jubilacion: number;
-    fuentes_ingreso: { rentas: number; pension: number; patrimonio: number };
+    fuentes_ingreso: { rentas: number; afore: number; voluntarios: number; ley_73: number; pension: number; patrimonio: number };
   };
   motorE: { financiero: number };
   seguros_retiro: number;
   flujoMensual: { rentas: number };
 }) {
   const rentas = flujoMensual.rentas;
-  const totalIngresoMensual = motorC.pension_total_mensual;
+  const totalIngresoMensual = motorC.pension_fija_total;
   const deficit = motorC.deficit_mensual;
   const aportacion = motorC.aportacion_necesaria ?? 0;
   const sumaRetiro = seguros_retiro;
@@ -499,7 +499,7 @@ function Page5TrayectoriaPatrimonioFinanciero({
   clientName: string;
   motorC: {
     saldo_inicio_jubilacion: number;
-    pension_total_mensual: number;
+    pension_fija_total: number;
     curva: Array<{ mes: number; edad: number; saldo: number }>;
   };
   motorE: { financiero: number };
@@ -521,7 +521,7 @@ function Page5TrayectoriaPatrimonioFinanciero({
           { label: "Patrimonio financiero total al retiro", value: formatMXN(motorC.saldo_inicio_jubilacion), badge: false },
           { label: "Ahorro potencial (crecimiento)", value: formatMXN(ahorroPotencial), badge: false },
           { label: "Total acumulado", value: formatMXN(motorC.saldo_inicio_jubilacion), badge: "navy" },
-          { label: "Monto mensual a recibir durante tu retiro", value: formatMXN(motorC.pension_total_mensual), badge: "gold" },
+          { label: "Monto mensual a recibir durante tu retiro", value: formatMXN(motorC.pension_fija_total), badge: "gold" },
         ].map((row) => (
           <div key={row.label} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "6px 0", borderBottom: `1px solid ${C.rowBorder}` }}>
             <span style={{ fontSize: "13px", color: C.textNavy }}>{row.label}</span>
@@ -875,23 +875,19 @@ export function DiagnosticoPDFTemplate() {
 
   const motorC = useMemo(() => {
     if (!patrimonio || !flujoMensual || !retiro) return null;
-    const pat_fin =
-      patrimonio.liquidez +
-      patrimonio.inversiones +
-      patrimonio.dotales +
-      patrimonio.afore +
-      patrimonio.ppr +
-      patrimonio.plan_privado +
-      patrimonio.seguros_retiro;
-    const saldo_esquemas = patrimonio.afore + patrimonio.ppr + patrimonio.plan_privado;
     return calcularMotorC({
-      patrimonio_financiero_total: pat_fin,
-      saldo_esquemas,
-      ley_73: patrimonio.ley_73,
-      rentas: flujoMensual.rentas,
+      liquidez:        patrimonio.liquidez,
+      inversiones:     patrimonio.inversiones,
+      dotales:         patrimonio.dotales,
+      afore:           patrimonio.afore,
+      ppr:             patrimonio.ppr,
+      plan_privado:    patrimonio.plan_privado,
+      seguros_retiro:  patrimonio.seguros_retiro,
+      ley_73:          patrimonio.ley_73,
+      rentas:          flujoMensual.rentas,
       edad,
-      edad_retiro: retiro.edad_retiro,
-      edad_defuncion: retiro.edad_defuncion,
+      edad_retiro:     retiro.edad_retiro,
+      edad_defuncion:  retiro.edad_defuncion,
       mensualidad_deseada: retiro.mensualidad_deseada,
     });
   }, [patrimonio, flujoMensual, retiro, edad]);
@@ -937,37 +933,47 @@ export function DiagnosticoPDFTemplate() {
       seguro_vida: proteccion.seguro_vida ?? false,
       propiedades_aseguradas: proteccion.propiedades_aseguradas,
       sgmm: proteccion.sgmm ?? false,
-      dependientes: perfil?.dependientes ?? false,
-      patrimonio_neto: motorE.patrimonio_neto,
-      inmuebles_total,
+      dependientes: perfil?.dependientes ? 1 : 0,
+      inversiones: patrimonio?.inversiones ?? 0,
+      dotales: patrimonio?.dotales ?? 0,
+      gastos_mensuales: (flujoMensual?.gastos_basicos ?? 0) + (flujoMensual?.obligaciones ?? 0) + (flujoMensual?.creditos ?? 0),
       edad,
+      inmuebles_total,
+      rentas_mensuales: flujoMensual?.rentas ?? 0,
     });
-  }, [proteccion, motorE, patrimonio, perfil, edad]);
+  }, [proteccion, motorE, patrimonio, perfil, edad, flujoMensual]);
 
   // Safe zero-defaults so pages never crash
   const safeMotorA = motorA ?? {
     ingresos_totales: 0, gastos_totales: 0,
-    distribucion: { obligaciones_pct: 0, gastos_pct: 0, ahorro_pct: 0 },
-    benchmark_reserva: 0, meses_cubiertos: null, resultado_reserva: "Pendiente" as const, remanente: 0,
+    distribucion: { gastos_pct: 0, obligaciones_pct: 0, creditos_pct: 0, ahorro_pct: 0 },
+    benchmark_reserva: 0, meses_cubiertos: null, resultado_reserva: "Pendiente" as const,
+    pendiente_reserva: 0, meses_para_cubrir: 0, remanente: 0,
   };
   const safeMotorB = motorB ?? {
-    patrimonio_financiero_total: 0, gasto_anual: 0, ratio: 0,
-    nivel_riqueza: "suficiente" as const, benchmark_para_edad: 0,
-    longevidad_recursos: edad, meses_cubiertos: 0,
+    patrimonio_financiero_total: 0, patrimonio_acumulacion_libre: 0, patrimonio_esquemas: 0,
+    gasto_anual: 0, ratio: 0, nivel_riqueza: "suficiente" as const, etiqueta_nivel: "—",
+    benchmark_para_edad: 0, longevidad_recursos: edad, meses_cubiertos: 0,
   };
   const safeMotorC = motorC ?? {
-    saldo_inicio_jubilacion: 0, meses_acumulacion: 0, meses_jubilacion: 0,
-    mensualidad_posible: 0, pension_total_mensual: 0, grado_avance: 0,
-    deficit_mensual: 0, aportacion_necesaria: null, curva: [],
-    fuentes_ingreso: { rentas: 0, pension: 0, patrimonio: 0 },
+    saldo_inicio_jubilacion: 0, patrimonio_acum_libre: 0,
+    meses_acumulacion: 0, meses_jubilacion: 0,
+    mensualidad_posible: 0, mensualidad_afore: 0, mensualidad_voluntarios: 0, mensualidad_esquemas: 0,
+    pension_fija_total: 0, ingresos_fijos_retiro: 0, total_mensual: 0,
+    grado_avance: 0, pendiente_mensual: 0, deficit_mensual: 0,
+    pasivo_vf: 0, pasivo_vp: 0, aportacion_necesaria: null, curva: [],
+    fuentes_ingreso: { rentas: 0, afore: 0, voluntarios: 0, ley_73: 0, pension: 0, patrimonio: 0 },
   };
   const safeMotorD = motorD ?? { resultados: [], saldo_retiro: 0, legado: 0 };
   const safeMotorE = motorE ?? {
     activos_total: 0, pasivos_total: 0, patrimonio_neto: 0,
-    financiero: 0, noFinanciero: 0, indice_solvencia: 0,
-    clasificacion_solvencia: "Muy saludable", potencial_apalancamiento: 0,
+    financiero: 0, no_financiero: 0, activos_base: 0, esquemas_retiro: 0,
+    indice_solvencia: 0, clasificacion_solvencia: "Muy saludable", potencial_apalancamiento: 0,
   };
-  const safeMotorF = motorF ?? { recomendaciones: [] };
+  const safeMotorF = motorF ?? {
+    recomendaciones: [], suma_asegurada_vida: 0, costo_prima_vida: 0,
+    seguro_hogar_sugerido: 0, costo_hogar_anual: 0, sgmm_estimado: 0,
+  };
   const safeFlujoMensual = flujoMensual ?? {
     ahorro: 0, rentas: 0, otros: 0, gastos_basicos: 0, obligaciones: 0, creditos: 0,
   };

@@ -14,44 +14,70 @@ export interface MotorAOutput {
   ingresos_totales: number;
   gastos_totales: number;
   distribucion: {
-    obligaciones_pct: number;
     gastos_pct: number;
+    obligaciones_pct: number;
+    creditos_pct: number;
     ahorro_pct: number;
   };
   benchmark_reserva: number;
   meses_cubiertos: number | null;
-  resultado_reserva: "Cubierta" | "Insuficiente" | "Pendiente";
+  resultado_reserva: "Excedida" | "Insuficiente" | "Pendiente";
+  pendiente_reserva: number;
+  meses_para_cubrir: number;
   remanente: number;
 }
 
 export function calcularMotorA(input: MotorAInput): MotorAOutput {
-  const ingresos_totales = input.ahorro + input.rentas + input.otros;
+  // ─── FIX-1: Ingresos Totales ────────────────────────────────────────────
+  // `ahorro` = capacidad de ahorro NETA ya neteada de rentas y otros.
+  // El ingreso laboral se reconstruye sustrayendo rentas y otros:
+  //   ingreso_laboral = gastos_basicos + obligaciones + creditos + ahorro − rentas − otros
+  //   ingresos_totales = ingreso_laboral + rentas + otros
+  //                    = gastos_basicos + obligaciones + creditos + ahorro
+  // Verificación Juan Pérez:
+  //   ingreso_laboral = (40K+20K+0+50K) − 10K − 0 = $100,000  ← Excel C16 ✓
+  //   ingresos_totales = 100K + 10K + 0 = $110,000              ← Excel total ✓
+  const ingreso_laboral =
+    input.gastos_basicos + input.obligaciones + input.creditos + input.ahorro
+    - input.rentas - input.otros;
+  const ingresos_totales = ingreso_laboral + input.rentas + input.otros;
   const gastos_totales =
     input.gastos_basicos + input.obligaciones + input.creditos;
 
+  // Distribución coherente: los 4 componentes suman 100% del ingreso total
   const distribucion = {
-    obligaciones_pct:
-      ingresos_totales > 0 ? input.obligaciones / ingresos_totales : 0,
-    gastos_pct:
-      ingresos_totales > 0 ? input.gastos_basicos / ingresos_totales : 0,
-    ahorro_pct: ingresos_totales > 0 ? input.ahorro / ingresos_totales : 0,
+    gastos_pct:       ingresos_totales > 0 ? input.gastos_basicos / ingresos_totales : 0,
+    obligaciones_pct: ingresos_totales > 0 ? input.obligaciones   / ingresos_totales : 0,
+    creditos_pct:     ingresos_totales > 0 ? input.creditos        / ingresos_totales : 0,
+    ahorro_pct:       ingresos_totales > 0 ? input.ahorro          / ingresos_totales : 0,
   };
 
-  const benchmark_reserva =
-    PARAMS.BENCHMARK_RESERVA_MESES * input.gastos_basicos;
+  // ─── Reserva de Emergencia ──────────────────────────────────────────────
+  const benchmark_reserva = PARAMS.BENCHMARK_RESERVA_MESES * input.gastos_basicos;
 
   let meses_cubiertos: number | null = null;
-  if (
-    input.liquidez !== undefined &&
-    input.gastos_basicos > 0
-  ) {
+  if (input.liquidez !== undefined && input.gastos_basicos > 0) {
     meses_cubiertos = input.liquidez / input.gastos_basicos;
   }
 
-  let resultado_reserva: "Cubierta" | "Insuficiente" | "Pendiente" = "Pendiente";
+  let resultado_reserva: "Excedida" | "Insuficiente" | "Pendiente" = "Pendiente";
   if (meses_cubiertos !== null) {
-    resultado_reserva = meses_cubiertos >= 3 ? "Cubierta" : "Insuficiente";
+    resultado_reserva = meses_cubiertos >= 3 ? "Excedida" : "Insuficiente";
   }
+
+  // ─── FIX ADD-1: Remanente real para objetivos ───────────────────────────
+  // Si hay déficit en reserva, parte del ahorro mensual se destina a cubrirlo.
+  let pendiente_reserva = 0;
+  let meses_para_cubrir = 0;
+  if (meses_cubiertos !== null && meses_cubiertos < 3 && input.liquidez !== undefined) {
+    pendiente_reserva = benchmark_reserva - (input.liquidez ?? 0);
+    meses_para_cubrir = input.ahorro > 0 ? pendiente_reserva / input.ahorro : 0;
+  }
+
+  const remanente =
+    meses_para_cubrir > 0
+      ? Math.max(0, input.ahorro * (1 - Math.min(meses_para_cubrir / 12, 1)))
+      : input.ahorro;
 
   return {
     ingresos_totales,
@@ -60,6 +86,8 @@ export function calcularMotorA(input: MotorAInput): MotorAOutput {
     benchmark_reserva,
     meses_cubiertos,
     resultado_reserva,
-    remanente: input.ahorro,
+    pendiente_reserva,
+    meses_para_cubrir: Math.round(meses_para_cubrir * 100) / 100,
+    remanente,
   };
 }

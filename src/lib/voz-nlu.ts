@@ -249,9 +249,8 @@ function extractAge(text: string): number | null {
   }
 
   // --- Direct age patterns (require context to avoid false positives) ---
-  // IMPORTANT: "años" is required (not optional) to avoid capturing "tengo 20 empleados"
-  // Also avoid matching "N años de hipoteca/experiencia/trabajo/etc."
-  const DISQUALIFY_AFTER = /\baños\s+(?:de\s+(?:hipoteca|experiencia|trabajo|servicio|antigüedad|carrera|crédito|casado|plazo|casada|matrimonio)|pagando|trabajando|viviendo|llevamos|llevo|tiene\s+la\s+empresa|de\s+la\s+empresa)/i;
+  // Only disqualify "N años de [contexto_no_edad]" — NOT "llevo/llevamos" that appear AFTER a comma or new clause
+  const DISQUALIFY_AFTER = /\baños\s+de\s+(?:hipoteca|experiencia|trabajo|servicio|antigüedad|carrera|crédito|casado|plazo|casada|matrimonio|empresa)/i;
 
   // Word-age helper: "tengo cuarenta y cinco años" → 45
   // Handles decades+units like "treinta y dos", "cuarenta y cinco", etc.
@@ -272,14 +271,15 @@ function extractAge(text: string): number | null {
   }
 
   const patterns: RegExp[] = [
-    /\btengo\s+(\d{1,3})\s+años\b/i,            // "tengo 45 años"
-    /\bcumplo\s+(\d{1,3})\s+años\b/i,           // "cumplo 45 años"
-    /\bcumpl[ií]\s+(\d{1,3})\s+años?\b/i,       // "cumplí 45 años"
-    /\bvoy\s+a\s+cumplir\s+(\d{1,3})/i,         // "voy a cumplir 45"
-    /\btengo\s+(\d{1,3})\s+de\s+edad\b/i,       // "tengo 45 de edad"
+    /\btengo\s+(\d{1,3})\s+años\b/i,              // "tengo 45 años"
+    /\bcumplo\s+(\d{1,3})\s+años\b/i,             // "cumplo 45 años"
+    /\bcumpl[ií]\s+(\d{1,3})\s+años?\b/i,         // "cumplí 45 años"
+    /\bvoy\s+a\s+cumplir\s+(\d{1,3})/i,           // "voy a cumplir 45"
+    /\btengo\s+(\d{1,3})\s+de\s+edad\b/i,         // "tengo 45 de edad"
     /\bmi\s+edad\s+(?:es\s+(?:de\s+)?)?(\d{1,3})/i, // "mi edad es 45" / "mi edad es de 45"
     /\bedad\s+(?:es\s+(?:de\s+)?|de\s+)?(\d{1,3})/i, // "edad de 45" / "edad es de 45"
     /\b(\d{1,3})\s+años\s+(?:de\s+edad|tengo|cumpl)/i, // "45 años de edad" / "45 años tengo"
+    /\btengo\s+(\d{2})\b(?!\s*(?:empleados?|trabajadores?|hijos?|años\s+de))/i, // "tengo 35" (sin "años")
   ];
 
   for (const p of patterns) {

@@ -9,13 +9,15 @@ import { TrayectoriaRetiroChart } from "@/components/outputs/trayectoria-retiro-
 import { useDiagnosticoStore } from "@/stores/diagnostico-store";
 
 interface BaseInput {
-  patrimonio_financiero_total: number;
-  saldo_esquemas: number;
-  saldo_esquemas_pension?: number;
-  saldo_esquemas_voluntarios?: number;
+  liquidez: number;
+  inversiones: number;
+  dotales: number;
+  afore: number;
+  ppr: number;
+  plan_privado: number;
+  seguros_retiro: number;
   ley_73: number | null;
   rentas: number;
-  ingresos_negocio?: number;
   edad: number;
   edad_retiro: number;
   edad_defuncion: number;
@@ -58,10 +60,10 @@ export function InlineScenarioSimulator({ baseInput, motorCBase }: Props) {
 
   const motorCSim = useMemo(() => {
     const mesesAcum = Math.max((edadRetiro - baseInput.edad) * 12, 0);
-    const patrimonioConAportacion = baseInput.patrimonio_financiero_total + aportacion * mesesAcum;
+    const extraAcumulado = aportacion * mesesAcum;
     return calcularMotorC({
       ...baseInput,
-      patrimonio_financiero_total: patrimonioConAportacion,
+      liquidez: baseInput.liquidez + extraAcumulado,
       edad_retiro: edadRetiro,
       tasa_real_anual: tasa / 100,
     });
@@ -91,7 +93,7 @@ export function InlineScenarioSimulator({ baseInput, motorCBase }: Props) {
         mensualidad_posible: motorCSim.mensualidad_posible,
         deficit_mensual: motorCSim.deficit_mensual,
         saldo_inicio_jubilacion: motorCSim.saldo_inicio_jubilacion,
-        pension_total_mensual: motorCSim.pension_total_mensual,
+        pension_fija_total: motorCSim.pension_fija_total,
       },
     });
     setSaved(true);
@@ -195,8 +197,8 @@ export function InlineScenarioSimulator({ baseInput, motorCBase }: Props) {
             {[
               {
                 label: "Mensualidad proyectada",
-                base: motorCBase.mensualidad_posible + motorCBase.pension_total_mensual,
-                sim: motorCSim.mensualidad_posible + motorCSim.pension_total_mensual,
+                base: motorCBase.mensualidad_posible + motorCBase.pension_fija_total,
+                sim: motorCSim.mensualidad_posible + motorCSim.pension_fija_total,
               },
               {
                 label: "Déficit / Surplus",
@@ -228,7 +230,7 @@ export function InlineScenarioSimulator({ baseInput, motorCBase }: Props) {
           {/* Mini chart */}
           <TrayectoriaRetiroChart
             saldoInicioJubilacion={motorCSim.saldo_inicio_jubilacion}
-            pensionTotalMensual={motorCSim.pension_total_mensual}
+            pensionTotalMensual={motorCSim.pension_fija_total}
             mensualidadDeseada={baseInput.mensualidad_deseada}
             edadRetiro={edadRetiro}
             edadDefuncion={baseInput.edad_defuncion}

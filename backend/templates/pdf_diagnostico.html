@@ -184,7 +184,7 @@
       <td><span class="badge {{ 'badge-green' if motor_c.grado_avance >= 1 else ('badge-gold' if motor_c.grado_avance >= 0.7 else 'badge-red') }}">{{ "%.0f"|format(motor_c.grado_avance * 100) }}%</span></td>
     </tr>
     <tr>
-      <th>Pensión total estimada</th><td>${{ "{:,.0f}".format(motor_c.pension_total_mensual) }}</td>
+      <th>Pensión total estimada</th><td>${{ "{:,.0f}".format(motor_c.pension_fija_total) }}</td>
       <th>Déficit mensual</th>
       <td {% if motor_c.deficit_mensual > 0 %}style="color:#b04040; font-weight:700"{% endif %}>${{ "{:,.0f}".format(motor_c.deficit_mensual) }}</td>
     </tr>

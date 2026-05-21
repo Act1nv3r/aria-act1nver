@@ -11,9 +11,9 @@ export const BENCHMARK_RIQUEZA = [
   [30, 0.5, 0.75, 1, 1.5, 2],
   [35, 1, 2, 3, 4, 6],
   [40, 2, 4, 6, 8, 10],
-  [45, 3, 6, 8, 10, 12],
+  [45, 3, 6, 8, 10, 13],  // on-fire corregido: 12→13 (auditoria Excel)
   [50, 4, 7, 9, 12, 15],
-  [55, 5, 8, 11, 14, 18],
+  [55, 5, 8, 11, 14, 17],  // on-fire corregido: 18→17 (auditoria Excel)
   [60, 6, 9, 13, 16, 20],
 ] as const;
 

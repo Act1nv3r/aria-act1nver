@@ -62,7 +62,7 @@ export function buildPlanDeAccion({
   }
 
   // Inmuebles
-  const noFin = motorE.noFinanciero;
+  const noFin = motorE.no_financiero;
   if (noFin > motorE.financiero * 2) {
     rows.push({ aspecto: "Inmuebles", situacion: "Alta participación patrimonial", riesgo: "Bajo", recomendacion: "Posibilidad de crédito para inversión financiera" });
   } else if (noFin > 0) {

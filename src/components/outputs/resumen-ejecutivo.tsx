@@ -132,7 +132,7 @@ export function ResumenEjecutivo({ motorB, motorC, motorE, motorD, perfil, objet
         {metaAlcanzada ? (
           <div className="bg-green-900/30 border border-green-600/40 rounded-lg p-4 text-center">
             <p className="text-green-400 font-bold text-base">¡Ya alcanzas tu meta de retiro!</p>
-            <p className="text-xs text-[#8899BB] mt-1">Mensualidad posible: {formatMXN(motorC.mensualidad_posible + motorC.pension_total_mensual)}</p>
+            <p className="text-xs text-[#8899BB] mt-1">Mensualidad posible: {formatMXN(motorC.mensualidad_posible + motorC.pension_fija_total)}</p>
           </div>
         ) : (
           <div className="space-y-3">

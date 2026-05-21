@@ -610,7 +610,7 @@ export default function SesionPage() {
             </div>
           </div>
           <p className="text-sm text-[#F0F4FA] leading-relaxed">
-            ArIA escuchará la conversación para extraer datos automáticamente. El audio se procesa en tiempo real y no se almacena.
+            Actinver Banca Privada escuchará la conversación para extraer datos automáticamente. El audio se procesa en tiempo real y no se almacena.
           </p>
           <div className="flex justify-center">
             <Toggle label="Acepto el procesamiento de voz para esta sesión" checked={consent} onChange={setConsent} />

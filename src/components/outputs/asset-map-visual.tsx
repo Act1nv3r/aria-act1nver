@@ -105,7 +105,7 @@ export function AssetMapVisual({ patrimonio, motorE, proteccion }: Props) {
           <div className="grid grid-cols-4 gap-2 mt-5 pt-4 border-t border-white/[0.06]">
             {[
               { label: "Financiero", val: motorE.financiero, color: "#1C2B4A" },
-              { label: "No Financiero", val: motorE.noFinanciero, color: "#314566" },
+              { label: "No Financiero", val: motorE.no_financiero, color: "#314566" },
               { label: "Pasivos", val: motorE.pasivos_total, color: "#8B3A3A" },
               { label: "Neto", val: motorE.patrimonio_neto, color: "#C9A84C" },
             ].map((item) => (

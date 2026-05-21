@@ -16,7 +16,7 @@ const openSans = Open_Sans({
 });
 
 export const metadata: Metadata = {
-  title: "ArIA by Actinver",
+  title: "Actinver Banca Privada",
   description: "Herramienta de diagnóstico y planeación financiera personal",
 };
 

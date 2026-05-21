@@ -13,9 +13,12 @@ import {
   ArrowLeft,
   Pencil,
   Trash2,
-  BarChart3,
   TrendingUp,
   CheckCircle2,
+  Mic,
+  FileText,
+  Zap,
+  BarChart3,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -25,7 +28,6 @@ import { Input } from "@/components/ui/input";
 import { api } from "@/lib/api-client";
 import { labelForPaso } from "@/lib/diagnostico-steps";
 import { useDiagnosticoStore } from "@/stores/diagnostico-store";
-import { QuickMetrics } from "@/components/crm/quick-metrics";
 
 type ClienteEstado = "nuevo" | "borrador" | "completo";
 
@@ -112,6 +114,7 @@ export default function DashboardPage() {
   const [modalStep, setModalStep] = useState<"modo" | "nombre">("modo");
   const [modoSeleccionado, setModoSeleccionado] = useState<"individual" | "pareja">("individual");
   const [nuevoNombre, setNuevoNombre] = useState("");
+  const [capturaIniciando, setCapturaIniciando] = useState(false);
   const [search, setSearch] = useState("");
   const [pendingDelete, setPendingDelete] = useState<PendingDelete | null>(null);
 
@@ -165,8 +168,9 @@ export default function DashboardPage() {
     refreshClientes().finally(() => setLoading(false));
   }, [refreshClientes]);
 
-  const handleNuevoCliente = async () => {
+  const handleNuevoCliente = async (captura: "voz" | "manual") => {
     if (!nuevoNombre.trim()) return;
+    setCapturaIniciando(true);
     setModo(modoSeleccionado);
     try {
       const c = await api.clientes.create(nuevoNombre.trim());
@@ -191,8 +195,14 @@ export default function DashboardPage() {
       setNuevoNombre("");
       setModalOpen(false);
       setModalStep("modo");
-      router.push(`/diagnosticos/${d.id}/sesion?clienteId=${c.id}`);
+      setCapturaIniciando(false);
+      if (captura === "voz") {
+        router.push(`/diagnosticos/${d.id}/sesion?clienteId=${c.id}`);
+      } else {
+        router.push(`/diagnosticos/${d.id}/paso/1?clienteId=${c.id}`);
+      }
     } catch {
+      setCapturaIniciando(false);
       router.push("/diagnosticos/demo/paso/1");
     }
   };
@@ -210,7 +220,7 @@ export default function DashboardPage() {
   };
 
   const handleCardClick = (cliente: ClienteItem) => {
-    router.push(`/crm/${cliente.id}`);
+    router.push(`/customers/${cliente.id}`);
   };
 
   const handleEditFromCard = (cliente: ClienteItem) => {
@@ -257,23 +267,87 @@ export default function DashboardPage() {
   return (
     <div className="max-w-[1600px] mx-auto px-6 sm:px-8 lg:px-12 py-8">
 
-      {/* Welcome banner — tool explanation */}
-      <div className="mb-8 rounded-[20px] overflow-hidden border border-[#C9A84C]/15"
-        style={{ background: "linear-gradient(135deg, #0C1829 0%, #112038 100%)" }}>
-        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 px-6 py-5">
-          <div className="w-11 h-11 rounded-[14px] bg-[#C9A84C]/10 border border-[#C9A84C]/20 flex items-center justify-center shrink-0">
-            <TrendingUp className="h-5 w-5 text-[#C9A84C]" />
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-[#F0F4FA] font-semibold text-sm leading-snug">
-              Convierte una conversación de 15 minutos en un diagnóstico financiero completo
-            </p>
-            <p className="text-[#8B9BB4] text-xs mt-1 leading-relaxed">
-              Registra los datos de tu cliente, ArIA calcula su situación patrimonial y genera un reporte profesional listo para presentar — sin hojas de cálculo.
-            </p>
+      {/* Insights header — accionable, no explicativo */}
+      {totalClientes === 0 ? (
+        /* Primera vez — sí mostrar el banner orientador */
+        <div className="mb-8 rounded-[20px] overflow-hidden border border-[#C9A84C]/15"
+          style={{ background: "linear-gradient(135deg, #0C1829 0%, #112038 100%)" }}>
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 px-6 py-5">
+            <div className="w-11 h-11 rounded-[14px] bg-[#C9A84C]/10 border border-[#C9A84C]/20 flex items-center justify-center shrink-0">
+              <TrendingUp className="h-5 w-5 text-[#C9A84C]" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-[#F0F4FA] font-semibold text-sm leading-snug">
+                Convierte una conversación de 15 minutos en un diagnóstico financiero completo
+              </p>
+              <p className="text-[#8B9BB4] text-xs mt-1 leading-relaxed">
+                Registra los datos de tu cliente, Actinver Banca Privada calcula su situación patrimonial y genera un reporte profesional listo para presentar.
+              </p>
+            </div>
           </div>
         </div>
-      </div>
+      ) : (
+        /* Asesores con clientes — insights accionables */
+        <div className="mb-8 grid grid-cols-1 sm:grid-cols-3 gap-3">
+          {/* Diagnósticos en progreso */}
+          {enProgreso > 0 && (
+            <div className="flex items-center gap-3 px-4 py-3.5 rounded-[14px] bg-[#60A5FA]/5 border border-[#60A5FA]/15">
+              <div className="w-9 h-9 rounded-[10px] bg-[#60A5FA]/10 flex items-center justify-center shrink-0">
+                <Zap className="h-4 w-4 text-[#60A5FA]" />
+              </div>
+              <div>
+                <p className="text-[#F0F4FA] font-semibold text-sm">
+                  {enProgreso} {enProgreso === 1 ? "diagnóstico" : "diagnósticos"} en curso
+                </p>
+                <p className="text-[#8B9BB4] text-xs">Retoma donde lo dejaste</p>
+              </div>
+            </div>
+          )}
+
+          {/* Clientes sin diagnóstico */}
+          {clientes.filter(c => c.estado === "nuevo").length > 0 && (
+            <div className="flex items-center gap-3 px-4 py-3.5 rounded-[14px] bg-[#F59E0B]/5 border border-[#F59E0B]/15">
+              <div className="w-9 h-9 rounded-[10px] bg-[#F59E0B]/10 flex items-center justify-center shrink-0">
+                <UserPlus className="h-4 w-4 text-[#F59E0B]" />
+              </div>
+              <div>
+                <p className="text-[#F0F4FA] font-semibold text-sm">
+                  {clientes.filter(c => c.estado === "nuevo").length} {clientes.filter(c => c.estado === "nuevo").length === 1 ? "cliente" : "clientes"} sin diagnóstico
+                </p>
+                <p className="text-[#8B9BB4] text-xs">Iniciar sesión pendiente</p>
+              </div>
+            </div>
+          )}
+
+          {/* Diagnósticos completados */}
+          {completados > 0 && (
+            <div className="flex items-center gap-3 px-4 py-3.5 rounded-[14px] bg-[#10B981]/5 border border-[#10B981]/15">
+              <div className="w-9 h-9 rounded-[10px] bg-[#10B981]/10 flex items-center justify-center shrink-0">
+                <CheckCircle2 className="h-4 w-4 text-[#10B981]" />
+              </div>
+              <div>
+                <p className="text-[#F0F4FA] font-semibold text-sm">
+                  {completados} {completados === 1 ? "diagnóstico" : "diagnósticos"} completados
+                </p>
+                <p className="text-[#8B9BB4] text-xs">Reportes listos para presentar</p>
+              </div>
+            </div>
+          )}
+
+          {/* Si todos están completos y no hay pendientes — panel vacío de insights */}
+          {enProgreso === 0 && clientes.filter(c => c.estado === "nuevo").length === 0 && (
+            <div className="flex items-center gap-3 px-4 py-3.5 rounded-[14px] bg-[#C9A84C]/5 border border-[#C9A84C]/15">
+              <div className="w-9 h-9 rounded-[10px] bg-[#C9A84C]/10 flex items-center justify-center shrink-0">
+                <TrendingUp className="h-4 w-4 text-[#C9A84C]" />
+              </div>
+              <div>
+                <p className="text-[#F0F4FA] font-semibold text-sm">Cartera al día</p>
+                <p className="text-[#8B9BB4] text-xs">¿Nuevo cliente hoy?</p>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Header row */}
       <div className="flex items-center gap-3 mb-6">
@@ -309,18 +383,6 @@ export default function DashboardPage() {
         </Button>
       </div>
 
-      {/* Quick metrics */}
-      {totalClientes > 0 && (
-        <div className="mb-6 animate-slide-up">
-          <QuickMetrics
-            metrics={[
-              { label: "Total clientes", value: totalClientes, icon: <Users />, sublabel: "en tu cartera" },
-              { label: "En progreso", value: enProgreso, color: "#F59E0B", icon: <BarChart3 />, sublabel: "diagnósticos activos" },
-              { label: "Completados", value: completados, color: "#10B981", icon: <CheckCircle2 />, sublabel: "diagnósticos listos" },
-            ]}
-          />
-        </div>
-      )}
 
       {/* Content */}
       {loading ? (
@@ -587,22 +649,49 @@ export default function DashboardPage() {
                 placeholder="Ej: Juan Pérez"
                 value={nuevoNombre}
                 onChange={(e) => setNuevoNombre(e.target.value)}
-                onKeyDown={(e) => { if (e.key === "Enter" && nuevoNombre.trim()) void handleNuevoCliente(); }}
+                onKeyDown={(e) => { if (e.key === "Enter" && nuevoNombre.trim()) void handleNuevoCliente("voz"); }}
                 autoFocus
               />
-              <div className="flex flex-col gap-3 pt-2">
-                <Button
-                  variant="accent"
-                  className="w-full"
-                  onClick={handleNuevoCliente}
-                  disabled={!nuevoNombre.trim()}
+
+              <p className="text-xs text-[#8B9BB4] pt-1">¿Cómo quieres capturar los datos?</p>
+
+              <div className="grid grid-cols-2 gap-3">
+                {/* Voz — recomendado */}
+                <button
+                  type="button"
+                  disabled={!nuevoNombre.trim() || capturaIniciando}
+                  onClick={() => void handleNuevoCliente("voz")}
+                  className="flex flex-col items-center gap-2.5 p-4 rounded-[14px] border border-[#C9A84C]/40 bg-[#C9A84C]/5 hover:bg-[#C9A84C]/10 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  Crear y comenzar
-                </Button>
-                <Button variant="ghost" onClick={() => setModalStep("modo")} className="w-full text-[#8B9BB4] justify-center">
-                  <ArrowLeft className="h-4 w-4" /> Atrás
-                </Button>
+                  <div className="w-10 h-10 rounded-full bg-[#C9A84C]/15 flex items-center justify-center">
+                    <Mic className="h-5 w-5 text-[#C9A84C]" />
+                  </div>
+                  <div className="text-center">
+                    <p className="text-[#C9A84C] font-bold text-sm">Sesión de voz</p>
+                    <p className="text-[#8B9BB4] text-[11px] mt-0.5">~11 min · Recomendado</p>
+                  </div>
+                </button>
+
+                {/* Manual */}
+                <button
+                  type="button"
+                  disabled={!nuevoNombre.trim() || capturaIniciando}
+                  onClick={() => void handleNuevoCliente("manual")}
+                  className="flex flex-col items-center gap-2.5 p-4 rounded-[14px] border border-white/[0.08] bg-[#112038] hover:border-white/[0.15] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <div className="w-10 h-10 rounded-full bg-[#1A3154] flex items-center justify-center">
+                    <FileText className="h-5 w-5 text-[#8B9BB4]" />
+                  </div>
+                  <div className="text-center">
+                    <p className="text-[#F0F4FA] font-bold text-sm">Formulario</p>
+                    <p className="text-[#8B9BB4] text-[11px] mt-0.5">~20 min · Paso a paso</p>
+                  </div>
+                </button>
               </div>
+
+              <Button variant="ghost" onClick={() => setModalStep("modo")} className="w-full text-[#8B9BB4] justify-center">
+                <ArrowLeft className="h-4 w-4" /> Atrás
+              </Button>
             </>
           )}
         </div>

@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 
-const DEFAULT_AVISO = `En cumplimiento con la Ley Federal de Protección de Datos Personales en Posesión de los Particulares (LFPDPPP), Actinver informa que los datos personales recabados serán utilizados para la prestación del servicio de diagnóstico financiero ArIA. Los datos no serán compartidos con terceros sin su consentimiento. Usted puede ejercer sus derechos de acceso, rectificación, cancelación y oposición contactando a su asesor.`;
+const DEFAULT_AVISO = `En cumplimiento con la Ley Federal de Protección de Datos Personales en Posesión de los Particulares (LFPDPPP), Actinver informa que los datos personales recabados serán utilizados para la prestación del servicio de diagnóstico financiero Actinver Banca Privada. Los datos no serán compartidos con terceros sin su consentimiento. Usted puede ejercer sus derechos de acceso, rectificación, cancelación y oposición contactando a su asesor.`;
 
 export default function AdminAvisoPrivacidadPage() {
   const [texto, setTexto] = useState(DEFAULT_AVISO);

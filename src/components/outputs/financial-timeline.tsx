@@ -30,7 +30,12 @@ interface FinancialTimelineProps {
   patrimonioActual: number;
   ahorroMensual: number;
   tasaReal?: number;
-  pensionMensual: number;
+  /** Edad desde la que aplica la tasa real. Si se pasa, se muestra el slider en la gráfica. */
+  edadInicioRendimientos?: number;
+  onInicioRendimientosChange?: (edad: number) => void;
+  /** Rango [inicio, fin] de edad en que aplica el ahorro mensual. */
+  rangoAhorro?: [number, number];
+  pensionMensual: number | null;
   rentasMensuales: number;
   mensualidadDeseada: number;
   eventos?: EventoVida[];
@@ -146,6 +151,9 @@ export function FinancialTimeline({
   patrimonioActual,
   ahorroMensual,
   tasaReal,
+  edadInicioRendimientos,
+  onInicioRendimientosChange,
+  rangoAhorro,
   pensionMensual,
   rentasMensuales,
   mensualidadDeseada,
@@ -162,6 +170,8 @@ export function FinancialTimeline({
       patrimonioActual,
       ahorroMensual,
       tasaReal,
+      edadInicioRendimientos,
+      rangoAhorro,
       pensionMensual,
       rentasMensuales,
       mensualidadDeseada,
@@ -174,6 +184,8 @@ export function FinancialTimeline({
       patrimonioActual,
       ahorroMensual,
       tasaReal,
+      edadInicioRendimientos,
+      rangoAhorro,
       pensionMensual,
       rentasMensuales,
       mensualidadDeseada,
@@ -239,7 +251,7 @@ export function FinancialTimeline({
           />
           <MetricCard
             label="Mensualidad posible"
-            value={formatMXN(mensualidadPosible + pensionMensual + rentasMensuales)}
+            value={formatMXN(mensualidadPosible + (pensionMensual ?? 0) + rentasMensuales)}
             color="#C9A84C"
             animate={!shouldAnimate}
           />
@@ -334,6 +346,23 @@ export function FinancialTimeline({
               }}
             />
 
+            {/* Inicio de rendimientos reference line */}
+            {edadInicioRendimientos !== undefined && edadInicioRendimientos > edadActual && (
+              <ReferenceLine
+                x={edadInicioRendimientos}
+                stroke="#C9A84C"
+                strokeDasharray="4 3"
+                strokeWidth={1.5}
+                label={{
+                  value: `Rend. (${edadInicioRendimientos})`,
+                  position: "top",
+                  fill: "#C9A84C",
+                  fontSize: isPresentation ? 11 : 9,
+                  fontWeight: "bold",
+                }}
+              />
+            )}
+
             {/* Zero line if patrimony goes near zero */}
             {edadAgotamiento && (
               <ReferenceLine
@@ -393,6 +422,43 @@ export function FinancialTimeline({
           </ComposedChart>
         </ResponsiveContainer>
       </div>
+
+      {/* Inicio de rendimientos slider — between chart and legend */}
+      {!isMini && onInicioRendimientosChange !== undefined && (
+        <div className="px-1 pt-1 pb-0.5">
+          <div className="flex items-center justify-between mb-1">
+            <span className="text-[10px] font-semibold text-[#C9A84C] uppercase tracking-[1.5px]">
+              Inicio de rendimientos
+            </span>
+            <span className="text-[11px] font-bold text-[#C9A84C]">
+              {edadInicioRendimientos === undefined || edadInicioRendimientos <= edadActual
+                ? "Desde hoy"
+                : `${edadInicioRendimientos} años`}
+            </span>
+          </div>
+          <input
+            type="range"
+            min={edadActual}
+            max={edadRetiro}
+            step={1}
+            value={edadInicioRendimientos ?? edadActual}
+            onChange={(e) => onInicioRendimientosChange(Number(e.target.value))}
+            className="w-full h-1 rounded-full appearance-none cursor-pointer"
+            style={{
+              background: (() => {
+                const val = edadInicioRendimientos ?? edadActual;
+                const pct = ((val - edadActual) / Math.max(1, edadRetiro - edadActual)) * 100;
+                return `linear-gradient(to right, #C9A84C ${pct}%, rgba(255,255,255,0.08) ${pct}%)`;
+              })(),
+              accentColor: "#C9A84C",
+            }}
+          />
+          <div className="flex justify-between text-[9px] text-[#4A5A72] mt-0.5">
+            <span>Hoy ({edadActual}a)</span>
+            <span className="text-[#4A5A72]">Retiro ({edadRetiro}a)</span>
+          </div>
+        </div>
+      )}
 
       {/* Legend */}
       {!isMini && (

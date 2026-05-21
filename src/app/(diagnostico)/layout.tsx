@@ -105,10 +105,9 @@ export default function DiagnosticoLayout({
 
   const isCompletado = pathname?.includes("/completado") ?? false;
   const isSesion = pathname?.includes("/sesion") ?? false;
-  const isPresentacion = pathname?.includes("/presentacion") ?? false;
-  const isSimulador = pathname?.includes("/simulador") ?? false;
   const isWrapped = pathname?.includes("/wrapped") ?? false;
-  const isFullScreenPage = isCompletado || isSesion || isPresentacion || isSimulador || isWrapped;
+  const isPresentacion = pathname?.includes("/presentacion") ?? false;
+  const isFullScreenPage = isCompletado || isSesion || isWrapped || isPresentacion;
   const currentStep = steps.find((s) => s.id === pasoActual);
 
   const nombreInitials = nombre
@@ -118,32 +117,22 @@ export default function DiagnosticoLayout({
     .toUpperCase()
     .slice(0, 2);
 
-  if (isFullScreenPage) {
-    return (
-      <DiagnosticoProvider>
-        <div className="min-h-screen bg-[#060D1A]">
-          {children}
-        </div>
-      </DiagnosticoProvider>
-    );
-  }
-
   return (
     <DiagnosticoProvider>
-      <div className="min-h-screen bg-[#060D1A] flex">
+      <div className={`min-h-screen bg-[#060D1A] ${isFullScreenPage ? "" : "flex"}`}>
 
-        {/* LEFT SIDEBAR — fixed 280px, desktop only */}
-        <aside className="hidden lg:flex flex-col w-[280px] shrink-0 sticky top-0 h-screen bg-[#0C1829] border-r border-white/[0.06] overflow-y-auto">
+        {/* LEFT SIDEBAR — fixed 280px, desktop only — hidden on full-screen pages */}
+        <aside className={`${isFullScreenPage ? "hidden" : "hidden lg:flex"} flex-col w-[280px] shrink-0 sticky top-0 h-screen bg-[#0C1829] border-r border-white/[0.06] overflow-y-auto`}>
 
           {/* Sidebar header / logo */}
           <div className="px-6 py-5 border-b border-white/[0.06]">
-            <Link href="/crm" className="flex items-center gap-3 group">
+            <Link href="/dashboard" className="flex items-center gap-3 group">
               <div className="w-8 h-8 bg-[#C9A84C]/10 border border-[#C9A84C]/30 rounded-[8px] flex items-center justify-center">
                 <span className="text-[#C9A84C] font-bold text-sm">A</span>
               </div>
               <div>
                 <p className="text-[#F0F4FA] font-bold text-sm leading-none">Actinver</p>
-                <p className="text-[#C9A84C] text-[10px] tracking-[3px] uppercase leading-none mt-0.5">ArIA</p>
+                <p className="text-[#C9A84C] text-[10px] tracking-[3px] uppercase leading-none mt-0.5">Banca Privada</p>
               </div>
             </Link>
           </div>
@@ -185,7 +174,7 @@ export default function DiagnosticoLayout({
           </div>
 
           {/* Voice session link — shown when a voice session has been started */}
-          {sesion_inicio && !isCompletado && (
+          {sesion_inicio && !isFullScreenPage && (
             <div className="px-4 py-3 border-b border-white/[0.06]">
               <button
                 type="button"
@@ -208,7 +197,7 @@ export default function DiagnosticoLayout({
           )}
 
           {/* Progress overview */}
-          {!isCompletado && (
+          {!isFullScreenPage && (
             <div className="px-6 py-3 border-b border-white/[0.06]">
               <div className="flex items-center justify-between mb-2">
                 <span className="text-[#8B9BB4] text-xs">Progreso</span>
@@ -226,7 +215,7 @@ export default function DiagnosticoLayout({
           )}
 
           {/* Stepper nav */}
-          {!isCompletado && (
+          {!isFullScreenPage && (
             <nav className="flex-1 px-3 py-4 space-y-1" aria-label="Pasos del diagnóstico">
               {steps.map((step) => {
                 const isCurrent = pasoActual === step.id;
@@ -292,7 +281,7 @@ export default function DiagnosticoLayout({
           {/* Back to dashboard */}
           <div className="px-4 py-4 border-t border-white/[0.06]">
             <Link
-              href="/crm"
+              href="/dashboard"
               className="flex items-center gap-2 px-3 py-2 rounded-[8px] text-[#8B9BB4] hover:text-[#F0F4FA] hover:bg-[#1A3154]/50 transition-colors text-xs"
             >
               <ArrowLeft className="w-3.5 h-3.5" />
@@ -302,18 +291,18 @@ export default function DiagnosticoLayout({
         </aside>
 
         {/* MAIN CONTENT */}
-        <main className="flex-1 min-w-0 overflow-y-auto">
+        <main className={`${isFullScreenPage ? "w-full" : "flex-1 min-w-0"} overflow-y-auto`}>
 
           {/* Mobile header */}
-          {!isCompletado && (
+          {!isFullScreenPage && (
             <div className="lg:hidden sticky top-0 z-[60] bg-[#0C1829]/95 border-b border-white/[0.06]"
                  style={{ backdropFilter: "blur(16px)" }}>
               <div className="flex items-center justify-between px-4 py-3">
-                <Link href="/crm" className="flex items-center gap-2">
+                <Link href="/dashboard" className="flex items-center gap-2">
                   <div className="w-7 h-7 bg-[#C9A84C]/10 border border-[#C9A84C]/30 rounded-[6px] flex items-center justify-center">
                     <span className="text-[#C9A84C] font-bold text-xs">A</span>
                   </div>
-                  <span className="text-[#F0F4FA] font-bold text-sm">ArIA</span>
+                  <span className="text-[#F0F4FA] font-bold text-sm">Actinver Banca Privada</span>
                 </Link>
                 <VoiceButton />
               </div>
@@ -358,7 +347,7 @@ export default function DiagnosticoLayout({
           )}
 
           {/* Page header — sticky, desktop + mobile */}
-          {!isCompletado && currentStep && (
+          {!isFullScreenPage && currentStep && (
             <div
               className="sticky lg:top-0 top-0 z-[50] px-6 py-4 lg:px-8 border-b border-white/[0.06]"
               style={{
@@ -372,7 +361,7 @@ export default function DiagnosticoLayout({
           )}
 
           {/* Voice session banner — visible when coming from voice capture */}
-          {sesion_inicio && !isCompletado && (
+          {sesion_inicio && !isFullScreenPage && (
             <div className="mx-6 lg:mx-12 mt-6 flex items-center gap-3 px-4 py-3 rounded-xl bg-[#C9A84C]/[0.06] border border-[#C9A84C]/15">
               <div className="w-2 h-2 rounded-full bg-[#C9A84C] animate-pulse shrink-0" />
               <p className="text-xs text-[#8B9BB4] flex-1">
@@ -396,7 +385,7 @@ export default function DiagnosticoLayout({
           {/* Content wrapper */}
           <div
             className={`${
-              isCompletado
+              isFullScreenPage
                 ? "px-0"
                 : "px-6 py-8 lg:px-12 max-w-[960px]"
             }`}

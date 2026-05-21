@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Shield, TrendingUp, FileText, Check } from "lucide-react";
+import { Shield, TrendingUp, Presentation, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useAuthStore } from "@/stores/auth-store";
@@ -20,15 +20,15 @@ type LoginForm = z.infer<typeof loginSchema>;
 const features = [
   {
     icon: Shield,
-    text: "Diagnóstico en 6 pasos",
+    text: "Diagnóstico patrimonial completo en minutos",
   },
   {
     icon: TrendingUp,
-    text: "Motores de cálculo financiero",
+    text: "Detección automática de oportunidades financieras",
   },
   {
-    icon: FileText,
-    text: "Reportes PDF y Financial Wrapped",
+    icon: Presentation,
+    text: "Balance y presentación premium lista para el cliente",
   },
 ];
 
@@ -96,7 +96,7 @@ export default function LoginPage() {
             </div>
             <div>
               <p className="text-[#F0F4FA] font-bold text-sm leading-none">Actinver</p>
-              <p className="text-[#C9A84C] text-[10px] tracking-[3px] uppercase leading-none mt-0.5">ArIA</p>
+              <p className="text-[#C9A84C] text-[10px] tracking-[3px] uppercase leading-none mt-0.5">Banca Privada</p>
             </div>
           </div>
         </div>
@@ -105,8 +105,8 @@ export default function LoginPage() {
         <div className="relative z-10 flex flex-col justify-center flex-1 px-12 max-w-sm">
           <div className="mb-10">
             <h2 className="text-3xl font-bold text-[#F0F4FA] leading-tight">
-              Tu guía financiera<br />
-              <span className="text-[#C9A84C]">inteligente</span>
+              Balance patrimonial<br />
+              <span className="text-[#C9A84C]">privada y wealth</span>
             </h2>
             <p className="text-sm text-[#8B9BB4] mt-4 leading-relaxed">
               Diagnostica, planifica y protege el patrimonio de tus clientes con precisión y elegancia.
@@ -142,7 +142,7 @@ export default function LoginPage() {
             </div>
             <div>
               <p className="text-[#F0F4FA] font-bold text-sm leading-none">Actinver</p>
-              <p className="text-[#C9A84C] text-[10px] tracking-[3px] uppercase leading-none mt-0.5">ArIA</p>
+              <p className="text-[#C9A84C] text-[10px] tracking-[3px] uppercase leading-none mt-0.5">Banca Privada</p>
             </div>
           </div>
 

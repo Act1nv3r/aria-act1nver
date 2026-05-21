@@ -71,8 +71,13 @@ function runMotorsForPersona(
   let motorD: MotorOutputs["motorD"] = null;
   if (retiro) {
     motorC = calcularMotorC({
-      patrimonio_financiero_total: patrimonioFin,
-      saldo_esquemas: patrimonio.afore + patrimonio.ppr + patrimonio.plan_privado + patrimonio.seguros_retiro,
+      liquidez: patrimonio.liquidez,
+      inversiones: patrimonio.inversiones,
+      dotales: patrimonio.dotales,
+      afore: patrimonio.afore,
+      ppr: patrimonio.ppr,
+      plan_privado: patrimonio.plan_privado,
+      seguros_retiro: patrimonio.seguros_retiro,
       ley_73: patrimonio.ley_73,
       rentas: flujo.rentas,
       edad: perfil.edad,
@@ -99,10 +104,13 @@ function runMotorsForPersona(
       seguro_vida: proteccion.seguro_vida ?? false,
       propiedades_aseguradas: proteccion.propiedades_aseguradas,
       sgmm: proteccion.sgmm ?? false,
-      dependientes: perfil.dependientes ?? false,
-      patrimonio_neto: motorE.patrimonio_neto,
-      inmuebles_total: patrimonio.casa + patrimonio.inmuebles_renta + patrimonio.tierra,
+      dependientes: perfil.dependientes ? 1 : 0,
+      inversiones: patrimonio.inversiones,
+      dotales: patrimonio.dotales,
+      gastos_mensuales: flujo.gastos_basicos + flujo.obligaciones + flujo.creditos,
       edad: perfil.edad,
+      inmuebles_total: patrimonio.casa + patrimonio.inmuebles_renta + patrimonio.tierra,
+      rentas_mensuales: flujo.rentas,
     });
   }
 
@@ -211,8 +219,13 @@ export function OutputPanel({ variant = "sidebar" }: OutputPanelProps) {
       const patrimonioFin = patrimonio.liquidez + patrimonio.inversiones + patrimonio.dotales;
       if (retiro) {
         const motorC = calcularMotorC({
-          patrimonio_financiero_total: patrimonioFin,
-          saldo_esquemas: patrimonio.afore + patrimonio.ppr + patrimonio.plan_privado + patrimonio.seguros_retiro,
+          liquidez: patrimonio.liquidez,
+          inversiones: patrimonio.inversiones,
+          dotales: patrimonio.dotales,
+          afore: patrimonio.afore,
+          ppr: patrimonio.ppr,
+          plan_privado: patrimonio.plan_privado,
+          seguros_retiro: patrimonio.seguros_retiro,
           ley_73: patrimonio.ley_73,
           rentas: flujoMensual.rentas,
           edad: perfil.edad,
@@ -239,10 +252,13 @@ export function OutputPanel({ variant = "sidebar" }: OutputPanelProps) {
           seguro_vida: proteccion.seguro_vida ?? false,
           propiedades_aseguradas: proteccion.propiedades_aseguradas,
           sgmm: proteccion.sgmm ?? false,
-          dependientes: perfil.dependientes ?? false,
-          patrimonio_neto: motorE.patrimonio_neto,
-          inmuebles_total: patrimonio.casa + patrimonio.inmuebles_renta + patrimonio.tierra,
+          dependientes: perfil.dependientes ? 1 : 0,
+          inversiones: patrimonio.inversiones,
+          dotales: patrimonio.dotales,
+          gastos_mensuales: flujoMensual.gastos_basicos + flujoMensual.obligaciones + flujoMensual.creditos,
           edad: perfil.edad,
+          inmuebles_total: patrimonio.casa + patrimonio.inmuebles_renta + patrimonio.tierra,
+          rentas_mensuales: flujoMensual.rentas,
         });
         updateOutputs("motorF", motorF);
       }
@@ -335,7 +351,7 @@ export function OutputPanel({ variant = "sidebar" }: OutputPanelProps) {
                 edadDefuncion={retiroActivo.edad_defuncion ?? 90}
                 patrimonioActual={(patrimonioActivo?.liquidez ?? 0) + (patrimonioActivo?.inversiones ?? 0) + (patrimonioActivo?.dotales ?? 0)}
                 ahorroMensual={flujoActivo?.ahorro ?? 0}
-                pensionMensual={motorC.pension_total_mensual}
+                pensionMensual={motorC.pension_fija_total}
                 rentasMensuales={flujoActivo?.rentas ?? 0}
                 mensualidadDeseada={(retiroActivo as { mensualidad_deseada?: number })?.mensualidad_deseada ?? 50000}
                 modo="mini"
@@ -421,7 +437,7 @@ export function OutputPanel({ variant = "sidebar" }: OutputPanelProps) {
               edadDefuncion={retiroActivo.edad_defuncion ?? 90}
               patrimonioActual={(patrimonioActivo?.liquidez ?? 0) + (patrimonioActivo?.inversiones ?? 0) + (patrimonioActivo?.dotales ?? 0)}
               ahorroMensual={flujoActivo?.ahorro ?? 0}
-              pensionMensual={motorC.pension_total_mensual}
+              pensionMensual={motorC.pension_fija_total}
               rentasMensuales={flujoActivo?.rentas ?? 0}
               mensualidadDeseada={(retiroActivo as { mensualidad_deseada?: number })?.mensualidad_deseada ?? 50000}
               modo="resultados"
@@ -519,7 +535,7 @@ export function OutputPanel({ variant = "sidebar" }: OutputPanelProps) {
               <div className="space-y-2">
                 {[
                   { label: "Calidad de vida objetivo", value: (retiroActivo as { mensualidad_deseada?: number }).mensualidad_deseada ?? 0, highlight: false },
-                  { label: "Total ingresos en retiro", value: motorC.pension_total_mensual + (motorC.fuentes_ingreso?.rentas ?? 0), highlight: false },
+                  { label: "Total ingresos en retiro", value: motorC.pension_fija_total + (motorC.fuentes_ingreso?.rentas ?? 0), highlight: false },
                   { label: "Faltante / Superávit mensual", value: motorC.deficit_mensual, highlight: true },
                 ].map(({ label, value, highlight }) => (
                   <div key={label} className="flex justify-between items-center py-2 border-b border-white/[0.06]">
@@ -543,7 +559,7 @@ export function OutputPanel({ variant = "sidebar" }: OutputPanelProps) {
           <Card className="min-h-[400px]">
             <TrayectoriaRetiroChart
               saldoInicioJubilacion={motorC.saldo_inicio_jubilacion}
-              pensionTotalMensual={motorC.pension_total_mensual}
+              pensionTotalMensual={motorC.pension_fija_total}
               mensualidadDeseada={(retiroActivo as { mensualidad_deseada?: number })?.mensualidad_deseada ?? 50000}
               edadRetiro={retiroActivo?.edad_retiro ?? 60}
               edadDefuncion={retiroActivo?.edad_defuncion ?? 90}
@@ -577,7 +593,7 @@ export function OutputPanel({ variant = "sidebar" }: OutputPanelProps) {
               <PatrimonioNetoCard
                 neto={motorE.patrimonio_neto}
                 financiero={motorE.financiero}
-                noFinanciero={motorE.noFinanciero}
+                noFinanciero={motorE.no_financiero}
                 pasivos={motorE.pasivos_total}
               />
             </Card>

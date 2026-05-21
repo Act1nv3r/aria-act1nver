@@ -47,7 +47,7 @@ export default function DashboardLayout({
           </div>
           <div className="hidden sm:flex flex-col">
             <span className="text-[#F0F4FA] font-bold text-sm leading-none">Actinver</span>
-            <span className="text-[#C9A84C] text-[10px] tracking-[3px] uppercase leading-none mt-0.5">ArIA</span>
+            <span className="text-[#C9A84C] text-[10px] tracking-[3px] uppercase leading-none mt-0.5">Banca Privada</span>
           </div>
         </Link>
 
@@ -56,7 +56,7 @@ export default function DashboardLayout({
           <Link
             href="/dashboard"
             className={`px-4 py-1.5 rounded-full text-sm font-medium transition-all ${
-              pathname?.startsWith("/dashboard") || pathname?.startsWith("/crm")
+              pathname?.startsWith("/dashboard") || pathname?.startsWith("/customers")
                 ? "font-semibold text-[#F0F4FA] bg-[#1A3154]"
                 : "text-[#8B9BB4] hover:text-[#F0F4FA] hover:bg-[#1A3154]/50"
             }`}

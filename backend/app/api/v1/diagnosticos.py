@@ -440,21 +440,21 @@ async def update_retiro(
     if diag.patrimonio and diag.perfil:
         p = diag.patrimonio
         perfil = diag.perfil
-        patrimonio_financiero_total = (
-            float(p.liquidez) + float(p.inversiones) + float(p.dotales) +
-            float(p.afore) + float(p.ppr) + float(p.plan_privado) + float(p.seguros_retiro)
-        )
-        saldo_esquemas = float(p.afore) + float(p.ppr) + float(p.plan_privado) + float(p.seguros_retiro)
         rentas = float(diag.flujo_mensual.rentas) if diag.flujo_mensual else 0.0
         output_c = calcular_motor_c(
-            patrimonio_financiero_total,
-            saldo_esquemas,
-            float(p.ley_73) if p.ley_73 is not None else None,
-            rentas,
-            perfil.edad,
-            data.edad_retiro,
-            data.edad_defuncion,
-            float(data.mensualidad_deseada),
+            liquidez=float(p.liquidez),
+            inversiones=float(p.inversiones),
+            dotales=float(p.dotales),
+            afore=float(p.afore),
+            ppr=float(p.ppr),
+            plan_privado=float(p.plan_privado),
+            seguros_retiro=float(p.seguros_retiro),
+            ley_73=float(p.ley_73) if p.ley_73 is not None else None,
+            rentas=rentas,
+            edad=perfil.edad,
+            edad_retiro=data.edad_retiro,
+            edad_defuncion=data.edad_defuncion,
+            mensualidad_deseada=float(data.mensualidad_deseada),
         )
         await _upsert_resultado(db, id, "C", output_c)
         await db.flush()
@@ -533,21 +533,22 @@ async def update_proteccion(
     if diag.patrimonio and diag.perfil:
         p = diag.patrimonio
         inmuebles_total = float(p.casa) + float(p.inmuebles_renta) + float(p.tierra)
-        activos = (
-            float(p.liquidez) + float(p.inversiones) + float(p.dotales) +
-            float(p.afore) + float(p.ppr) + float(p.plan_privado) + float(p.seguros_retiro) +
-            inmuebles_total + float(p.negocio) + float(p.herencia)
+        rentas_m = float(diag.flujo_mensual.rentas) if diag.flujo_mensual else 0.0
+        gastos_m = (
+            float(diag.flujo_mensual.gastos_basicos) + float(diag.flujo_mensual.obligaciones) + float(diag.flujo_mensual.creditos)
+            if diag.flujo_mensual else 0.0
         )
-        pasivos = float(p.hipoteca) + float(p.saldo_planes) + float(p.compromisos)
-        patrimonio_neto = activos - pasivos
         output_f = calcular_motor_f(
-            bool(data.seguro_vida),
-            data.propiedades_aseguradas,
-            bool(data.sgmm),
-            bool(diag.perfil.dependientes),
-            patrimonio_neto,
-            inmuebles_total,
-            diag.perfil.edad,
+            seguro_vida=bool(data.seguro_vida),
+            dependientes=int(bool(diag.perfil.dependientes)),
+            inversiones=float(p.inversiones),
+            dotales=float(p.dotales),
+            gastos_mensuales=gastos_m,
+            edad=diag.perfil.edad,
+            propiedades_aseguradas=data.propiedades_aseguradas,
+            inmuebles_total=inmuebles_total,
+            rentas_mensuales=rentas_m,
+            sgmm=bool(data.sgmm),
         )
         await _upsert_resultado(db, id, "F", output_f)
         await db.flush()
@@ -622,30 +623,41 @@ async def get_diagnostico_pdf(
         )
 
     if p and perfil and retiro:
-        patrimonio_financiero_total = (
-            float(p.liquidez) + float(p.inversiones) + float(p.dotales) +
-            float(p.afore) + float(p.ppr) + float(p.plan_privado) + float(p.seguros_retiro)
-        )
-        saldo_esquemas = float(p.afore) + float(p.ppr) + float(p.plan_privado) + float(p.seguros_retiro)
         rentas = float(f.rentas) if f else 0.0
         motor_c_out = calcular_motor_c(
-            patrimonio_financiero_total, saldo_esquemas,
-            float(p.ley_73) if p.ley_73 is not None else None,
-            rentas, perfil.edad, retiro.edad_retiro,
-            retiro.edad_defuncion, float(retiro.mensualidad_deseada),
+            liquidez=float(p.liquidez),
+            inversiones=float(p.inversiones),
+            dotales=float(p.dotales),
+            afore=float(p.afore),
+            ppr=float(p.ppr),
+            plan_privado=float(p.plan_privado),
+            seguros_retiro=float(p.seguros_retiro),
+            ley_73=float(p.ley_73) if p.ley_73 is not None else None,
+            rentas=rentas,
+            edad=perfil.edad,
+            edad_retiro=retiro.edad_retiro,
+            edad_defuncion=retiro.edad_defuncion,
+            mensualidad_deseada=float(retiro.mensualidad_deseada),
         )
 
     if p and perfil and diag.proteccion:
         inmuebles_total = float(p.casa) + float(p.inmuebles_renta) + float(p.tierra)
-        patrimonio_neto_val = motor_e_out["patrimonio_neto"] if motor_e_out else 0.0
+        rentas_m_pdf = float(f.rentas) if f else 0.0
+        gastos_m_pdf = (
+            float(f.gastos_basicos) + float(f.obligaciones) + float(f.creditos)
+            if f else 0.0
+        )
         motor_f_out = calcular_motor_f(
-            bool(diag.proteccion.seguro_vida),
-            diag.proteccion.propiedades_aseguradas,
-            bool(diag.proteccion.sgmm),
-            bool(perfil.dependientes),
-            patrimonio_neto_val,
-            inmuebles_total,
-            perfil.edad,
+            seguro_vida=bool(diag.proteccion.seguro_vida),
+            dependientes=int(bool(perfil.dependientes)),
+            inversiones=float(p.inversiones),
+            dotales=float(p.dotales),
+            gastos_mensuales=gastos_m_pdf,
+            edad=perfil.edad,
+            propiedades_aseguradas=diag.proteccion.propiedades_aseguradas,
+            inmuebles_total=inmuebles_total,
+            rentas_mensuales=rentas_m_pdf,
+            sgmm=bool(diag.proteccion.sgmm),
         )
 
     # Populate template data

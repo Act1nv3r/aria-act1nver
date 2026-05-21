@@ -123,7 +123,7 @@ export interface SavedSimulation {
     mensualidad_posible: number;
     deficit_mensual: number;
     saldo_inicio_jubilacion: number;
-    pension_total_mensual: number;
+    pension_fija_total: number;
   };
 }
 
@@ -170,6 +170,8 @@ export interface ClienteSnapshot {
     negocio: number;
     herencia: number;
     hipoteca: number;
+    saldo_planes: number;
+    compromisos: number;
   };
   retiro: {
     edad_retiro: number;
@@ -727,6 +729,8 @@ export const useDiagnosticoStore = create<DiagnosticoStore>()(
               negocio: s.patrimonio?.negocio ?? 0,
               herencia: s.patrimonio?.herencia ?? 0,
               hipoteca: s.patrimonio?.hipoteca ?? 0,
+              saldo_planes: s.patrimonio?.saldo_planes ?? 0,
+              compromisos: s.patrimonio?.compromisos ?? 0,
             },
             retiro: {
               edad_retiro: s.retiro?.edad_retiro ?? 65,

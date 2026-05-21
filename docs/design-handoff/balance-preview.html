@@ -1,0 +1,1707 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Balance Patrimonial — Actinver Banca Privada</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg:        #060D1A;
+    --bg-card:   #0C1829;
+    --bg-lift:   #112038;
+    --bg-input:  #0A1628;
+    --border:    rgba(255,255,255,0.06);
+    --border-md: rgba(255,255,255,0.10);
+    --gold:      #C9A84C;
+    --gold-lt:   #E8C872;
+    --gold-dim:  rgba(201,168,76,0.12);
+    --gold-dim2: rgba(201,168,76,0.06);
+    --white:     #F0F4FA;
+    --muted:     #8B9BB4;
+    --dim:       #4A5A72;
+    --green:     #10B981;
+    --green-dim: rgba(16,185,129,0.12);
+    --red:       #EF4444;
+    --red-dim:   rgba(239,68,68,0.12);
+    --blue:      #3B82F6;
+    --blue-dim:  rgba(59,130,246,0.12);
+    --amber:     #F59E0B;
+    --amber-dim: rgba(245,158,11,0.12);
+  }
+
+  body {
+    font-family: -apple-system, 'SF Pro Display', 'Helvetica Neue', Arial, sans-serif;
+    background: var(--bg);
+    color: var(--white);
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ── Layout ──────────────────────────────────────────────────── */
+  .page { max-width: 1200px; margin: 0 auto; padding: 0 32px 80px; }
+
+  /* ── Typography helpers ──────────────────────────────────────── */
+  .label   { font-size: 10px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: var(--dim); }
+  .label-gold { color: var(--gold); }
+  .mono    { font-variant-numeric: tabular-nums; }
+
+  /* ── Section header ──────────────────────────────────────────── */
+  .section { margin-bottom: 64px; }
+  .section-header { margin-bottom: 28px; padding-bottom: 16px; border-bottom: 1px solid var(--border); }
+  .section-header .tag {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 10px; font-weight: 700; letter-spacing: 2.5px; text-transform: uppercase;
+    color: var(--gold); margin-bottom: 6px;
+  }
+  .section-header h2 { font-size: 22px; font-weight: 700; color: var(--white); }
+  .section-header p  { font-size: 13px; color: var(--muted); margin-top: 3px; }
+
+  /* ── Cards ───────────────────────────────────────────────────── */
+  .card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 24px;
+  }
+  .card-sm { padding: 18px 20px; border-radius: 12px; }
+
+  /* ── ─────────────────────────────────────────────────────────── */
+  /* HERO — PATRIMONIO NETO                                         */
+  /* ── ─────────────────────────────────────────────────────────── */
+  .hero {
+    position: relative;
+    padding: 48px 0 56px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 56px;
+    overflow: hidden;
+  }
+  .hero::before {
+    content: '';
+    position: absolute;
+    top: -80px; left: 50%;
+    transform: translateX(-50%);
+    width: 700px; height: 400px;
+    background: radial-gradient(ellipse, rgba(201,168,76,0.06) 0%, transparent 70%);
+    pointer-events: none;
+  }
+  .hero-eyebrow {
+    display: flex; align-items: center; gap: 10px;
+    margin-bottom: 12px;
+  }
+  .hero-eyebrow .dot {
+    width: 6px; height: 6px; border-radius: 50%; background: var(--green);
+    box-shadow: 0 0 8px var(--green);
+  }
+  .hero-label { font-size: 11px; font-weight: 700; letter-spacing: 3px; text-transform: uppercase; color: var(--muted); }
+
+  .hero-number {
+    font-size: clamp(44px, 6vw, 72px);
+    font-weight: 800;
+    letter-spacing: -2px;
+    color: var(--white);
+    line-height: 1;
+    margin-bottom: 6px;
+    font-variant-numeric: tabular-nums;
+  }
+  .hero-number span { color: var(--gold); }
+
+  .hero-sub {
+    font-size: 14px; color: var(--muted); margin-bottom: 36px;
+  }
+
+  .hero-kpis {
+    display: grid; grid-template-columns: repeat(4, 1fr);
+    gap: 1px;
+    background: var(--border);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    overflow: hidden;
+    max-width: 780px;
+  }
+  .hero-kpi {
+    background: var(--bg-card);
+    padding: 16px 20px;
+  }
+  .hero-kpi .kpi-label { font-size: 10px; font-weight: 600; letter-spacing: 1.5px; text-transform: uppercase; color: var(--dim); margin-bottom: 6px; }
+  .hero-kpi .kpi-value { font-size: 20px; font-weight: 700; line-height: 1; font-variant-numeric: tabular-nums; }
+  .hero-kpi .kpi-sub   { font-size: 11px; color: var(--muted); margin-top: 3px; }
+  .gold { color: var(--gold); }
+  .green { color: var(--green); }
+  .red   { color: var(--red); }
+  .white { color: var(--white); }
+  .muted { color: var(--muted); }
+
+  /* ── ─────────────────────────────────────────────────────────── */
+  /* SECCIÓN C — BALANCE PATRIMONIAL                                */
+  /* ── ─────────────────────────────────────────────────────────── */
+  .balance-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+  .balance-col { }
+  .balance-col-header {
+    font-size: 10px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase;
+    padding: 10px 16px;
+    border-radius: 8px 8px 0 0;
+    margin-bottom: 1px;
+  }
+  .col-activo .balance-col-header   { background: rgba(201,168,76,0.08); color: var(--gold); }
+  .col-real   .balance-col-header   { background: rgba(59,130,246,0.08); color: var(--blue); }
+  .col-pasivo .balance-col-header   { background: rgba(239,68,68,0.08); color: var(--red); }
+
+  .balance-items { display: flex; flex-direction: column; gap: 1px; }
+  .balance-item {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 10px 16px;
+    background: var(--bg-card);
+    font-size: 13px;
+  }
+  .balance-item:first-child { border-radius: 0; }
+  .balance-item:last-child  { border-radius: 0 0 8px 8px; }
+  .balance-item .bi-label { color: var(--muted); }
+  .balance-item .bi-value { font-weight: 600; font-variant-numeric: tabular-nums; }
+
+  .balance-total {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 12px 16px;
+    margin-top: 1px;
+    border-radius: 0 0 8px 8px;
+    font-weight: 700;
+    font-size: 14px;
+    font-variant-numeric: tabular-nums;
+  }
+  .col-activo  .balance-total { background: rgba(201,168,76,0.10); color: var(--gold); }
+  .col-real    .balance-total { background: rgba(59,130,246,0.10); color: var(--blue); }
+  .col-pasivo  .balance-total { background: rgba(239,68,68,0.10); color: var(--red); }
+
+  /* Patrimonio Neto resultado */
+  .pn-result {
+    background: linear-gradient(135deg, rgba(201,168,76,0.08) 0%, rgba(201,168,76,0.03) 100%);
+    border: 1px solid rgba(201,168,76,0.20);
+    border-radius: 12px;
+    padding: 20px 24px;
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 20px;
+  }
+  .pn-result .pn-label { font-size: 13px; color: var(--muted); }
+  .pn-result .pn-formula { font-size: 11px; color: var(--dim); margin-top: 2px; }
+  .pn-result .pn-value { font-size: 28px; font-weight: 800; color: var(--gold); font-variant-numeric: tabular-nums; letter-spacing: -1px; }
+
+  /* Asset composition bar */
+  .comp-bar-wrap { margin-bottom: 20px; }
+  .comp-bar-label { display: flex; justify-content: space-between; margin-bottom: 6px; }
+  .comp-bar { height: 8px; border-radius: 4px; overflow: hidden; display: flex; background: var(--bg-lift); }
+  .comp-bar .seg { height: 100%; transition: width 0.6s ease; }
+  .comp-bar-legend { display: flex; gap: 16px; margin-top: 8px; }
+  .comp-bar-legend .leg { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--muted); }
+  .comp-bar-legend .leg-dot { width: 8px; height: 8px; border-radius: 2px; flex-shrink: 0; }
+
+  /* Donut SVG */
+  .chart-row {
+    display: grid; grid-template-columns: 200px 1fr;
+    gap: 32px; align-items: center;
+  }
+  .donut-labels { display: flex; flex-direction: column; gap: 10px; }
+  .donut-label-item {
+    display: flex; align-items: center; gap: 10px; font-size: 13px;
+  }
+  .donut-label-dot { width: 10px; height: 10px; border-radius: 3px; flex-shrink: 0; }
+  .donut-label-name { color: var(--muted); flex: 1; }
+  .donut-label-val { font-weight: 600; font-variant-numeric: tabular-nums; }
+  .donut-label-pct { font-size: 11px; color: var(--dim); width: 38px; text-align: right; }
+
+  /* ── ─────────────────────────────────────────────────────────── */
+  /* SECCIÓN A — RESUMEN EJECUTIVO                                  */
+  /* ── ─────────────────────────────────────────────────────────── */
+  .exec-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .exec-grid.wide { grid-template-columns: 1fr; }
+
+  .exec-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 20px 22px;
+    position: relative;
+    overflow: hidden;
+  }
+  .exec-card .ec-tag { font-size: 10px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: var(--dim); margin-bottom: 10px; }
+  .exec-card .ec-title { font-size: 13px; font-weight: 600; color: var(--muted); margin-bottom: 12px; }
+  .exec-card .ec-big { font-size: 32px; font-weight: 800; letter-spacing: -1px; line-height: 1; font-variant-numeric: tabular-nums; }
+  .exec-card .ec-sub { font-size: 12px; color: var(--muted); margin-top: 4px; }
+
+  .badge {
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 3px 9px; border-radius: 20px;
+    font-size: 11px; font-weight: 700;
+  }
+  .badge-gold  { background: rgba(201,168,76,0.15); color: var(--gold); }
+  .badge-green { background: rgba(16,185,129,0.15); color: var(--green); }
+  .badge-red   { background: rgba(239,68,68,0.15);  color: var(--red); }
+  .badge-blue  { background: rgba(59,130,246,0.15); color: var(--blue); }
+  .badge-amber { background: rgba(245,158,11,0.15); color: var(--amber); }
+
+  /* Progress bar */
+  .progress-wrap { margin-top: 14px; }
+  .progress-header { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 6px; }
+  .progress-header .ph-label { font-size: 11px; color: var(--muted); }
+  .progress-header .ph-pct   { font-size: 16px; font-weight: 700; color: var(--gold); }
+  .progress-track { height: 6px; background: var(--bg-lift); border-radius: 3px; overflow: hidden; }
+  .progress-fill  { height: 100%; border-radius: 3px; background: linear-gradient(90deg, var(--gold), var(--gold-lt)); }
+
+  /* Apalancamiento 3-grid */
+  .apalan-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-top: 12px; }
+  .apalan-item { background: var(--bg-lift); border-radius: 10px; padding: 12px 14px; }
+  .apalan-item .ai-label { font-size: 10px; color: var(--dim); margin-bottom: 4px; }
+  .apalan-item .ai-val { font-size: 17px; font-weight: 700; font-variant-numeric: tabular-nums; }
+
+  /* ── ─────────────────────────────────────────────────────────── */
+  /* SECCIÓN D — FLUJO DISPONIBLE                                   */
+  /* ── ─────────────────────────────────────────────────────────── */
+  .flujo-statement {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    overflow: hidden;
+    margin-bottom: 16px;
+  }
+  .flujo-row {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 16px 24px;
+    border-bottom: 1px solid var(--border);
+  }
+  .flujo-row:last-child { border-bottom: none; }
+  .flujo-row.total-row { background: var(--bg-lift); }
+  .flujo-row .fr-label { font-size: 14px; color: var(--muted); }
+  .flujo-row .fr-val   { font-size: 18px; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .flujo-row .fr-pct   { font-size: 11px; color: var(--dim); margin-top: 1px; }
+
+  .flujo-breakdown { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px; }
+  .flujo-item {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 18px 20px;
+  }
+  .flujo-item .fi-label { font-size: 11px; color: var(--dim); margin-bottom: 6px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; }
+  .flujo-item .fi-val   { font-size: 22px; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .flujo-item .fi-sub   { font-size: 11px; color: var(--muted); margin-top: 3px; }
+
+  .rentabilidad-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    font-size: 13px;
+  }
+  .rentabilidad-table th {
+    background: var(--bg-lift);
+    color: var(--dim);
+    font-weight: 600;
+    font-size: 10px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    padding: 10px 16px;
+    text-align: left;
+  }
+  .rentabilidad-table th:last-child { text-align: right; }
+  .rentabilidad-table td {
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border);
+    background: var(--bg-card);
+    color: var(--muted);
+    vertical-align: middle;
+  }
+  .rentabilidad-table td:last-child { text-align: right; color: var(--white); font-weight: 600; }
+  .rentabilidad-table td.accent { color: var(--gold); font-weight: 600; }
+
+  /* ── ─────────────────────────────────────────────────────────── */
+  /* SECCIÓN B — PLAN DE ACCIÓN                                     */
+  /* ── ─────────────────────────────────────────────────────────── */
+  .plan-table {
+    width: 100%; border-collapse: separate; border-spacing: 0;
+    font-size: 13px;
+  }
+  .plan-table thead th {
+    background: var(--bg-lift);
+    color: var(--dim);
+    font-weight: 700;
+    font-size: 10px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    padding: 12px 18px;
+    text-align: left;
+  }
+  .plan-table thead th:first-child { border-radius: 10px 0 0 0; }
+  .plan-table thead th:last-child  { border-radius: 0 10px 0 0; }
+  .plan-table tbody tr:nth-child(odd)  td { background: var(--bg-card); }
+  .plan-table tbody tr:nth-child(even) td { background: rgba(10,22,40,0.8); }
+  .plan-table td {
+    padding: 14px 18px;
+    border-bottom: 1px solid var(--border);
+    color: var(--muted);
+    vertical-align: top;
+  }
+  .plan-table td:first-child { color: var(--white); font-weight: 600; }
+  .plan-table td .rec { color: var(--white); font-size: 13px; }
+
+  /* ── ─────────────────────────────────────────────────────────── */
+  /* NAVEGACIÓN INTERNA (sticky anchor bar)                         */
+  /* ── ─────────────────────────────────────────────────────────── */
+  .nav-bar {
+    position: sticky; top: 0; z-index: 40;
+    background: rgba(6,13,26,0.92);
+    backdrop-filter: blur(20px) saturate(1.6);
+    border-bottom: 1px solid var(--border);
+    padding: 0 32px;
+    display: flex; align-items: center; gap: 0;
+    max-width: 100%;
+    overflow-x: auto;
+  }
+  .nav-item {
+    padding: 14px 18px;
+    font-size: 12px; font-weight: 600;
+    color: var(--dim);
+    white-space: nowrap;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    text-decoration: none;
+    transition: color 0.15s, border-color 0.15s;
+  }
+  .nav-item:hover { color: var(--white); }
+  .nav-item.active { color: var(--gold); border-bottom-color: var(--gold); }
+  .nav-logo {
+    font-size: 11px; font-weight: 700; letter-spacing: 2px;
+    text-transform: uppercase; color: var(--muted);
+    padding: 14px 18px 14px 0;
+    margin-right: 8px;
+    border-right: 1px solid var(--border);
+    white-space: nowrap;
+  }
+
+  /* ── ─────────────────────────────────────────────────────────── */
+  /* TOP BAR                                                        */
+  /* ── ─────────────────────────────────────────────────────────── */
+  .top-bar {
+    padding: 20px 0 0;
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 0;
+  }
+  .top-bar .client-info { display: flex; align-items: center; gap: 14px; }
+  .top-bar .avatar {
+    width: 44px; height: 44px; border-radius: 12px;
+    background: var(--gold-dim);
+    border: 1px solid rgba(201,168,76,0.3);
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 800; font-size: 16px; color: var(--gold);
+  }
+  .top-bar .client-name { font-size: 18px; font-weight: 700; }
+  .top-bar .client-meta { font-size: 12px; color: var(--muted); margin-top: 2px; }
+  .top-bar .actions { display: flex; gap: 8px; }
+  .btn {
+    padding: 9px 18px; border-radius: 9px;
+    font-size: 13px; font-weight: 600;
+    border: none; cursor: pointer;
+    display: inline-flex; align-items: center; gap: 6px;
+  }
+  .btn-accent { background: var(--gold); color: #060D1A; }
+  .btn-outline { background: transparent; border: 1px solid var(--border-md); color: var(--muted); }
+
+  /* ── divider ─────────────────────────────────────────────────── */
+  .divider { height: 1px; background: var(--border); margin: 40px 0; }
+
+  /* ── trayectoria section ─────────────────────────────────────── */
+  .tray-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 24px; }
+  .tray-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 14px; padding: 20px 22px; }
+  .tray-card .tc-label { font-size: 11px; color: var(--dim); font-weight: 600; letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 8px; }
+  .tray-card .tc-big { font-size: 30px; font-weight: 800; letter-spacing: -1px; font-variant-numeric: tabular-nums; }
+  .tray-card .tc-sub { font-size: 12px; color: var(--muted); margin-top: 4px; }
+
+  /* Retirement progress visual */
+  .retiro-vis {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 24px;
+  }
+  .retiro-timeline {
+    display: flex; align-items: center; gap: 0;
+    margin: 24px 0 20px;
+    position: relative;
+  }
+  .retiro-dot {
+    width: 14px; height: 14px; border-radius: 50%;
+    border: 2px solid var(--bg-card);
+    flex-shrink: 0; position: relative; z-index: 2;
+  }
+  .retiro-line {
+    flex: 1; height: 2px; position: relative;
+  }
+  .retiro-event {
+    display: flex; flex-direction: column; align-items: center;
+    gap: 6px;
+  }
+  .retiro-event .re-age { font-size: 18px; font-weight: 800; line-height: 1; }
+  .retiro-event .re-label { font-size: 10px; color: var(--dim); letter-spacing: 1px; text-transform: uppercase; }
+  .retiro-event .re-value { font-size: 12px; color: var(--muted); }
+
+  /* ── solvencia bar section ───────────────────────────────────── */
+  .solvencia-bar {
+    height: 12px; border-radius: 6px; overflow: hidden;
+    background: var(--bg-lift);
+    margin: 12px 0;
+    position: relative;
+  }
+  .solvencia-fill { height: 100%; border-radius: 6px; transition: width 0.8s ease; }
+
+  /* ── proteccion grid ─────────────────────────────────────────── */
+  .prot-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+  .prot-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 18px 20px;
+    display: flex; flex-direction: column; gap: 8px;
+  }
+  .prot-card .pc-icon {
+    width: 36px; height: 36px; border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px; margin-bottom: 4px;
+  }
+  .prot-card .pc-label { font-size: 11px; color: var(--dim); font-weight: 600; letter-spacing: 1px; text-transform: uppercase; }
+  .prot-card .pc-status { font-size: 15px; font-weight: 700; }
+  .prot-card .pc-detail { font-size: 12px; color: var(--muted); }
+
+  /* ── simulator teaser ────────────────────────────────────────── */
+  .sim-teaser {
+    background: linear-gradient(135deg, rgba(201,168,76,0.05) 0%, rgba(59,130,246,0.04) 100%);
+    border: 1px solid rgba(201,168,76,0.15);
+    border-radius: 16px;
+    padding: 32px;
+    display: flex; justify-content: space-between; align-items: center;
+    gap: 24px;
+  }
+  .sim-teaser h3 { font-size: 20px; font-weight: 700; margin-bottom: 6px; }
+  .sim-teaser p  { font-size: 13px; color: var(--muted); max-width: 380px; }
+
+  /* scroll target offset */
+  [id] { scroll-margin-top: 60px; }
+
+  /* ── trayectoria charts ──────────────────────────────────────── */
+  .tray-charts-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin-top: 24px;
+  }
+  .tray-chart-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 20px 22px;
+  }
+  .tray-chart-card .tcc-title {
+    font-size: 10px; font-weight: 700; letter-spacing: 2px;
+    text-transform: uppercase; color: var(--gold);
+    margin-bottom: 4px;
+  }
+  .tray-chart-card .tcc-sub {
+    font-size: 12px; color: var(--muted); margin-bottom: 16px;
+  }
+  .tray-bar-row {
+    display: flex; align-items: center; gap: 10px;
+  }
+  .tray-bar-age {
+    font-size: 11px; color: var(--dim); width: 32px;
+    text-align: right; flex-shrink: 0;
+  }
+  .tray-bar-track {
+    flex: 1; height: 18px; background: var(--bg-lift);
+    border-radius: 3px; overflow: hidden;
+  }
+  .tray-bar-fill {
+    height: 100%; border-radius: 3px;
+    transition: width 0.7s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .tray-bar-label {
+    font-size: 11px; font-weight: 600;
+    width: 64px; text-align: right; flex-shrink: 0;
+    font-variant-numeric: tabular-nums;
+  }
+  .tray-fuente-row {
+    display: flex; align-items: center; gap: 10px;
+  }
+  .tray-fuente-track {
+    flex: 1; height: 20px; background: var(--bg-lift);
+    border-radius: 3px; overflow: hidden; display: flex;
+  }
+  .tray-fuente-seg { height: 100%; transition: width 0.7s ease; }
+  .tray-fuente-total {
+    font-size: 11px; color: var(--muted);
+    width: 56px; text-align: right; flex-shrink: 0;
+    font-variant-numeric: tabular-nums;
+  }
+  .tray-legend {
+    display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 14px;
+  }
+  .tray-legend-item {
+    display: flex; align-items: center; gap: 5px;
+    font-size: 10px; color: var(--muted);
+  }
+  .tray-legend-dot {
+    width: 10px; height: 10px; border-radius: 2px; flex-shrink: 0;
+  }
+  .tray-kpis {
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px;
+    margin-top: 20px;
+  }
+  .tray-kpi {
+    background: var(--bg-lift);
+    border-radius: 10px; padding: 12px 14px;
+  }
+  .tray-kpi .tk-label { font-size: 10px; color: var(--dim); margin-bottom: 4px; }
+  .tray-kpi .tk-val { font-size: 15px; font-weight: 700; font-variant-numeric: tabular-nums; }
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- STICKY NAV BAR                                                  -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<nav class="nav-bar">
+  <span class="nav-logo">Actinver · Banca Privada</span>
+  <a href="#patrimonio" class="nav-item active">Patrimonio</a>
+  <a href="#resumen"    class="nav-item">Resumen</a>
+  <a href="#flujo"      class="nav-item">Flujo</a>
+  <a href="#retiro"     class="nav-item">Retiro</a>
+  <a href="#plan"       class="nav-item">Plan de Acción</a>
+  <a href="#proteccion" class="nav-item">Protección</a>
+  <a href="#simulador"  class="nav-item">Simulador</a>
+  <a href="#houseview"  class="nav-item">House View</a>
+</nav>
+
+<div class="page">
+
+  <!-- ─────────────────────────────────────────────────────────── -->
+  <!-- TOP CLIENT BAR                                              -->
+  <!-- ─────────────────────────────────────────────────────────── -->
+  <div class="top-bar">
+    <div class="client-info">
+      <div class="avatar">CM</div>
+      <div>
+        <div class="client-name">Carlos Mendoza</div>
+        <div class="client-meta">52 años · Diagnóstico completado hoy</div>
+      </div>
+    </div>
+    <div class="actions">
+      <button class="btn btn-outline">⬇ Diagnóstico PDF</button>
+      <button class="btn btn-accent">⬇ Balance Patrimonial</button>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════ -->
+  <!-- HERO — PATRIMONIO NETO (Above the fold)                    -->
+  <!-- ═══════════════════════════════════════════════════════════ -->
+  <div class="hero" id="patrimonio">
+    <div class="hero-eyebrow">
+      <div class="dot"></div>
+      <span class="hero-label">Patrimonio Neto · Al día de hoy</span>
+    </div>
+
+    <div class="hero-number mono">
+      $<span>28</span>,450,000 <span style="font-size:0.5em; letter-spacing:0; font-weight:600; color:var(--muted)">MXN</span>
+    </div>
+    <div class="hero-sub">Activos totales $33,200,000 &nbsp;·&nbsp; Obligaciones $4,750,000</div>
+
+    <!-- 4 KPIs strip -->
+    <div class="hero-kpis">
+      <div class="hero-kpi">
+        <div class="kpi-label">Nivel de Riqueza</div>
+        <div class="kpi-value gold">Genial</div>
+        <div class="kpi-sub">Top 8% para su edad</div>
+      </div>
+      <div class="hero-kpi">
+        <div class="kpi-label">Longevidad Activos</div>
+        <div class="kpi-value white">24 años</div>
+        <div class="kpi-sub">Hasta los 76 años</div>
+      </div>
+      <div class="hero-kpi">
+        <div class="kpi-label">Índice de Solvencia</div>
+        <div class="kpi-value green">85.7%</div>
+        <div class="kpi-sub">Muy saludable</div>
+      </div>
+      <div class="hero-kpi">
+        <div class="kpi-label">Deuda / Activos</div>
+        <div class="kpi-value white">14.3%</div>
+        <div class="kpi-sub">Por debajo del umbral</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════ -->
+  <!-- SECCIÓN C — DIAGNÓSTICO PATRIMONIAL                        -->
+  <!-- ═══════════════════════════════════════════════════════════ -->
+  <div class="section">
+    <div class="section-header">
+      <div class="tag"><span>C</span> ─</div>
+      <h2>Diagnóstico Patrimonial</h2>
+      <p>Composición detallada de activos, pasivos y patrimonio neto</p>
+    </div>
+
+    <!-- Balance de 3 columnas -->
+    <div class="balance-grid">
+
+      <!-- Activos Financieros -->
+      <div class="balance-col col-activo">
+        <div class="balance-col-header">Activos Financieros</div>
+        <div class="balance-items">
+          <div class="balance-item"><span class="bi-label">Ahorro / Liquidez</span><span class="bi-value white">$2,500,000</span></div>
+          <div class="balance-item"><span class="bi-label">Inversiones</span><span class="bi-value white">$12,000,000</span></div>
+          <div class="balance-item"><span class="bi-label">Dotales</span><span class="bi-value white">$1,200,000</span></div>
+          <div class="balance-item"><span class="bi-label">AFORE</span><span class="bi-value muted">$800,000</span></div>
+          <div class="balance-item"><span class="bi-label">PPR</span><span class="bi-value muted">$1,200,000</span></div>
+          <div class="balance-item"><span class="bi-label">Plan Privado</span><span class="bi-value muted">$500,000</span></div>
+          <div class="balance-item"><span class="bi-label">Seguros Retiro</span><span class="bi-value muted">$0</span></div>
+        </div>
+        <div class="balance-total"><span>Total Financiero</span><span>$18,200,000</span></div>
+      </div>
+
+      <!-- Activos No Financieros -->
+      <div class="balance-col col-real">
+        <div class="balance-col-header">Activos No Financieros</div>
+        <div class="balance-items">
+          <div class="balance-item"><span class="bi-label">Casa Principal</span><span class="bi-value white">$8,000,000</span></div>
+          <div class="balance-item"><span class="bi-label">Inmuebles en Renta</span><span class="bi-value white">$5,000,000</span></div>
+          <div class="balance-item"><span class="bi-label">Tierra</span><span class="bi-value muted">$0</span></div>
+          <div class="balance-item"><span class="bi-label">Negocio</span><span class="bi-value white">$2,000,000</span></div>
+          <div class="balance-item"><span class="bi-label">Herencia Esperada</span><span class="bi-value muted">$0</span></div>
+        </div>
+        <div class="balance-total" style="background:rgba(59,130,246,0.10); color:var(--blue)"><span>Total No Financiero</span><span>$15,000,000</span></div>
+      </div>
+
+      <!-- Pasivos -->
+      <div class="balance-col col-pasivo">
+        <div class="balance-col-header">Obligaciones</div>
+        <div class="balance-items">
+          <div class="balance-item"><span class="bi-label">Hipoteca</span><span class="bi-value" style="color:var(--red)">$3,500,000</span></div>
+          <div class="balance-item"><span class="bi-label">Planes / Seguros</span><span class="bi-value muted">$0</span></div>
+          <div class="balance-item"><span class="bi-label">Otros Compromisos</span><span class="bi-value" style="color:var(--red)">$1,250,000</span></div>
+        </div>
+        <div class="balance-total"><span>Total Obligaciones</span><span>$4,750,000</span></div>
+
+        <!-- Patrimonio Neto inline -->
+        <div style="margin-top:12px; padding:14px 16px; background:var(--gold-dim); border-radius:8px;">
+          <div style="font-size:10px; color:var(--gold); font-weight:700; letter-spacing:2px; text-transform:uppercase; margin-bottom:4px;">Patrimonio Neto</div>
+          <div style="font-size:22px; font-weight:800; color:var(--gold); font-variant-numeric:tabular-nums; letter-spacing:-0.5px;">$28,450,000</div>
+          <div style="font-size:10px; color:var(--dim); margin-top:3px;">Activos $33.2M − Obligaciones $4.75M</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Barra de composición -->
+    <div class="card" style="margin-bottom:16px;">
+      <div style="margin-bottom:14px;">
+        <div class="label label-gold" style="margin-bottom:10px;">Estructura del patrimonio</div>
+        <div class="comp-bar">
+          <div class="seg" style="width:15%; background:#C9A84C; opacity:0.9;" title="Liquidez"></div>
+          <div class="seg" style="width:21%; background:#3B82F6; opacity:0.85;" title="Inversiones"></div>
+          <div class="seg" style="width:7%;  background:#8B5CF6; opacity:0.85;" title="Retiro"></div>
+          <div class="seg" style="width:33%; background:#0EA5E9; opacity:0.80;" title="Patrimoniales"></div>
+          <div class="seg" style="width:16%; background:#10B981; opacity:0.80;" title="Productivos"></div>
+          <div class="seg" style="width:8%;  background:#EF4444; opacity:0.70;" title="Obligaciones"></div>
+        </div>
+        <div class="comp-bar-legend">
+          <div class="leg"><div class="leg-dot" style="background:#C9A84C;"></div>Liquidez 15%</div>
+          <div class="leg"><div class="leg-dot" style="background:#3B82F6;"></div>Inversiones 21%</div>
+          <div class="leg"><div class="leg-dot" style="background:#8B5CF6;"></div>Retiro 7%</div>
+          <div class="leg"><div class="leg-dot" style="background:#0EA5E9;"></div>Patrimoniales 33%</div>
+          <div class="leg"><div class="leg-dot" style="background:#10B981;"></div>Productivos 16%</div>
+          <div class="leg"><div class="leg-dot" style="background:#EF4444; opacity:0.8;"></div>Obligaciones −14%</div>
+        </div>
+      </div>
+
+      <!-- Donut + leyenda -->
+      <div class="chart-row" style="margin-top:8px;">
+        <svg width="200" height="200" viewBox="0 0 200 200" style="flex-shrink:0;">
+          <circle cx="100" cy="100" r="70" fill="none" stroke="#1A2840" stroke-width="28"/>
+          <!-- Liquidez 15% -->
+          <circle cx="100" cy="100" r="70" fill="none" stroke="#C9A84C" stroke-width="28"
+            stroke-dasharray="65.9 373.9" stroke-dashoffset="0" transform="rotate(-90 100 100)"/>
+          <!-- Inversiones 21% -->
+          <circle cx="100" cy="100" r="70" fill="none" stroke="#3B82F6" stroke-width="28"
+            stroke-dasharray="92.3 347.5" stroke-dashoffset="-65.9" transform="rotate(-90 100 100)"/>
+          <!-- Retiro 7% -->
+          <circle cx="100" cy="100" r="70" fill="none" stroke="#8B5CF6" stroke-width="28"
+            stroke-dasharray="30.8 408.8" stroke-dashoffset="-158.2" transform="rotate(-90 100 100)"/>
+          <!-- Patrimoniales 33% -->
+          <circle cx="100" cy="100" r="70" fill="none" stroke="#0EA5E9" stroke-width="28"
+            stroke-dasharray="145.1 294.7" stroke-dashoffset="-189.0" transform="rotate(-90 100 100)"/>
+          <!-- Productivos 16% -->
+          <circle cx="100" cy="100" r="70" fill="none" stroke="#10B981" stroke-width="28"
+            stroke-dasharray="70.3 369.5" stroke-dashoffset="-334.1" transform="rotate(-90 100 100)"/>
+          <!-- Center label -->
+          <text x="100" y="94" text-anchor="middle" fill="#F0F4FA" font-size="13" font-weight="700" font-family="system-ui">Total</text>
+          <text x="100" y="112" text-anchor="middle" fill="#C9A84C" font-size="11" font-weight="600" font-family="system-ui">$33.2M</text>
+        </svg>
+
+        <div class="donut-labels">
+          <div class="donut-label-item">
+            <div class="donut-label-dot" style="background:#C9A84C;"></div>
+            <span class="donut-label-name">Liquidez</span>
+            <span class="donut-label-val gold">$2,500,000</span>
+            <span class="donut-label-pct muted">7.5%</span>
+          </div>
+          <div class="donut-label-item">
+            <div class="donut-label-dot" style="background:#3B82F6;"></div>
+            <span class="donut-label-name">Inversiones</span>
+            <span class="donut-label-val" style="color:#3B82F6">$13,200,000</span>
+            <span class="donut-label-pct muted">39.8%</span>
+          </div>
+          <div class="donut-label-item">
+            <div class="donut-label-dot" style="background:#8B5CF6;"></div>
+            <span class="donut-label-name">Esquemas Retiro</span>
+            <span class="donut-label-val" style="color:#8B5CF6">$2,500,000</span>
+            <span class="donut-label-pct muted">7.5%</span>
+          </div>
+          <div class="donut-label-item">
+            <div class="donut-label-dot" style="background:#0EA5E9;"></div>
+            <span class="donut-label-name">Bienes Raíces</span>
+            <span class="donut-label-val" style="color:#0EA5E9">$8,000,000</span>
+            <span class="donut-label-pct muted">24.1%</span>
+          </div>
+          <div class="donut-label-item">
+            <div class="donut-label-dot" style="background:#10B981;"></div>
+            <span class="donut-label-name">Activos Productivos</span>
+            <span class="donut-label-val" style="color:#10B981">$7,000,000</span>
+            <span class="donut-label-pct muted">21.1%</span>
+          </div>
+          <div style="margin-top:12px; padding-top:12px; border-top:1px solid var(--border); display:flex; justify-content:space-between; align-items:baseline;">
+            <span style="font-size:11px; color:var(--dim);">Índice de Liquidez</span>
+            <span style="font-size:16px; font-weight:700; color:var(--green);">3.7x <span style="font-size:11px; font-weight:400; color:var(--green)">Saludable</span></span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════ -->
+  <!-- SECCIÓN A — RESUMEN EJECUTIVO                              -->
+  <!-- ═══════════════════════════════════════════════════════════ -->
+  <div class="section" id="resumen">
+    <div class="section-header">
+      <div class="tag"><span>A</span> ─</div>
+      <h2>Resumen Ejecutivo</h2>
+      <p>Panorama integral de la situación patrimonial y financiera</p>
+    </div>
+
+    <div class="exec-grid" style="grid-template-columns: 1fr 1fr 1fr; gap:12px; margin-bottom:12px;">
+
+      <!-- A1 Nivel de Patrimonio -->
+      <div class="exec-card">
+        <div class="ec-tag">A1</div>
+        <div class="ec-title">Nivel de Patrimonio</div>
+        <div class="ec-big gold">$28.45M</div>
+        <div class="ec-sub">Patrimonio neto en MXN</div>
+        <div style="margin-top:14px; display:flex; align-items:center; gap:8px;">
+          <span class="badge badge-gold">Genial</span>
+          <span style="font-size:11px; color:var(--dim);">≈ 35x gastos anuales</span>
+        </div>
+        <!-- Benchmark bar -->
+        <div style="margin-top:14px;">
+          <div style="display:flex; justify-content:space-between; font-size:10px; color:var(--dim); margin-bottom:5px;">
+            <span>Benchmark para 52 años</span><span>$20M meta</span>
+          </div>
+          <div style="height:4px; background:var(--bg-lift); border-radius:2px; overflow:hidden;">
+            <div style="width:92%; height:100%; background:linear-gradient(90deg, var(--gold), var(--gold-lt)); border-radius:2px;"></div>
+          </div>
+          <div style="font-size:10px; color:var(--muted); margin-top:4px; text-align:right;">142% del benchmark</div>
+        </div>
+      </div>
+
+      <!-- A2 Longevidad -->
+      <div class="exec-card">
+        <div class="ec-tag">A2</div>
+        <div class="ec-title">Longevidad de Activos</div>
+        <div class="ec-big white">24 <span style="font-size:0.5em; color:var(--muted); font-weight:600;">años</span></div>
+        <div class="ec-sub">Activos financieros hasta los 76 años</div>
+        <div style="margin-top:16px; padding:12px; background:var(--bg-lift); border-radius:8px;">
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <div>
+              <div style="font-size:10px; color:var(--dim);">Edad actual</div>
+              <div style="font-size:16px; font-weight:700;">52</div>
+            </div>
+            <div style="flex:1; height:2px; margin:0 12px; background:linear-gradient(90deg, var(--gold), var(--green));"></div>
+            <div>
+              <div style="font-size:10px; color:var(--dim);">Cobertura hasta</div>
+              <div style="font-size:16px; font-weight:700; color:var(--green);">76</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- A3 Apalancamiento -->
+      <div class="exec-card">
+        <div class="ec-tag">A3</div>
+        <div class="ec-title">Estructura de Apalancamiento</div>
+        <div class="apalan-grid">
+          <div class="apalan-item">
+            <div class="ai-label">Deuda Actual</div>
+            <div class="ai-val" style="color:var(--red)">$4.75M</div>
+          </div>
+          <div class="apalan-item">
+            <div class="ai-label">Potencial</div>
+            <div class="ai-val gold">$9.96M</div>
+          </div>
+          <div class="apalan-item">
+            <div class="ai-label">Excedente</div>
+            <div class="ai-val green">$5.21M</div>
+          </div>
+        </div>
+        <div style="margin-top:12px; display:flex; align-items:center; gap:8px;">
+          <span class="badge badge-green">Solvencia Muy Saludable</span>
+          <span style="font-size:11px; color:var(--dim);">14.3% D/A</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="exec-grid" style="gap:12px;">
+      <!-- A4 Retiro -->
+      <div class="exec-card">
+        <div class="ec-tag">A4</div>
+        <div class="ec-title">Mapa de Retiro</div>
+        <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:16px;">
+          <div>
+            <div style="font-size:12px; color:var(--dim); margin-bottom:4px;">Aportación mensual necesaria</div>
+            <div style="font-size:26px; font-weight:800; color:var(--gold); font-variant-numeric:tabular-nums;">$18,500</div>
+            <div style="font-size:11px; color:var(--muted); margin-top:2px;">Actual: $15,000/mes</div>
+          </div>
+          <div style="text-align:right;">
+            <div style="font-size:12px; color:var(--dim); margin-bottom:4px;">Mensualidad posible</div>
+            <div style="font-size:26px; font-weight:800; color:var(--green); font-variant-numeric:tabular-nums;">$42,300</div>
+            <div style="font-size:11px; color:var(--muted); margin-top:2px;">Meta: $50,000/mes</div>
+          </div>
+        </div>
+        <div class="progress-wrap">
+          <div class="progress-header">
+            <span class="ph-label">Avance hacia la meta de retiro</span>
+            <span class="ph-pct">84.6%</span>
+          </div>
+          <div class="progress-track">
+            <div class="progress-fill" style="width:84.6%;"></div>
+          </div>
+          <div style="font-size:11px; color:var(--dim); margin-top:5px;">Retiro a los 65 años · Meta $50,000/mes</div>
+        </div>
+      </div>
+
+      <!-- A5 Sucesión -->
+      <div class="exec-card" style="background:linear-gradient(135deg, rgba(201,168,76,0.05) 0%, var(--bg-card) 100%); border-color:rgba(201,168,76,0.15);">
+        <div class="ec-tag">A5</div>
+        <div class="ec-title">Sucesión y Legado</div>
+        <div class="ec-big gold">$21.4M</div>
+        <div class="ec-sub">Legado patrimonial proyectado</div>
+        <div style="margin-top:12px;">
+          <span class="badge badge-gold">Blindaje Patrimonial</span>
+        </div>
+        <div style="margin-top:14px; font-size:12px; color:var(--muted); line-height:1.7;">
+          Con el patrimonio actual y la trayectoria proyectada, se estima un legado de $21.4M MXN al cierre de la vida financiera planificada.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════ -->
+  <!-- SECCIÓN D — FLUJO DISPONIBLE                               -->
+  <!-- ═══════════════════════════════════════════════════════════ -->
+  <div class="section" id="flujo">
+    <div class="section-header">
+      <div class="tag"><span>D</span> ─</div>
+      <h2>Fuentes de Flujo Disponible</h2>
+      <p>Análisis de ingresos, gastos y capacidad de inversión mensual</p>
+    </div>
+
+    <!-- Estado de resultados -->
+    <div class="flujo-statement" style="margin-bottom:16px;">
+      <div class="flujo-row">
+        <div><div class="fr-label">Ingresos Totales</div></div>
+        <div style="text-align:right;"><div class="fr-val gold">$95,000</div><div class="fr-pct">mensual</div></div>
+      </div>
+      <div class="flujo-row">
+        <div><div class="fr-label">Gastos Totales</div></div>
+        <div style="text-align:right;"><div class="fr-val" style="color:var(--red)">− $60,000</div><div class="fr-pct">63% de ingresos</div></div>
+      </div>
+      <div class="flujo-row total-row">
+        <div><div class="fr-label" style="color:var(--white); font-weight:700;">Disponible para Inversión</div></div>
+        <div style="text-align:right;"><div class="fr-val green">$35,000</div><div class="fr-pct">37% de ingresos</div></div>
+      </div>
+    </div>
+
+    <div class="flujo-breakdown">
+      <div class="flujo-item">
+        <div class="fi-label">Actividad Principal</div>
+        <div class="fi-val white">$20,000</div>
+        <div class="fi-sub">21% de ingresos totales</div>
+      </div>
+      <div class="flujo-item">
+        <div class="fi-label">Otras Fuentes</div>
+        <div class="fi-val gold">$15,000</div>
+        <div class="fi-sub">Rentas + Negocio · 16%</div>
+      </div>
+    </div>
+
+    <!-- Rentabilidad de fuentes -->
+    <div class="card">
+      <div class="label label-gold" style="margin-bottom:14px;">Rentabilidad de fuentes de flujo</div>
+      <table class="rentabilidad-table">
+        <thead>
+          <tr>
+            <th>Fuente</th>
+            <th>Activo Productivo</th>
+            <th>Flujo Mensual</th>
+            <th>Rentabilidad Anual</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="accent">Inmuebles en Renta</td>
+            <td>$5,000,000</td>
+            <td class="accent">$10,000</td>
+            <td><span class="badge badge-green">2.4%</span></td>
+          </tr>
+          <tr>
+            <td class="accent">Negocio Propio</td>
+            <td>$2,000,000</td>
+            <td class="accent">$5,000</td>
+            <td><span class="badge badge-green">3.0%</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════ -->
+  <!-- SECCIÓN G — TRAYECTORIA Y RETIRO                           -->
+  <!-- ═══════════════════════════════════════════════════════════ -->
+  <div class="section" id="retiro">
+    <div class="section-header">
+      <div class="tag"><span>G</span> ─</div>
+      <h2>Trayectoria Patrimonial y Retiro</h2>
+      <p>Proyección de ingresos en retiro por fuente y capital humano</p>
+    </div>
+
+    <div class="tray-grid">
+      <div class="tray-card">
+        <div class="tc-label">Mensualidad Posible en Retiro</div>
+        <div class="tc-big gold">$42,300</div>
+        <div class="tc-sub">vs meta de $50,000/mes · <span style="color:var(--amber)">Brecha: $7,700/mes</span></div>
+      </div>
+      <div class="tray-card">
+        <div class="tc-label">Capital al Inicio del Retiro</div>
+        <div class="tc-big white">$38,700,000</div>
+        <div class="tc-sub">Proyectado a los 65 años con tasa real 2.5%</div>
+      </div>
+    </div>
+
+    <!-- Timeline visual de retiro -->
+    <div class="retiro-vis">
+      <div class="label label-gold" style="margin-bottom:4px;">Línea de vida financiera</div>
+      <div style="font-size:12px; color:var(--dim); margin-bottom:20px;">Hoy → Retiro → Proyección de vida</div>
+
+      <div style="display:flex; align-items:flex-end; gap:0; position:relative; padding: 32px 0 16px;">
+        <!-- Timeline bar -->
+        <div style="position:absolute; top:50%; left:0; right:0; height:2px; background:var(--bg-lift); transform:translateY(-50%);"></div>
+        <div style="position:absolute; top:50%; left:0; width:43%; height:2px; background:linear-gradient(90deg, var(--gold), var(--gold)); transform:translateY(-50%);"></div>
+
+        <!-- Hoy -->
+        <div style="display:flex; flex-direction:column; align-items:center; width:80px; flex-shrink:0; position:relative; z-index:2;">
+          <div style="background:var(--gold); width:14px; height:14px; border-radius:50%; margin-bottom:10px; box-shadow:0 0 12px rgba(201,168,76,0.5);"></div>
+          <div style="font-size:22px; font-weight:800; color:var(--white);">52</div>
+          <div style="font-size:10px; color:var(--dim); margin-top:3px; text-align:center;">HOY</div>
+          <div style="font-size:12px; color:var(--muted); margin-top:4px;">$28.45M</div>
+        </div>
+
+        <div style="flex:1;"></div>
+
+        <!-- Retiro -->
+        <div style="display:flex; flex-direction:column; align-items:center; width:100px; flex-shrink:0; position:relative; z-index:2;">
+          <div style="background:var(--gold); width:18px; height:18px; border-radius:50%; margin-bottom:10px; box-shadow:0 0 16px rgba(201,168,76,0.6); border:3px solid var(--bg);"></div>
+          <div style="font-size:26px; font-weight:800; color:var(--gold);">65</div>
+          <div style="font-size:10px; color:var(--gold); margin-top:3px; text-align:center; letter-spacing:1px;">RETIRO</div>
+          <div style="font-size:12px; color:var(--muted); margin-top:4px;">$38.7M</div>
+          <div style="font-size:11px; color:var(--green); margin-top:2px;">$42,300/mes</div>
+        </div>
+
+        <div style="flex:1; background: linear-gradient(90deg, transparent, rgba(16,185,129,0.15));"></div>
+
+        <!-- Fin proyección -->
+        <div style="display:flex; flex-direction:column; align-items:center; width:80px; flex-shrink:0; position:relative; z-index:2;">
+          <div style="background:var(--bg-lift); border:2px solid var(--dim); width:14px; height:14px; border-radius:50%; margin-bottom:10px;"></div>
+          <div style="font-size:22px; font-weight:800; color:var(--muted);">85</div>
+          <div style="font-size:10px; color:var(--dim); margin-top:3px; text-align:center;">PROYECCIÓN</div>
+          <div style="font-size:12px; color:var(--muted); margin-top:4px; text-align:center;">Legado $21.4M</div>
+        </div>
+      </div>
+
+      <!-- Fuentes de ingreso en retiro — summary boxes -->
+      <div style="margin-top:20px; padding-top:20px; border-top:1px solid var(--border);">
+        <div class="label" style="margin-bottom:12px;">Fuentes de ingreso al inicio del retiro (65 años)</div>
+        <div style="display:grid; grid-template-columns:repeat(4,1fr); gap:10px;">
+          <div style="background:var(--bg-lift); border-radius:10px; padding:12px 14px;">
+            <div style="font-size:10px; color:var(--dim); margin-bottom:4px;">IMSS/AFORE</div>
+            <div style="font-size:16px; font-weight:700; color:var(--muted);">$8,500</div>
+          </div>
+          <div style="background:var(--bg-lift); border-radius:10px; padding:12px 14px;">
+            <div style="font-size:10px; color:var(--dim); margin-bottom:4px;">Esquemas Voluntarios</div>
+            <div style="font-size:16px; font-weight:700; color:var(--gold);">$6,800</div>
+          </div>
+          <div style="background:var(--bg-lift); border-radius:10px; padding:12px 14px;">
+            <div style="font-size:10px; color:var(--dim); margin-bottom:4px;">Rentas e Inversiones</div>
+            <div style="font-size:16px; font-weight:700; color:var(--blue)">$15,000</div>
+          </div>
+          <div style="background:var(--bg-lift); border-radius:10px; padding:12px 14px;">
+            <div style="font-size:10px; color:var(--dim); margin-bottom:4px;">Retiro de Capital</div>
+            <div style="font-size:16px; font-weight:700; color:var(--green)">$12,000</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Gráficas de Trayectoria ─────────────────────────────── -->
+    <div class="tray-charts-grid">
+
+      <!-- Gráfica 1 — Trayectoria del Patrimonio en Retiro -->
+      <div class="tray-chart-card">
+        <div class="tcc-title">Trayectoria del Patrimonio en Retiro</div>
+        <div class="tcc-sub">Saldo proyectado por año · Tasa real 2.5% · Retiro mensual de capital</div>
+        <div id="patrimony-tray-chart" style="display:flex; flex-direction:column; gap:5px;">
+          <!-- populated by JS -->
+        </div>
+        <div style="margin-top:12px; padding-top:12px; border-top:1px solid var(--border); display:flex; justify-content:space-between; align-items:center;">
+          <div style="display:flex; align-items:center; gap:8px;">
+            <div style="width:10px;height:10px;border-radius:2px;background:var(--green);"></div>
+            <span style="font-size:10px; color:var(--muted);">Saldo positivo</span>
+          </div>
+          <div style="display:flex; align-items:center; gap:8px;">
+            <div style="width:10px;height:10px;border-radius:2px;background:var(--red);"></div>
+            <span style="font-size:10px; color:var(--muted);">Déficit patrimonial</span>
+          </div>
+          <span style="font-size:10px; color:var(--dim);">Pensión no incluida</span>
+        </div>
+      </div>
+
+      <!-- Gráfica 2 — Ingresos en Retiro por Fuente -->
+      <div class="tray-chart-card">
+        <div class="tcc-title">Ingresos en Retiro por Fuente</div>
+        <div class="tcc-sub">Distribución mensual estimada por año de retiro</div>
+        <div id="fuentes-tray-chart">
+          <!-- populated by JS -->
+        </div>
+      </div>
+
+    </div>
+
+    <!-- KPIs resumen patrimonial -->
+    <div class="tray-kpis" style="margin-top:20px;">
+      <div class="tray-kpi">
+        <div class="tk-label">Patrimonio Financiero al Retiro</div>
+        <div class="tk-val gold">$38,700,000</div>
+      </div>
+      <div class="tray-kpi">
+        <div class="tk-label">Capital Humano</div>
+        <div class="tk-label" style="font-size:9px; margin-bottom:2px;">(VP ingresos futuros)</div>
+        <div class="tk-val white">$14,820,000</div>
+      </div>
+      <div class="tray-kpi">
+        <div class="tk-label">Obligaciones</div>
+        <div class="tk-val" style="color:var(--red);">$4,750,000</div>
+      </div>
+      <div class="tray-kpi">
+        <div class="tk-label">Patrimonio Total Proyectado</div>
+        <div class="tk-val green">$48,770,000</div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════ -->
+  <!-- SECCIÓN E — POTENCIAL DEL BALANCE                          -->
+  <!-- ═══════════════════════════════════════════════════════════ -->
+  <div class="section">
+    <div class="section-header">
+      <div class="tag"><span>E</span> ─</div>
+      <h2>Potencial del Balance</h2>
+      <p>Solvencia, estructura patrimonial y distribución de activos</p>
+    </div>
+
+    <div class="card" style="margin-bottom:16px;">
+      <div style="display:flex; justify-content:space-between; align-items:baseline; margin-bottom:6px;">
+        <div>
+          <span class="label">Índice de Solvencia</span>
+          <span style="font-size:24px; font-weight:800; color:var(--green); margin-left:12px;">85.7%</span>
+        </div>
+        <span class="badge badge-green">Muy Saludable</span>
+      </div>
+      <div class="solvencia-bar">
+        <div class="solvencia-fill" style="width:85.7%; background:linear-gradient(90deg, #10B981, #34D399);"></div>
+      </div>
+      <div style="font-size:12px; color:var(--muted); margin-top:8px;">
+        Los activos cubren 7x las obligaciones. Estructura con amplio margen de seguridad.
+      </div>
+    </div>
+
+    <!-- Categorías del patrimonio con barras -->
+    <div class="card">
+      <div class="label label-gold" style="margin-bottom:16px;">Distribución por categoría</div>
+      <div style="display:flex; flex-direction:column; gap:12px;">
+        <div>
+          <div style="display:flex; justify-content:space-between; align-items:baseline; margin-bottom:5px;">
+            <span style="font-size:13px; color:var(--muted);">Inversiones y Dotales</span>
+            <span style="font-size:13px; font-weight:700; color:var(--white); font-variant-numeric:tabular-nums;">$13,200,000 <span style="color:var(--dim); font-weight:400;">39.8%</span></span>
+          </div>
+          <div style="height:5px; background:var(--bg-lift); border-radius:3px;"><div style="width:39.8%; height:100%; background:#3B82F6; border-radius:3px;"></div></div>
+        </div>
+        <div>
+          <div style="display:flex; justify-content:space-between; align-items:baseline; margin-bottom:5px;">
+            <span style="font-size:13px; color:var(--muted);">Bienes Raíces Patrimoniales</span>
+            <span style="font-size:13px; font-weight:700; color:var(--white); font-variant-numeric:tabular-nums;">$8,000,000 <span style="color:var(--dim); font-weight:400;">24.1%</span></span>
+          </div>
+          <div style="height:5px; background:var(--bg-lift); border-radius:3px;"><div style="width:24.1%; height:100%; background:#0EA5E9; border-radius:3px;"></div></div>
+        </div>
+        <div>
+          <div style="display:flex; justify-content:space-between; align-items:baseline; margin-bottom:5px;">
+            <span style="font-size:13px; color:var(--muted);">Activos Productivos</span>
+            <span style="font-size:13px; font-weight:700; color:var(--white); font-variant-numeric:tabular-nums;">$7,000,000 <span style="color:var(--dim); font-weight:400;">21.1%</span></span>
+          </div>
+          <div style="height:5px; background:var(--bg-lift); border-radius:3px;"><div style="width:21.1%; height:100%; background:#10B981; border-radius:3px;"></div></div>
+        </div>
+        <div>
+          <div style="display:flex; justify-content:space-between; align-items:baseline; margin-bottom:5px;">
+            <span style="font-size:13px; color:var(--muted);">Esquemas de Retiro</span>
+            <span style="font-size:13px; font-weight:700; color:var(--white); font-variant-numeric:tabular-nums;">$2,500,000 <span style="color:var(--dim); font-weight:400;">7.5%</span></span>
+          </div>
+          <div style="height:5px; background:var(--bg-lift); border-radius:3px;"><div style="width:7.5%; height:100%; background:#8B5CF6; border-radius:3px;"></div></div>
+        </div>
+        <div>
+          <div style="display:flex; justify-content:space-between; align-items:baseline; margin-bottom:5px;">
+            <span style="font-size:13px; color:var(--muted);">Liquidez</span>
+            <span style="font-size:13px; font-weight:700; color:var(--white); font-variant-numeric:tabular-nums;">$2,500,000 <span style="color:var(--dim); font-weight:400;">7.5%</span></span>
+          </div>
+          <div style="height:5px; background:var(--bg-lift); border-radius:3px;"><div style="width:7.5%; height:100%; background:#C9A84C; border-radius:3px;"></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════ -->
+  <!-- SECCIÓN B — PLAN DE ACCIÓN                                 -->
+  <!-- ═══════════════════════════════════════════════════════════ -->
+  <div class="section" id="plan">
+    <div class="section-header">
+      <div class="tag"><span>B</span> ─</div>
+      <h2>Plan de Acción</h2>
+      <p>Situación actual, nivel de riesgo y recomendaciones por área</p>
+    </div>
+
+    <div class="card" style="padding:0; overflow:hidden;">
+      <table class="plan-table">
+        <thead>
+          <tr>
+            <th style="width:18%">Área</th>
+            <th style="width:32%">Situación Actual</th>
+            <th style="width:12%">Riesgo</th>
+            <th>Recomendación</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Liquidez</td>
+            <td>Reserva de $2.5M cubre 41 meses de gastos básicos</td>
+            <td><span class="badge badge-green">Bajo</span></td>
+            <td><span class="rec">Mantener nivel. Considerar optimizar rendimiento de excedente con fondos de corto plazo.</span></td>
+          </tr>
+          <tr>
+            <td>Retiro</td>
+            <td>Avance del 84.6% hacia meta. Brecha de $3,500/mes</td>
+            <td><span class="badge badge-amber">Medio</span></td>
+            <td><span class="rec">Incrementar aportación mensual a PPR de $15K a $18.5K para cerrar brecha en 8 años.</span></td>
+          </tr>
+          <tr>
+            <td>Protección de Vida</td>
+            <td>Sin seguro de vida vigente con dependientes activos</td>
+            <td><span class="badge badge-red">Alto</span></td>
+            <td><span class="rec">Contratar seguro de vida por monto equivalente a 5 años de ingreso ($5.7M cobertura).</span></td>
+          </tr>
+          <tr>
+            <td>Bienes Raíces</td>
+            <td>Casa principal sin SGMM sobre inmuebles verificado</td>
+            <td><span class="badge badge-amber">Medio</span></td>
+            <td><span class="rec">Verificar coberturas de inmuebles en renta. Evaluar seguro de daños para casa principal.</span></td>
+          </tr>
+          <tr>
+            <td>Inversiones</td>
+            <td>Alta concentración en renta variable (>60% del portafolio)</td>
+            <td><span class="badge badge-amber">Medio</span></td>
+            <td><span class="rec">Diversificar hacia instrumentos de renta fija y alternativos. Estructurar cartera acorde a horizonte de 13 años.</span></td>
+          </tr>
+          <tr>
+            <td>Optimización Fiscal</td>
+            <td>Sin uso de vehículos fiscales eficientes identificados</td>
+            <td><span class="badge badge-amber">Medio</span></td>
+            <td><span class="rec">Analizar uso de PPR adicional, FIBRAS o instrumentos con tratamiento fiscal favorable.</span></td>
+          </tr>
+          <tr>
+            <td>Sucesión</td>
+            <td>Patrimonio proyectado de $21.4M sin testamento confirmado</td>
+            <td><span class="badge badge-red">Alto</span></td>
+            <td><span class="rec">Formalizar testamento y fideicomiso para transmisión eficiente del patrimonio. Revisar beneficiarios.</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════ -->
+  <!-- SECCIÓN F — PROTECCIÓN                                     -->
+  <!-- ═══════════════════════════════════════════════════════════ -->
+  <div class="section" id="proteccion">
+    <div class="section-header">
+      <div class="tag"><span>F</span> ─</div>
+      <h2>Protección Patrimonial</h2>
+      <p>Cobertura de seguros e impacto potencial en el balance</p>
+    </div>
+
+    <div class="prot-grid">
+      <div class="prot-card">
+        <div class="pc-icon" style="background:rgba(239,68,68,0.12);display:flex;align-items:center;justify-content:center;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#EF4444" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div>
+        <div class="pc-label">Seguro de Vida</div>
+        <div class="pc-status" style="color:var(--red);">No contratado</div>
+        <div class="pc-detail">Riesgo patrimonial estimado: $5.7M sin cobertura de fallecimiento prematuro</div>
+        <div style="margin-top:8px;"><span class="badge badge-red">Acción urgente</span></div>
+      </div>
+      <div class="prot-card">
+        <div class="pc-icon" style="background:rgba(201,168,76,0.12);display:flex;align-items:center;justify-content:center;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#C9A84C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></div>
+        <div class="pc-label">Propiedades Aseguradas</div>
+        <div class="pc-status gold">Parcial</div>
+        <div class="pc-detail">Casa principal asegurada. Inmuebles en renta sin cobertura verificada ($5M en riesgo)</div>
+        <div style="margin-top:8px;"><span class="badge badge-amber">Revisar</span></div>
+      </div>
+      <div class="prot-card">
+        <div class="pc-icon" style="background:rgba(16,185,129,0.12);display:flex;align-items:center;justify-content:center;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#10B981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg></div>
+        <div class="pc-label">Gastos Médicos Mayores</div>
+        <div class="pc-status green">Activo</div>
+        <div class="pc-detail">SGMM vigente. Cobertura médica completa para el cliente y dependientes</div>
+        <div style="margin-top:8px;"><span class="badge badge-green">Cubierto</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════ -->
+  <!-- SIMULADOR — TEASER / TRANSICIÓN                            -->
+  <!-- ═══════════════════════════════════════════════════════════ -->
+  <div id="simulador" class="sim-teaser" onclick="toggleSimulador(this)" style="cursor:pointer;">
+    <div>
+      <h3>Simula tu futuro</h3>
+      <p>Ajusta los parámetros de ahorro, retiro y tasa de rendimiento para ver cómo impactan en tu trayectoria patrimonial.</p>
+    </div>
+    <button class="btn btn-accent" style="white-space:nowrap; font-size:14px; padding:12px 24px;" onclick="event.stopPropagation(); toggleSimulador(document.getElementById('simulador'))">
+      Abrir simulador ↓
+    </button>
+  </div>
+
+  <!-- Contenido expandible Simulador -->
+  <div id="simulador-content" style="display:none; margin-top:-8px; border:1px solid rgba(201,168,76,0.15); border-top:none; border-radius:0 0 16px 16px; padding:32px; background:var(--card);">
+    <p style="font-size:10px;font-weight:700;color:var(--dim);text-transform:uppercase;letter-spacing:.12em;margin-bottom:24px;">Escenarios de proyección patrimonial</p>
+
+    <!-- Sliders -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-bottom:28px;">
+      <div>
+        <div style="display:flex;justify-content:space-between;margin-bottom:8px;">
+          <span style="font-size:12px;color:var(--muted);">Ahorro mensual adicional</span>
+          <span id="sim-ahorro-val" style="font-size:13px;font-weight:700;color:#C9A84C;">$30,000</span>
+        </div>
+        <input type="range" min="0" max="100000" step="5000" value="30000" style="width:100%;accent-color:#C9A84C;"
+          oninput="document.getElementById('sim-ahorro-val').textContent='$'+parseInt(this.value).toLocaleString(); updateSimChart()">
+      </div>
+      <div>
+        <div style="display:flex;justify-content:space-between;margin-bottom:8px;">
+          <span style="font-size:12px;color:var(--muted);">Tasa de rendimiento anual</span>
+          <span id="sim-tasa-val" style="font-size:13px;font-weight:700;color:#C9A84C;">8.0%</span>
+        </div>
+        <input type="range" min="3" max="15" step="0.5" value="8" style="width:100%;accent-color:#C9A84C;"
+          oninput="document.getElementById('sim-tasa-val').textContent=parseFloat(this.value).toFixed(1)+'%'; updateSimChart()">
+      </div>
+      <div>
+        <div style="display:flex;justify-content:space-between;margin-bottom:8px;">
+          <span style="font-size:12px;color:var(--muted);">Edad de retiro</span>
+          <span id="sim-retiro-val" style="font-size:13px;font-weight:700;color:#C9A84C;">65 años</span>
+        </div>
+        <input type="range" min="55" max="75" step="1" value="65" style="width:100%;accent-color:#C9A84C;"
+          oninput="document.getElementById('sim-retiro-val').textContent=this.value+' años'; updateSimChart()">
+      </div>
+      <div>
+        <div style="display:flex;justify-content:space-between;margin-bottom:8px;">
+          <span style="font-size:12px;color:var(--muted);">Gasto mensual en retiro</span>
+          <span id="sim-gasto-val" style="font-size:13px;font-weight:700;color:#C9A84C;">$120,000</span>
+        </div>
+        <input type="range" min="30000" max="300000" step="10000" value="120000" style="width:100%;accent-color:#C9A84C;"
+          oninput="document.getElementById('sim-gasto-val').textContent='$'+parseInt(this.value).toLocaleString(); updateSimChart()">
+      </div>
+    </div>
+
+    <!-- KPI resultado -->
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:24px;">
+      <div style="background:#0C1829;border:1px solid rgba(255,255,255,.05);border-radius:12px;padding:20px;text-align:center;">
+        <p style="font-size:10px;color:var(--dim);text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px;">Patrimonio al retiro</p>
+        <p id="sim-kpi-retiro" style="font-size:22px;font-weight:800;color:#C9A84C;">$62.4M</p>
+      </div>
+      <div style="background:#0C1829;border:1px solid rgba(255,255,255,.05);border-radius:12px;padding:20px;text-align:center;">
+        <p style="font-size:10px;color:var(--dim);text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px;">Años de cobertura</p>
+        <p id="sim-kpi-años" style="font-size:22px;font-weight:800;color:#10B981;">28 años</p>
+      </div>
+      <div style="background:#0C1829;border:1px solid rgba(255,255,255,.05);border-radius:12px;padding:20px;text-align:center;">
+        <p style="font-size:10px;color:var(--dim);text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px;">Legado proyectado</p>
+        <p id="sim-kpi-legado" style="font-size:22px;font-weight:800;color:#F0F4FA;">$18.1M</p>
+      </div>
+    </div>
+
+    <!-- Gráfica simple de barras -->
+    <div style="background:#0C1829;border:1px solid rgba(255,255,255,.05);border-radius:12px;padding:20px;">
+      <p style="font-size:10px;color:var(--dim);text-transform:uppercase;letter-spacing:.08em;margin-bottom:16px;">Trayectoria patrimonial proyectada</p>
+      <div id="sim-chart" style="display:flex;align-items:flex-end;gap:6px;height:100px;">
+        <!-- barras generadas por JS -->
+      </div>
+      <div style="display:flex;justify-content:space-between;margin-top:8px;">
+        <span style="font-size:10px;color:var(--dim);">Hoy (52)</span>
+        <span style="font-size:10px;color:var(--dim);">Retiro (65)</span>
+        <span style="font-size:10px;color:var(--dim);">Proyección (85)</span>
+      </div>
+    </div>
+    <p style="font-size:10px;color:#3A4A5E;text-align:center;line-height:1.6;margin-top:16px;">
+      Proyección ilustrativa con base en supuestos de rendimiento constante. No garantiza resultados futuros.
+    </p>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════
+       SECTION H — HOUSE VIEW (teaser colapsable)
+  ════════════════════════════════════════════════════════════ -->
+  <div id="houseview" class="sim-teaser" onclick="toggleHouseView(this)" style="cursor:pointer;">
+    <div>
+      <h3>House View</h3>
+      <p>Perspectiva de mercado Actinver Análisis — objetivos de cierre 2026 para bolsas, divisas, tasas y materias primas.</p>
+    </div>
+    <button class="btn btn-accent" style="white-space:nowrap; font-size:14px; padding:12px 24px;" onclick="event.stopPropagation(); toggleHouseView(document.getElementById('houseview'))">
+      Ver House View ↓
+    </button>
+  </div>
+
+  <!-- Contenido expandible House View -->
+  <div id="houseview-content" style="display:none; margin-top:-8px; border:1px solid rgba(201,168,76,0.15); border-top:none; border-radius:0 0 16px 16px; padding:32px; background:var(--card);">
+
+    <!-- Headline card -->
+    <div style="background:linear-gradient(135deg,#0C1829,#0A1525);border:1px solid rgba(201,168,76,.2);border-radius:16px;padding:24px;margin-bottom:20px;">
+      <p style="font-size:10px;font-weight:700;color:rgba(201,168,76,.7);text-transform:uppercase;letter-spacing:.12em;margin-bottom:6px;">Actinver Análisis — Inversiones AM</p>
+      <h3 style="font-size:16px;font-weight:700;color:var(--white);line-height:1.35;margin-bottom:4px;">Portafolios diversificados para sortear eventos geopolíticos</h3>
+      <p style="font-size:11px;color:var(--dim);margin-bottom:12px;">26 de febrero, 2026</p>
+      <p style="font-size:13px;color:var(--muted);line-height:1.65;">Febrero favoreció portafolios diversificados: tasas estables, dólar firme y buen desempeño en emergentes. Marzo inicia con volatilidad por tensiones geopolíticas. La selectividad en tecnología premia empresas con monetización validada de IA sobre software sin guía clara.</p>
+    </div>
+
+    <!-- Temas clave -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:24px;">
+      <div style="display:flex;align-items:flex-start;gap:12px;background:#0C1829;border:1px solid rgba(255,255,255,.05);border-radius:12px;padding:16px;">
+        <div style="width:32px;height:32px;border-radius:8px;background:rgba(201,168,76,.1);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#C9A84C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/></svg>
+        </div>
+        <p style="font-size:12px;color:var(--muted);line-height:1.5;">IA de infraestructura (cómputo, semiconductores) supera a software y publicidad digital</p>
+      </div>
+      <div style="display:flex;align-items:flex-start;gap:12px;background:#0C1829;border:1px solid rgba(255,255,255,.05);border-radius:12px;padding:16px;">
+        <div style="width:32px;height:32px;border-radius:8px;background:rgba(239,68,68,.1);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#EF4444" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+        </div>
+        <p style="font-size:12px;color:var(--muted);line-height:1.5;">Tensiones geopolíticas EE.UU.–Europa y negociaciones nucleares con Irán elevan volatilidad</p>
+      </div>
+      <div style="display:flex;align-items:flex-start;gap:12px;background:#0C1829;border:1px solid rgba(255,255,255,.05);border-radius:12px;padding:16px;">
+        <div style="width:32px;height:32px;border-radius:8px;background:rgba(201,168,76,.1);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#C9A84C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="6"/><path d="M15.477 12.89L17 22l-5-3-5 3 1.523-9.11"/></svg>
+        </div>
+        <p style="font-size:12px;color:var(--muted);line-height:1.5;">Oro como diversificador estratégico: +20% acumulado 2026, soportado por bancos centrales</p>
+      </div>
+      <div style="display:flex;align-items:flex-start;gap:12px;background:#0C1829;border:1px solid rgba(255,255,255,.05);border-radius:12px;padding:16px;">
+        <div style="width:32px;height:32px;border-radius:8px;background:rgba(16,185,129,.1);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#10B981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+        </div>
+        <p style="font-size:12px;color:var(--muted);line-height:1.5;">IED en México alcanza USD 40.9 mil millones en 2025 — máximo histórico para el país</p>
+      </div>
+    </div>
+
+    <!-- Mercados -->
+    <p style="font-size:10px;font-weight:700;color:var(--dim);text-transform:uppercase;letter-spacing:.12em;margin-bottom:16px;">Mercados Financieros — Objetivos Cierre 2026</p>
+
+    <!-- Bolsas -->
+    <div style="background:#0C1829;border:1px solid rgba(255,255,255,.05);border-radius:14px;overflow:hidden;margin-bottom:12px;">
+      <div style="padding:10px 16px;background:#162236;border-bottom:1px solid rgba(255,255,255,.05);"><span style="font-size:10px;font-weight:700;color:#C9A84C;text-transform:uppercase;letter-spacing:.1em;">Bolsas</span></div>
+      <div style="display:grid;grid-template-columns:1fr 80px 80px 90px 80px;padding:8px 16px;border-bottom:1px solid rgba(255,255,255,.03);">
+        <span style="font-size:9px;color:#4A5A75;text-transform:uppercase;letter-spacing:.06em;">Activo</span><span style="font-size:9px;color:#4A5A75;text-align:right;">Actual</span><span style="font-size:9px;color:#4A5A75;text-align:right;">Acum. 2026</span><span style="font-size:9px;color:#4A5A75;text-align:right;">Objetivo</span><span style="font-size:9px;color:#4A5A75;text-align:right;">Potencial</span>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 80px 80px 90px 80px;padding:12px 16px;border-bottom:1px solid rgba(255,255,255,.03);align-items:center;">
+        <div style="display:flex;align-items:center;gap:8px;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#10B981" stroke-width="2.5"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg><div><p style="font-size:12px;font-weight:600;color:var(--white);">S&amp;P 500</p><p style="font-size:9px;color:#4A5A75;">SPX</p></div></div>
+        <span style="font-size:12px;font-family:monospace;color:var(--white);text-align:right;">6,946</span><span style="font-size:11px;font-family:monospace;color:#10B981;text-align:right;">+1.47%</span><span style="font-size:12px;font-family:monospace;color:#C9A84C;text-align:right;">7,500</span>
+        <div style="text-align:right;"><span style="font-size:10px;font-weight:700;color:#10B981;background:#10B98115;padding:2px 8px;border-radius:99px;">+7.97%</span></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 80px 80px 90px 80px;padding:12px 16px;align-items:center;">
+        <div style="display:flex;align-items:center;gap:8px;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#10B981" stroke-width="2.5"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg><div><p style="font-size:12px;font-weight:600;color:var(--white);">IPC (MEXBOL)</p><p style="font-size:9px;color:#4A5A75;">IPC</p></div></div>
+        <span style="font-size:12px;font-family:monospace;color:var(--white);text-align:right;">71,144</span><span style="font-size:11px;font-family:monospace;color:#10B981;text-align:right;">+10.63%</span><span style="font-size:12px;font-family:monospace;color:#C9A84C;text-align:right;">73,500</span>
+        <div style="text-align:right;"><span style="font-size:10px;font-weight:700;color:#10B981;background:#10B98115;padding:2px 8px;border-radius:99px;">+3.31%</span></div>
+      </div>
+    </div>
+
+    <!-- Divisas -->
+    <div style="background:#0C1829;border:1px solid rgba(255,255,255,.05);border-radius:14px;overflow:hidden;margin-bottom:12px;">
+      <div style="padding:10px 16px;background:#162236;border-bottom:1px solid rgba(255,255,255,.05);"><span style="font-size:10px;font-weight:700;color:#C9A84C;text-transform:uppercase;letter-spacing:.1em;">Divisas</span></div>
+      <div style="display:grid;grid-template-columns:1fr 80px 80px 90px 80px;padding:8px 16px;border-bottom:1px solid rgba(255,255,255,.03);">
+        <span style="font-size:9px;color:#4A5A75;text-transform:uppercase;letter-spacing:.06em;">Activo</span><span style="font-size:9px;color:#4A5A75;text-align:right;">Actual</span><span style="font-size:9px;color:#4A5A75;text-align:right;">Acum. 2026</span><span style="font-size:9px;color:#4A5A75;text-align:right;">Objetivo</span><span style="font-size:9px;color:#4A5A75;text-align:right;">Potencial</span>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 80px 80px 90px 80px;padding:12px 16px;border-bottom:1px solid rgba(255,255,255,.03);align-items:center;">
+        <div style="display:flex;align-items:center;gap:8px;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#5A6A85" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"/></svg><div><p style="font-size:12px;font-weight:600;color:var(--white);">USD/MXN</p><p style="font-size:9px;color:#4A5A75;">MXN</p></div></div>
+        <span style="font-size:12px;font-family:monospace;color:var(--white);text-align:right;">17.19</span><span style="font-size:11px;font-family:monospace;color:#EF4444;text-align:right;">-4.41%</span><span style="font-size:12px;font-family:monospace;color:#C9A84C;text-align:right;">18.00</span>
+        <div style="text-align:right;"><span style="font-size:10px;font-weight:700;color:#10B981;background:#10B98115;padding:2px 8px;border-radius:99px;">+4.74%</span></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 80px 80px 90px 80px;padding:12px 16px;border-bottom:1px solid rgba(255,255,255,.03);align-items:center;">
+        <div style="display:flex;align-items:center;gap:8px;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#EF4444" stroke-width="2.5"><polyline points="23 18 13.5 8.5 8.5 13.5 1 6"/><polyline points="17 18 23 18 23 12"/></svg><div><p style="font-size:12px;font-weight:600;color:var(--white);">DXY (Índice Dólar)</p><p style="font-size:9px;color:#4A5A75;">DXY</p></div></div>
+        <span style="font-size:12px;font-family:monospace;color:var(--white);text-align:right;">97.68</span><span style="font-size:11px;font-family:monospace;color:#EF4444;text-align:right;">-0.61%</span><span style="font-size:12px;font-family:monospace;color:#C9A84C;text-align:right;">96.70</span>
+        <div style="text-align:right;"><span style="font-size:10px;font-weight:700;color:#EF4444;background:#EF444415;padding:2px 8px;border-radius:99px;">-1.00%</span></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 80px 80px 90px 80px;padding:12px 16px;align-items:center;">
+        <div style="display:flex;align-items:center;gap:8px;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#5A6A85" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"/></svg><div><p style="font-size:12px;font-weight:600;color:var(--white);">EUR/USD</p><p style="font-size:9px;color:#4A5A75;">EUR</p></div></div>
+        <span style="font-size:12px;font-family:monospace;color:var(--white);text-align:right;">1.181</span><span style="font-size:11px;font-family:monospace;color:#10B981;text-align:right;">+0.55%</span><span style="font-size:12px;font-family:monospace;color:#C9A84C;text-align:right;">1.180</span>
+        <div style="text-align:right;"><span style="font-size:10px;font-weight:700;color:#EF4444;background:#EF444415;padding:2px 8px;border-radius:99px;">-0.10%</span></div>
+      </div>
+    </div>
+
+    <!-- Tasas -->
+    <div style="background:#0C1829;border:1px solid rgba(255,255,255,.05);border-radius:14px;overflow:hidden;margin-bottom:12px;">
+      <div style="padding:10px 16px;background:#162236;border-bottom:1px solid rgba(255,255,255,.05);"><span style="font-size:10px;font-weight:700;color:#C9A84C;text-transform:uppercase;letter-spacing:.1em;">Tasas (10 años)</span></div>
+      <div style="display:grid;grid-template-columns:1fr 80px 80px 90px 80px;padding:8px 16px;border-bottom:1px solid rgba(255,255,255,.03);">
+        <span style="font-size:9px;color:#4A5A75;text-transform:uppercase;letter-spacing:.06em;">Activo</span><span style="font-size:9px;color:#4A5A75;text-align:right;">Actual</span><span style="font-size:9px;color:#4A5A75;text-align:right;">Acum. 2026</span><span style="font-size:9px;color:#4A5A75;text-align:right;">Objetivo</span><span style="font-size:9px;color:#4A5A75;text-align:right;">Potencial</span>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 80px 80px 90px 80px;padding:12px 16px;border-bottom:1px solid rgba(255,255,255,.03);align-items:center;">
+        <div style="display:flex;align-items:center;gap:8px;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#5A6A85" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"/></svg><div><p style="font-size:12px;font-weight:600;color:var(--white);">Bono EE.UU.</p><p style="font-size:9px;color:#4A5A75;">UST10Y</p></div></div>
+        <span style="font-size:12px;font-family:monospace;color:var(--white);text-align:right;">4.05%</span><span style="font-size:11px;font-family:monospace;color:#EF4444;text-align:right;">-0.13 pp</span><span style="font-size:12px;font-family:monospace;color:#C9A84C;text-align:right;">4.06%</span>
+        <div style="text-align:right;"><span style="font-size:10px;font-weight:700;color:#5A6A85;background:#5A6A8515;padding:2px 8px;border-radius:99px;">+0.01 pp</span></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 80px 80px 90px 80px;padding:12px 16px;align-items:center;">
+        <div style="display:flex;align-items:center;gap:8px;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#10B981" stroke-width="2.5"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg><div><p style="font-size:12px;font-weight:600;color:var(--white);">Bono México</p><p style="font-size:9px;color:#4A5A75;">MBono10Y</p></div></div>
+        <span style="font-size:12px;font-family:monospace;color:var(--white);text-align:right;">8.68%</span><span style="font-size:11px;font-family:monospace;color:#EF4444;text-align:right;">-0.42 pp</span><span style="font-size:12px;font-family:monospace;color:#C9A84C;text-align:right;">8.30%</span>
+        <div style="text-align:right;"><span style="font-size:10px;font-weight:700;color:#10B981;background:#10B98115;padding:2px 8px;border-radius:99px;">-0.38 pp</span></div>
+      </div>
+    </div>
+
+    <!-- Materias Primas -->
+    <div style="background:#0C1829;border:1px solid rgba(255,255,255,.05);border-radius:14px;overflow:hidden;margin-bottom:20px;">
+      <div style="padding:10px 16px;background:#162236;border-bottom:1px solid rgba(255,255,255,.05);"><span style="font-size:10px;font-weight:700;color:#C9A84C;text-transform:uppercase;letter-spacing:.1em;">Materias Primas</span></div>
+      <div style="display:grid;grid-template-columns:1fr 80px 80px 90px 80px;padding:8px 16px;border-bottom:1px solid rgba(255,255,255,.03);">
+        <span style="font-size:9px;color:#4A5A75;text-transform:uppercase;letter-spacing:.06em;">Activo</span><span style="font-size:9px;color:#4A5A75;text-align:right;">Actual</span><span style="font-size:9px;color:#4A5A75;text-align:right;">Acum. 2026</span><span style="font-size:9px;color:#4A5A75;text-align:right;">Objetivo</span><span style="font-size:9px;color:#4A5A75;text-align:right;">Potencial</span>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 80px 80px 90px 80px;padding:12px 16px;border-bottom:1px solid rgba(255,255,255,.03);align-items:center;">
+        <div style="display:flex;align-items:center;gap:8px;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#5A6A85" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"/></svg><div><p style="font-size:12px;font-weight:600;color:var(--white);">Oro</p><p style="font-size:9px;color:#4A5A75;">XAU</p></div></div>
+        <span style="font-size:12px;font-family:monospace;color:var(--white);text-align:right;">$5,197</span><span style="font-size:11px;font-family:monospace;color:#10B981;text-align:right;">+20.15%</span><span style="font-size:12px;font-family:monospace;color:#C9A84C;text-align:right;">$5,000</span>
+        <div style="text-align:right;"><span style="font-size:10px;font-weight:700;color:#EF4444;background:#EF444415;padding:2px 8px;border-radius:99px;">-3.80%</span></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 80px 80px 90px 80px;padding:12px 16px;border-bottom:1px solid rgba(255,255,255,.03);align-items:center;">
+        <div style="display:flex;align-items:center;gap:8px;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#EF4444" stroke-width="2.5"><polyline points="23 18 13.5 8.5 8.5 13.5 1 6"/><polyline points="17 18 23 18 23 12"/></svg><div><p style="font-size:12px;font-weight:600;color:var(--white);">Petróleo WTI</p><p style="font-size:9px;color:#4A5A75;">WTI</p></div></div>
+        <span style="font-size:12px;font-family:monospace;color:var(--white);text-align:right;">$64.1</span><span style="font-size:11px;font-family:monospace;color:#10B981;text-align:right;">+11.60%</span><span style="font-size:12px;font-family:monospace;color:#C9A84C;text-align:right;">$59.59</span>
+        <div style="text-align:right;"><span style="font-size:10px;font-weight:700;color:#EF4444;background:#EF444415;padding:2px 8px;border-radius:99px;">-7.01%</span></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 80px 80px 90px 80px;padding:12px 16px;align-items:center;">
+        <div style="display:flex;align-items:center;gap:8px;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#EF4444" stroke-width="2.5"><polyline points="23 18 13.5 8.5 8.5 13.5 1 6"/><polyline points="17 18 23 18 23 12"/></svg><div><p style="font-size:12px;font-weight:600;color:var(--white);">Mezcla Mexicana</p><p style="font-size:9px;color:#4A5A75;">MME</p></div></div>
+        <span style="font-size:12px;font-family:monospace;color:var(--white);text-align:right;">$62.0</span><span style="font-size:11px;font-family:monospace;color:#10B981;text-align:right;">+15.61%</span><span style="font-size:12px;font-family:monospace;color:#C9A84C;text-align:right;">$53.72</span>
+        <div style="text-align:right;"><span style="font-size:10px;font-weight:700;color:#EF4444;background:#EF444415;padding:2px 8px;border-radius:99px;">-13.34%</span></div>
+      </div>
+    </div>
+
+    <p style="font-size:10px;color:#3A4A5E;text-align:center;line-height:1.6;">
+      Información con fines ilustrativos. Fuente: Actinver Análisis (26 de febrero, 2026).
+      Los precios objetivo son estimaciones y no garantizan rendimientos futuros.
+    </p>
+  </div>
+
+</div><!-- /page -->
+
+<script>
+  function toggleSimulador(teaser) {
+    const content = document.getElementById('simulador-content');
+    const btn = teaser.querySelector('button');
+    const isOpen = content.style.display !== 'none';
+    content.style.display = isOpen ? 'none' : 'block';
+    btn.textContent = isOpen ? 'Abrir simulador ↓' : 'Cerrar ↑';
+    teaser.style.borderRadius = isOpen ? '16px' : '16px 16px 0 0';
+    if (!isOpen) updateSimChart();
+  }
+
+  function updateSimChart() {
+    const valores = [28.45, 35, 42, 50, 58, 62.4, 55, 45, 35, 25, 18.1];
+    const max = Math.max(...valores);
+    const chart = document.getElementById('sim-chart');
+    if (!chart) return;
+    chart.innerHTML = valores.map((v, i) => {
+      const pct = (v / max) * 100;
+      const color = i < 6 ? '#C9A84C' : (i < 9 ? '#5A8A9F' : '#10B981');
+      return `<div style="flex:1;background:${color};height:${pct}%;border-radius:3px 3px 0 0;opacity:${i===5?1:0.6};" title="$${v}M"></div>`;
+    }).join('');
+  }
+
+  function toggleHouseView(teaser) {
+    const content = document.getElementById('houseview-content');
+    const btn = teaser.querySelector('button');
+    const isOpen = content.style.display !== 'none';
+    content.style.display = isOpen ? 'none' : 'block';
+    btn.textContent = isOpen ? 'Ver House View ↓' : 'Cerrar ↑';
+    teaser.style.borderRadius = isOpen ? '16px' : '16px 16px 0 0';
+  }
+
+  // ── Trayectoria Patrimonial chart ─────────────────────────────
+  function fmtMXN(v) {
+    const abs = Math.abs(v);
+    if (abs >= 1e9)  return (v < 0 ? '-' : '') + '$' + (abs / 1e9).toFixed(1) + 'B';
+    if (abs >= 1e6)  return (v < 0 ? '-' : '') + '$' + (abs / 1e6).toFixed(1) + 'M';
+    if (abs >= 1e3)  return (v < 0 ? '-' : '') + '$' + Math.round(abs / 1e3) + 'K';
+    return '$' + Math.round(v);
+  }
+
+  function renderPatrimonyTrayChart() {
+    const saldoInicial = 38700000;
+    const tasaMensual  = 0.025 / 12;
+    const retiroMensual = 12000;   // retiro mensual de capital (brecha pensión vs meta)
+    const edadRetiro = 65;
+    const edadFin    = 85;
+
+    const data = [];
+    let saldo = saldoInicial;
+    for (let age = edadRetiro; age <= edadFin; age++) {
+      data.push({ edad: age, saldo: Math.round(saldo) });
+      for (let m = 0; m < 12; m++) {
+        saldo = saldo * (1 + tasaMensual) - retiroMensual;
+      }
+    }
+
+    const maxAbs = Math.max(...data.map(d => Math.abs(d.saldo)));
+    const chart = document.getElementById('patrimony-tray-chart');
+    if (!chart) return;
+
+    chart.innerHTML = data.map(d => {
+      const pct   = Math.min(100, (Math.abs(d.saldo) / maxAbs) * 95 + 2);
+      const isPos = d.saldo >= 0;
+      const color = isPos ? 'var(--green)' : 'var(--red)';
+      const opacity = d.edad === edadRetiro ? '1' : '0.75';
+      return `
+        <div class="tray-bar-row">
+          <span class="tray-bar-age">${d.edad}a</span>
+          <div class="tray-bar-track">
+            <div class="tray-bar-fill" style="width:${pct}%;background:${color};opacity:${opacity};"></div>
+          </div>
+          <span class="tray-bar-label" style="color:${color}">${fmtMXN(d.saldo)}</span>
+        </div>`;
+    }).join('');
+  }
+
+  function renderFuentesTrayChart() {
+    const COLORS = {
+      pension:     '#C9A84C',
+      voluntarios: '#E8C87A',
+      rentas:      '#3B82F6',
+      negocio:     '#8B5CF6',
+      patrimonio:  '#5A7A9F',
+    };
+    const LEGEND_LABELS = {
+      pension:     'AFORE / Ley 73',
+      voluntarios: 'PPR / Voluntarios',
+      rentas:      'Rentas',
+      negocio:     'Negocio',
+      patrimonio:  'Patrimonio Financiero',
+    };
+
+    // Keyframes cada 5 años; interpolamos año a año entre ellos
+    const keyframes = [
+      { edad: 65, pension: 8500,  voluntarios: 6800, rentas: 10000, negocio: 5000, patrimonio: 12000 },
+      { edad: 70, pension: 8500,  voluntarios: 5200, rentas: 10000, negocio: 4000, patrimonio: 14600 },
+      { edad: 75, pension: 8500,  voluntarios: 3100, rentas: 10000, negocio: 0,    patrimonio: 18900 },
+      { edad: 80, pension: 8500,  voluntarios: 800,  rentas: 10000, negocio: 0,    patrimonio: 14000 },
+      { edad: 85, pension: 8500,  voluntarios: 0,    rentas: 10000, negocio: 0,    patrimonio: 0     },
+    ];
+
+    const lerp = (a, b, t) => Math.max(0, Math.round(a + (b - a) * t));
+    const data = [];
+    for (let age = 65; age <= 85; age++) {
+      let lo = keyframes[0], hi = keyframes[keyframes.length - 1];
+      for (let i = 0; i < keyframes.length - 1; i++) {
+        if (age >= keyframes[i].edad && age <= keyframes[i + 1].edad) {
+          lo = keyframes[i]; hi = keyframes[i + 1]; break;
+        }
+      }
+      const t = lo.edad === hi.edad ? 0 : (age - lo.edad) / (hi.edad - lo.edad);
+      data.push({
+        edad:        age,
+        pension:     lerp(lo.pension,     hi.pension,     t),
+        voluntarios: lerp(lo.voluntarios, hi.voluntarios, t),
+        rentas:      lerp(lo.rentas,      hi.rentas,      t),
+        negocio:     lerp(lo.negocio,     hi.negocio,     t),
+        patrimonio:  lerp(lo.patrimonio,  hi.patrimonio,  t),
+      });
+    }
+
+    const keys = ['pension','voluntarios','rentas','negocio','patrimonio'];
+    const maxTotal = Math.max(...data.map(d => keys.reduce((s, k) => s + d[k], 0)));
+
+    const legendHtml = `
+      <div class="tray-legend">
+        ${keys.map(k =>
+          `<div class="tray-legend-item">
+            <div class="tray-legend-dot" style="background:${COLORS[k]};"></div>
+            ${LEGEND_LABELS[k]}
+          </div>`
+        ).join('')}
+      </div>`;
+
+    const rowsHtml = data.map(d => {
+      const total      = keys.reduce((s, k) => s + d[k], 0);
+      const totalWidth = (total / maxTotal) * 100;
+      // inner div takes totalWidth% of the track; segments use flex proportional to value
+      const segs = keys.filter(k => d[k] > 0).map(k =>
+        `<div style="flex:${d[k]};height:100%;background:${COLORS[k]};" title="${LEGEND_LABELS[k]}: $${d[k].toLocaleString()}/mes"></div>`
+      ).join('');
+      return `
+        <div class="tray-fuente-row" style="margin-bottom:4px;">
+          <span class="tray-bar-age">${d.edad}a</span>
+          <div style="flex:1;height:14px;background:var(--bg-lift);border-radius:2px;overflow:hidden;">
+            <div style="width:${totalWidth}%;height:100%;display:flex;">${segs}</div>
+          </div>
+          <span class="tray-fuente-total">${fmtMXN(total)}/mes</span>
+        </div>`;
+    }).join('');
+
+    const chart = document.getElementById('fuentes-tray-chart');
+    if (chart) chart.innerHTML = legendHtml + rowsHtml;
+  }
+
+  document.addEventListener('DOMContentLoaded', () => {
+    renderPatrimonyTrayChart();
+    renderFuentesTrayChart();
+  });
+
+  // Highlight active nav on scroll
+  const sections = ['patrimonio','resumen','flujo','retiro','plan','proteccion','simulador','houseview'];
+  const navItems = document.querySelectorAll('.nav-item');
+  const obs = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        navItems.forEach(n => n.classList.remove('active'));
+        const target = document.querySelector(`.nav-item[href="#${e.target.id}"]`);
+        if (target) target.classList.add('active');
+      }
+    });
+  }, { threshold: 0.4 });
+  sections.forEach(id => { const el = document.getElementById(id); if (el) obs.observe(el); });
+</script>
+
+</body>
+</html>

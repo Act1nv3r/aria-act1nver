@@ -25,10 +25,10 @@ const ASPECTO_CONFIG: Record<string, { icon: React.ElementType; impact: (m: Prop
   Liquidez: { icon: Wallet, impact: ({ motorA }) => `Optimiza ${formatMXN(motorA.remanente)} de excedente mensual` },
   "Riqueza Financiera": { icon: TrendingUp, impact: ({ motorE }) => `Crecimiento sobre ${formatMXN(motorE.financiero)}` },
   Inversión: { icon: BarChart2, impact: ({ motorA }) => `${Math.round(motorA.remanente / Math.max(motorA.ingresos_totales, 1) * 100)}% de ingresos disponible` },
-  Inmuebles: { icon: Home, impact: ({ motorE }) => `${formatMXN(motorE.noFinanciero)} en activos inmobiliarios` },
+  Inmuebles: { icon: Home, impact: ({ motorE }) => `${formatMXN(motorE.no_financiero)} en activos inmobiliarios` },
   Seguros: { icon: ShieldCheck, impact: ({ motorE }) => `Protege ${formatMXN(motorE.patrimonio_neto)} de patrimonio neto` },
   Dependientes: { icon: Users, impact: () => "Asegura el bienestar de tu familia" },
-  Retiro: { icon: Calendar, impact: ({ motorC }) => `Meta: ${formatMXN(motorC.mensualidad_posible + motorC.pension_total_mensual)}/mes` },
+  Retiro: { icon: Calendar, impact: ({ motorC }) => `Meta: ${formatMXN(motorC.mensualidad_posible + motorC.pension_fija_total)}/mes` },
   Sucesión: { icon: Crown, impact: ({ motorE }) => `Planifica ${formatMXN(motorE.patrimonio_neto)} para tus herederos` },
 };
 

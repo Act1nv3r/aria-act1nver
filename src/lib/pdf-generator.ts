@@ -45,6 +45,12 @@ async function capturarYDescargar(elementId: string, filename: string): Promise<
     return false;
   }
 
+  // Give React two animation frames to commit any pending state updates
+  // (e.g. store hydration from DiagnosticoProvider) before html2canvas captures.
+  await new Promise<void>((resolve) => {
+    requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
+  });
+
   const html2canvas = (await import("html2canvas")).default;
   const Pdf = (await import("jspdf")).jsPDF;
 
@@ -52,7 +58,7 @@ async function capturarYDescargar(elementId: string, filename: string): Promise<
   const h2cOptions = {
     scale: 2,
     useCORS: true,
-    backgroundColor: "#F5F0E8",
+    backgroundColor: "#FFFFFF",
     logging: false,
     // Prevent html2canvas from scrolling the page during capture
     scrollX: 0,
@@ -123,6 +129,20 @@ export async function generarBalancePDF(
   if (typeof window === "undefined") return false;
   const filename = `Balance_Patrimonial_${clienteNombre.replace(/\s/g, "_")}.pdf`;
 
+  // ── Priority 1: React DOM capture (our new Swiss-banking design) ────────────
+  // The BalancePDFTemplate component reads live from useDiagnosticoStore, which
+  // DiagnosticoProvider already populated before this call. This guarantees the
+  // correct design AND the real client data every time the template is mounted.
+  const ok = await capturarYDescargar("balance-pdf-template", filename);
+  if (ok) {
+    trackDocument("balance", filename, clienteNombre, options?.diagnosticoId);
+    return true;
+  }
+
+  // ── Priority 2: Backend server-side PDF (fallback when template not in DOM) ─
+  // The template is only mounted on vista-completa / completado / presentacion.
+  // From the dashboard customers page the DOM element won't be found, so we
+  // try the backend which has real data and can still produce a usable PDF.
   if (options?.diagnosticoId) {
     try {
       const url = `${API_URL}/api/v1/diagnosticos/${options.diagnosticoId}/pdf/balance`;
@@ -140,12 +160,11 @@ export async function generarBalancePDF(
         return true;
       }
     } catch {
-      // fallback to client-side DOM capture
+      // both strategies failed — caller will redirect to the right page
     }
   }
-  const ok = await capturarYDescargar("balance-pdf-template", filename);
-  if (ok) trackDocument("balance", filename, clienteNombre, options?.diagnosticoId);
-  return ok;
+
+  return false;
 }
 
 export async function generarDiagnosticoPDF(

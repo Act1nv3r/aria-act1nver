@@ -71,9 +71,14 @@ export default function SimuladorPage() {
   });
 
   const motorCInput = {
-    patrimonio_financiero_total: patrimonioFin,
-    saldo_esquemas: 0,
-    ley_73: patrimonio?.ley_73 ?? 35000,
+    liquidez: patrimonio?.liquidez ?? 0,
+    inversiones: patrimonio?.inversiones ?? 0,
+    dotales: patrimonio?.dotales ?? 0,
+    afore: patrimonio?.afore ?? 0,
+    ppr: patrimonio?.ppr ?? 0,
+    plan_privado: patrimonio?.plan_privado ?? 0,
+    seguros_retiro: patrimonio?.seguros_retiro ?? 0,
+    ley_73: patrimonio?.ley_73 ?? null,
     rentas: flujoBase.rentas,
     edad,
     edad_retiro: retiroBase.edad_retiro,
@@ -88,10 +93,10 @@ export default function SimuladorPage() {
   );
 
   const resultadoSimulado = useMemo(() => {
-    const patrimonioAjustado = patrimonioFin + sliderValues.aportacion_extra;
+    const extraAcumulado = sliderValues.aportacion_extra;
     return calcularMotorC({
       ...motorCInput,
-      patrimonio_financiero_total: patrimonioAjustado,
+      liquidez: motorCInput.liquidez + extraAcumulado,
       edad_retiro: sliderValues.edad_retiro,
       mensualidad_deseada: sliderValues.mensualidad_deseada,
       tasa_real_anual: sliderValues.tasa_real / 100,
@@ -145,8 +150,8 @@ export default function SimuladorPage() {
             negocio: patrimonio.negocio,
             herencia: patrimonio.herencia,
             hipoteca: patrimonio.hipoteca,
-            saldo_planes: 0,
-            compromisos: 0,
+            saldo_planes: patrimonio.saldo_planes,
+            compromisos: patrimonio.compromisos,
           })
         : null,
     [patrimonio]
@@ -162,12 +167,15 @@ export default function SimuladorPage() {
       seguro_vida: proteccion.seguro_vida ?? false,
       propiedades_aseguradas: proteccion.propiedades_aseguradas,
       sgmm: proteccion.sgmm ?? false,
-      dependientes: perfil.dependientes ?? false,
-      patrimonio_neto: motorE.patrimonio_neto,
-      inmuebles_total,
+      dependientes: perfil.dependientes ? 1 : 0,
+      inversiones: patrimonio?.inversiones ?? 0,
+      dotales: patrimonio?.dotales ?? 0,
+      gastos_mensuales: (flujoBase.gastos_basicos) + (flujoBase.obligaciones) + (flujoBase.creditos),
       edad,
+      inmuebles_total,
+      rentas_mensuales: flujoBase.rentas,
     });
-  }, [motorE, proteccion, perfil, patrimonio, edad]);
+  }, [motorE, proteccion, perfil, patrimonio, edad, flujoBase]);
 
   // ── Salud scores ──────────────────────────────────────────────
   const saludInput = useMemo(
@@ -254,7 +262,7 @@ export default function SimuladorPage() {
         mensualidad_posible: resultadoSimulado.mensualidad_posible,
         deficit_mensual: resultadoSimulado.deficit_mensual,
         saldo_inicio_jubilacion: resultadoSimulado.saldo_inicio_jubilacion,
-        pension_total_mensual: resultadoSimulado.pension_total_mensual,
+        pension_fija_total: resultadoSimulado.pension_fija_total,
       },
     });
     setSaveLabel("");
@@ -289,7 +297,7 @@ export default function SimuladorPage() {
               patrimonioActual={patrimonioFin + sliderValues.aportacion_extra}
               ahorroMensual={sliderValues.ahorro}
               tasaReal={sliderValues.tasa_real / 100}
-              pensionMensual={patrimonio?.ley_73 ?? 35000}
+              pensionMensual={patrimonio?.ley_73 ?? null}
               rentasMensuales={flujoBase.rentas}
               mensualidadDeseada={sliderValues.mensualidad_deseada}
               eventos={eventos}
@@ -474,7 +482,7 @@ export default function SimuladorPage() {
                 <Card className="min-h-[380px]">
                   <TrayectoriaRetiroChart
                     saldoInicioJubilacion={resultadoSimulado.saldo_inicio_jubilacion}
-                    pensionTotalMensual={resultadoSimulado.pension_total_mensual}
+                    pensionTotalMensual={resultadoSimulado.pension_fija_total}
                     mensualidadDeseada={sliderValues.mensualidad_deseada}
                     edadRetiro={sliderValues.edad_retiro}
                     edadDefuncion={retiroBase.edad_defuncion}
@@ -491,7 +499,7 @@ export default function SimuladorPage() {
         <div className="flex flex-wrap items-center gap-3 mt-8">
           <Button
             variant="ghost"
-            onClick={() => router.push(`/diagnosticos/${id}/presentacion`)}
+            onClick={() => router.push(`/diagnosticos/${id}/resultados`)}
           >
             <ChevronLeft className="w-4 h-4" />
             Volver al balance
