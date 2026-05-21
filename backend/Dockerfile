@@ -1,4 +1,4 @@
-FROM python:3.12-slim
+FROM python:3.12-slim-bookworm
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
     libgobject-2.0-0 libpango-1.0-0 libpangoft2-1.0-0 \
