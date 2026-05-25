@@ -32,11 +32,17 @@ export interface MotorEOutput {
   patrimonio_neto: number;
   financiero: number;
   no_financiero: number;
-  activos_base: number;          // para referencia / auditoría
-  esquemas_retiro: number;       // para referencia / auditoría
+  activos_base: number;             // para referencia / auditoría
+  esquemas_retiro: number;          // para referencia / auditoría
   indice_solvencia: number;
   clasificacion_solvencia: string;
-  potencial_apalancamiento: number;
+  // Estructura de apalancamiento (Excel "Potencial del Balance")
+  apalancamiento_actual: number;          // lo que ya se debe (= pasivos_total)
+  apalancamiento_potencial_bruto: number; // capacidad total = activos_base × 0.5
+  excedente_apalancamiento: number;       // max(potencial_bruto − pasivos_total, 0)
+  potencial_fin: number;                  // F11: respaldado por activos financieros libres
+  potencial_nofin: number;               // F12: respaldado por activos no financieros (inmuebles)
+  potencial_apalancamiento: number;       // @legacy: = excedente_apalancamiento (sin cambio en consumidores)
 }
 
 export function calcularMotorE(input: MotorEInput): MotorEOutput {
@@ -89,9 +95,19 @@ export function calcularMotorE(input: MotorEInput): MotorEOutput {
     clasificacion_solvencia = "Bajo";
   }
 
-  // ─── FIX-4: Potencial de Apalancamiento (Excel) ──────────────────────────
-  // Excel: activos_disponibles × 0.5 − pasivos_total
-  const potencial_apalancamiento = activos_base * 0.5 - pasivos_total;
+  // ─── Estructura de Apalancamiento (Excel "Potencial del Balance") ────────
+  // apalancamiento_actual    = pasivos_total (lo que ya se debe hoy)
+  // potencial_bruto          = activos_base × 0.5 (capacidad máxima de endeudamiento)
+  // excedente                = max(potencial_bruto − pasivos_total, 0) — cuánto más puede endeudarse
+  // F11: respaldo financiero = financiero_libre × 0.5 (créditos de inversión / prendarios)
+  // F12: respaldo inmobiliario = no_financiero_operativo × 0.5 (hipotecas / crédito puente)
+  const apalancamiento_potencial_bruto = activos_base * 0.5;
+  const excedente_apalancamiento = Math.max(0, apalancamiento_potencial_bruto - pasivos_total);
+  const potencial_fin    = financiero_libre * 0.5;
+  const potencial_nofin  = no_financiero_operativo * 0.5;
+
+  // @legacy — mantener para no romper consumidores existentes
+  const potencial_apalancamiento = excedente_apalancamiento;
 
   return {
     activos_total,
@@ -101,8 +117,13 @@ export function calcularMotorE(input: MotorEInput): MotorEOutput {
     no_financiero,
     activos_base,
     esquemas_retiro,
-    indice_solvencia:         Math.round(indice_solvencia * 10000) / 10000,
+    indice_solvencia:               Math.round(indice_solvencia * 10000) / 10000,
     clasificacion_solvencia,
-    potencial_apalancamiento: Math.round(potencial_apalancamiento * 100) / 100,
+    apalancamiento_actual:           Math.round(pasivos_total * 100) / 100,
+    apalancamiento_potencial_bruto: Math.round(apalancamiento_potencial_bruto * 100) / 100,
+    excedente_apalancamiento:       Math.round(excedente_apalancamiento * 100) / 100,
+    potencial_fin:                  Math.round(potencial_fin * 100) / 100,
+    potencial_nofin:                Math.round(potencial_nofin * 100) / 100,
+    potencial_apalancamiento:       Math.round(potencial_apalancamiento * 100) / 100,
   };
 }

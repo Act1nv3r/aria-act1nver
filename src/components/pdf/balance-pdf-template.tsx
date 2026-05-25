@@ -1456,6 +1456,7 @@ export function BalancePDFTemplate() {
     distribucion: { gastos_pct: 0, obligaciones_pct: 0, creditos_pct: 0, ahorro_pct: 0 },
     benchmark_reserva: 0, meses_cubiertos: null, resultado_reserva: "Pendiente" as const,
     pendiente_reserva: 0, meses_para_cubrir: 0, remanente: 0,
+    ingreso_disponible_pasivo: 0, ingreso_disponible_activo: 0,
   };
   const safeMotorB = motorB ?? {
     patrimonio_financiero_total: 0, patrimonio_acumulacion_libre: 0, patrimonio_esquemas: 0,
@@ -1475,6 +1476,8 @@ export function BalancePDFTemplate() {
     activos_total: 0, pasivos_total: 0, patrimonio_neto: 0,
     financiero: 0, no_financiero: 0, activos_base: 0, esquemas_retiro: 0,
     indice_solvencia: 0, clasificacion_solvencia: "Muy saludable", potencial_apalancamiento: 0,
+    apalancamiento_actual: 0, apalancamiento_potencial_bruto: 0, excedente_apalancamiento: 0,
+    potencial_fin: 0, potencial_nofin: 0,
   };
   const safeMotorF = motorF ?? {
     recomendaciones: [], suma_asegurada_vida: 0, costo_prima_vida: 0,

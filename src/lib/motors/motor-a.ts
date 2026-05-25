@@ -25,6 +25,11 @@ export interface MotorAOutput {
   pendiente_reserva: number;
   meses_para_cubrir: number;
   remanente: number;
+  // Desglose activo vs pasivo de la capacidad de ahorro (Excel fuente de verdad)
+  // ingreso_disponible_pasivo = min(rentas + otros, ahorro)  — de cuánto ahorro viene de ingresos pasivos
+  // ingreso_disponible_activo = ahorro − ingreso_disponible_pasivo — lo que viene de trabajo activo
+  ingreso_disponible_pasivo: number;
+  ingreso_disponible_activo: number;
 }
 
 export function calcularMotorA(input: MotorAInput): MotorAOutput {
@@ -79,6 +84,13 @@ export function calcularMotorA(input: MotorAInput): MotorAOutput {
       ? Math.max(0, input.ahorro * (1 - Math.min(meses_para_cubrir / 12, 1)))
       : input.ahorro;
 
+  // ─── Desglose ingreso disponible activo vs pasivo ────────────────────────
+  // Ingreso pasivo disponible: de tu capacidad de ahorro, cuánto proviene de
+  // fuentes pasivas (rentas + negocios). Tope: no puede superar el ahorro total.
+  // Ingreso activo disponible: lo que resta, proveniente de tu trabajo activo.
+  const ingreso_disponible_pasivo = Math.min(input.rentas + input.otros, input.ahorro);
+  const ingreso_disponible_activo = Math.max(0, input.ahorro - ingreso_disponible_pasivo);
+
   return {
     ingresos_totales,
     gastos_totales,
@@ -89,5 +101,7 @@ export function calcularMotorA(input: MotorAInput): MotorAOutput {
     pendiente_reserva,
     meses_para_cubrir: Math.round(meses_para_cubrir * 100) / 100,
     remanente,
+    ingreso_disponible_pasivo: Math.round(ingreso_disponible_pasivo * 100) / 100,
+    ingreso_disponible_activo: Math.round(ingreso_disponible_activo * 100) / 100,
   };
 }

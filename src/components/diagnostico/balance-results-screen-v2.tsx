@@ -516,6 +516,19 @@ export function BalanceResultsScreenV2({
 
   const longevidad_anos = Math.round(motorB.longevidad_recursos / 12);
 
+  // ─── Métricas adicionales PO ─────────────────────────────────────────────
+  // Índice de liquidez CORRECTO: (liquidez + inversiones) / total_obligaciones
+  const total_obligaciones = hipoteca + saldo_planes + compromisos;
+  const indice_liquidez_correcto = total_obligaciones > 0
+    ? (patrimonio.liquidez + patrimonio.inversiones) / total_obligaciones
+    : null;
+  // Bolsa de emergencia: meses de gastos cubiertos por liquidez
+  const bolsa_emergencia_meses = flujo.gastos_basicos > 0
+    ? patrimonio.liquidez / flujo.gastos_basicos
+    : 0;
+  // Mostrar Capacidad de Retiro solo si hay meta definida
+  const tieneMetaRetiro = mensDeseada > 0;
+
   // Trayectoria curva (bar chart data)
   const curvaPorAnio = motorC ? (() => {
     const data: { edad: number; saldo: number }[] = [];
@@ -758,23 +771,46 @@ export function BalanceResultsScreenV2({
             Activos totales {fmtMXN(motorE.activos_total)}&nbsp;·&nbsp;Obligaciones {fmtMXN(motorE.pasivos_total)}
           </div>
 
-          {/* 4 KPIs strip */}
+          {/* 3 KPIs strip — Corto plazo · Acumulación · Retiro */}
           <div
             className="grid overflow-hidden"
-            style={{ gridTemplateColumns: "repeat(4,1fr)", gap: 1, background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 14 }}
+            style={{ gridTemplateColumns: "repeat(3,1fr)", gap: 1, background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 14 }}
           >
-            {[
-              { label: "Nivel de Riqueza",  value: nivelLabel(motorB.nivel_riqueza), color: nivelColor(motorB.nivel_riqueza), sub: "Patrimonio financiero" },
-              { label: "Longevidad Activos", value: `${longevidad_anos} años`, color: "#F0F4FA", sub: `Hasta los ${edadActual + longevidad_anos} años` },
-              { label: "Índice de Solvencia", value: `${indice_solvencia_pct.toFixed(1)}%`, color: indice_solvencia_pct >= 70 ? "#10B981" : "#F59E0B", sub: motorE.clasificacion_solvencia },
-              { label: "Deuda / Activos", value: `${deuda_activos_pct.toFixed(1)}%`, color: "#F0F4FA", sub: deuda_activos_pct < 20 ? "Por debajo del umbral" : "Revisar endeudamiento" },
-            ].map((kpi, i) => (
-              <div key={i} className="px-5 py-4" style={{ background: "#0C1829" }}>
-                <div className="text-[10px] font-semibold tracking-[1.5px] uppercase text-[#4A5A72] mb-1.5">{kpi.label}</div>
-                <div className="text-[20px] font-bold leading-none tabular-nums" style={{ color: kpi.color }}>{kpi.value}</div>
-                <div className="text-[11px] text-[#8B9BB4] mt-0.5">{kpi.sub}</div>
+            {/* Horizonte 1 — Corto plazo: Bolsa de Emergencia */}
+            <div className="px-5 py-4" style={{ background: "#0C1829" }}>
+              <div className="text-[10px] font-semibold tracking-[1.5px] uppercase text-[#4A5A72] mb-1.5">Bolsa de Emergencia</div>
+              <div className="text-[20px] font-bold leading-none tabular-nums" style={{ color: bolsa_emergencia_meses >= 3 ? "#10B981" : "#F59E0B" }}>
+                {bolsa_emergencia_meses.toFixed(1)} meses
               </div>
-            ))}
+              <div className="text-[11px] text-[#8B9BB4] mt-0.5">
+                {bolsa_emergencia_meses >= 3 ? "Cubierta ✓" : "Reforzar — meta: 3 meses"}
+              </div>
+            </div>
+            {/* Horizonte 2 — Acumulación: Longevidad de activos */}
+            <div className="px-5 py-4" style={{ background: "#0C1829" }}>
+              <div className="text-[10px] font-semibold tracking-[1.5px] uppercase text-[#4A5A72] mb-1.5">Longevidad de Activos</div>
+              <div className="text-[20px] font-bold leading-none tabular-nums text-[#F0F4FA]">
+                {longevidad_anos} años
+              </div>
+              <div className="text-[11px] text-[#8B9BB4] mt-0.5">Hasta los {edadActual + longevidad_anos} años</div>
+            </div>
+            {/* Horizonte 3 — Retiro: Capacidad de Retiro */}
+            <div className="px-5 py-4" style={{ background: "#0C1829" }}>
+              <div className="text-[10px] font-semibold tracking-[1.5px] uppercase text-[#4A5A72] mb-1.5">Capacidad de Retiro</div>
+              {tieneMetaRetiro && motorC ? (
+                <>
+                  <div className="text-[20px] font-bold leading-none tabular-nums" style={{ color: motorC.grado_avance >= 1 ? "#10B981" : "#F59E0B" }}>
+                    {pct(motorC.grado_avance)}
+                  </div>
+                  <div className="text-[11px] text-[#8B9BB4] mt-0.5">Meta {fmtMXN(mensDeseada)}/mes</div>
+                </>
+              ) : (
+                <>
+                  <div className="text-[20px] font-bold leading-none tabular-nums text-[#4A5A72]">—</div>
+                  <div className="text-[11px] text-[#8B9BB4] mt-0.5">Definir meta de retiro</div>
+                </>
+              )}
+            </div>
           </div>
         </div>
 
@@ -908,117 +944,13 @@ export function BalanceResultsScreenV2({
                   </div>
                 ))}
                 <div className="mt-3 pt-3 border-t flex justify-between items-baseline" style={{ borderColor: "rgba(255,255,255,0.06)" }}>
-                  <span className="text-[11px] text-[#4A5A72]">Índice de Liquidez</span>
-                  <span className="text-[16px] font-bold text-[#10B981]">
-                    {(flujo.gastos_basicos > 0 ? patrimonio.liquidez / flujo.gastos_basicos : 0).toFixed(1)}x{" "}
-                    <span className="text-[11px] font-normal">
-                      {patrimonio.liquidez / flujo.gastos_basicos >= 3 ? "Saludable" : "Mejorable"}
-                    </span>
+                  <span className="text-[11px] text-[#4A5A72]">Índice de Solvencia</span>
+                  <span className="text-[16px] font-bold" style={{ color: indice_solvencia_pct >= 70 ? "#10B981" : "#F59E0B" }}>
+                    {indice_solvencia_pct.toFixed(1)}%{" "}
+                    <span className="text-[11px] font-normal">{motorE.clasificacion_solvencia}</span>
                   </span>
                 </div>
               </div>
-            </div>
-          </div>
-        </Section>
-
-        {/* ════════════════════════════════════════════════════════════════════ */}
-        {/* A — RESUMEN EJECUTIVO                                               */}
-        {/* ════════════════════════════════════════════════════════════════════ */}
-        <Section id="resumen">
-          <SectionHeader tag="A" title="Resumen Ejecutivo" subtitle="Panorama integral de la situación patrimonial y financiera" />
-
-          <div className="grid gap-3 mb-3" style={{ gridTemplateColumns: "repeat(3,1fr)" }}>
-            {/* A1 Tasa de Ahorro */}
-            <div className="rounded-[14px] p-5 border relative overflow-hidden" style={{ background: "#0C1829", borderColor: "rgba(255,255,255,0.06)" }}>
-              <div className="text-[10px] font-bold tracking-[2px] uppercase text-[#4A5A72] mb-2.5">A1</div>
-              <div className="text-[13px] font-semibold text-[#8B9BB4] mb-3">Tasa de Ahorro</div>
-              <div className="text-[32px] font-extrabold leading-none tabular-nums" style={{ letterSpacing: -1, color: "#C9A84C" }}>
-                {motorA.ingresos_totales > 0 ? pct(motorA.remanente / motorA.ingresos_totales) : "—"}
-              </div>
-              <div className="text-[12px] text-[#8B9BB4] mt-1">{fmtFull(motorA.remanente)}/mes disponible</div>
-              <div className="mt-3.5">
-                <div className="flex justify-between items-baseline mb-1.5">
-                  <span className="text-[11px] text-[#8B9BB4]">del ingreso total</span>
-                  <span className="text-[16px] font-bold text-[#C9A84C]">
-                    {motorA.ingresos_totales > 0 ? pct(motorA.remanente / motorA.ingresos_totales) : "—"}
-                  </span>
-                </div>
-                <div className="h-1.5 rounded-full overflow-hidden" style={{ background: "#112038" }}>
-                  <div className="h-full rounded-full" style={{ width: `${Math.min(100, motorA.ingresos_totales > 0 ? (motorA.remanente / motorA.ingresos_totales) * 100 : 0)}%`, background: "linear-gradient(90deg,#C9A84C,#E8C872)" }} />
-                </div>
-              </div>
-            </div>
-
-            {/* A2 Capacidad de Retiro */}
-            {motorC && (
-              <div className="rounded-[14px] p-5 border relative overflow-hidden" style={{ background: "#0C1829", borderColor: "rgba(255,255,255,0.06)" }}>
-                <div className="text-[10px] font-bold tracking-[2px] uppercase text-[#4A5A72] mb-2.5">A2</div>
-                <div className="text-[13px] font-semibold text-[#8B9BB4] mb-3">Capacidad de Retiro</div>
-                <div className="text-[32px] font-extrabold leading-none tabular-nums" style={{ letterSpacing: -1, color: motorC.grado_avance >= 1 ? "#10B981" : "#F59E0B" }}>
-                  {pct(motorC.grado_avance)}
-                </div>
-                <div className="text-[12px] text-[#8B9BB4] mt-1">de la meta alcanzada</div>
-                <div className="mt-3.5">
-                  <div className="flex justify-between items-baseline mb-1.5">
-                    <span className="text-[11px] text-[#8B9BB4]">Meta {fmtMXN(mensDeseada)}/mes</span>
-                    <span className="text-[16px] font-bold" style={{ color: motorC.grado_avance >= 1 ? "#10B981" : "#F59E0B" }}>
-                      {fmtMXN(motorC.mensualidad_posible)}/mes
-                    </span>
-                  </div>
-                  <div className="h-1.5 rounded-full overflow-hidden" style={{ background: "#112038" }}>
-                    <div className="h-full rounded-full" style={{ width: `${Math.min(100, motorC.grado_avance * 100)}%`, background: motorC.grado_avance >= 1 ? "#10B981" : "linear-gradient(90deg,#C9A84C,#E8C872)" }} />
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* A3 Cobertura de Liquidez */}
-            <div className="rounded-[14px] p-5 border relative overflow-hidden" style={{ background: "#0C1829", borderColor: "rgba(255,255,255,0.06)" }}>
-              <div className="text-[10px] font-bold tracking-[2px] uppercase text-[#4A5A72] mb-2.5">A3</div>
-              <div className="text-[13px] font-semibold text-[#8B9BB4] mb-3">Cobertura de Liquidez</div>
-              <div className="text-[32px] font-extrabold leading-none tabular-nums" style={{ letterSpacing: -1, color: "#10B981" }}>
-                {flujo.gastos_basicos > 0 ? Math.round(patrimonio.liquidez / flujo.gastos_basicos) : 0} <span className="text-[14px] font-semibold">meses</span>
-              </div>
-              <div className="text-[12px] text-[#8B9BB4] mt-1">de reserva de emergencia</div>
-              <div className="mt-3.5">
-                <Badge variant={flujo.gastos_basicos > 0 && patrimonio.liquidez / flujo.gastos_basicos >= 3 ? "green" : "amber"}>
-                  {flujo.gastos_basicos > 0 && patrimonio.liquidez / flujo.gastos_basicos >= 3 ? "Cubierta" : "Reforzar"}
-                </Badge>
-              </div>
-            </div>
-          </div>
-
-          <div className="grid gap-3" style={{ gridTemplateColumns: "repeat(2,1fr)" }}>
-            {/* A4 Apalancamiento */}
-            <div className="rounded-[14px] p-5 border" style={{ background: "#0C1829", borderColor: "rgba(255,255,255,0.06)" }}>
-              <div className="text-[10px] font-bold tracking-[2px] uppercase text-[#4A5A72] mb-2.5">A4</div>
-              <div className="text-[13px] font-semibold text-[#8B9BB4] mb-3">Estructura de Apalancamiento</div>
-              <div className="grid gap-2 mt-3" style={{ gridTemplateColumns: "1fr 1fr 1fr" }}>
-                {[
-                  { label: "Deuda/Activos",   val: `${deuda_activos_pct.toFixed(1)}%` },
-                  { label: "Potencial Crédito", val: fmtMXN(motorE.potencial_apalancamiento) },
-                  { label: "Deuda Total",     val: fmtMXN(motorE.pasivos_total) },
-                ].map((item, i) => (
-                  <div key={i} className="rounded-[10px] px-3.5 py-3" style={{ background: "#112038" }}>
-                    <div className="text-[10px] text-[#4A5A72] mb-1">{item.label}</div>
-                    <div className="text-[17px] font-bold tabular-nums text-[#F0F4FA]">{item.val}</div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* A5 Sucesión */}
-            <div className="rounded-[14px] p-5 border" style={{ background: "#0C1829", borderColor: "rgba(255,255,255,0.06)" }}>
-              <div className="text-[10px] font-bold tracking-[2px] uppercase text-[#4A5A72] mb-2.5">A5</div>
-              <div className="text-[13px] font-semibold text-[#8B9BB4] mb-3">Sucesión y Legado</div>
-              <div className="text-[32px] font-extrabold leading-none tabular-nums text-[#C9A84C]" style={{ letterSpacing: -1 }}>
-                {fmtMXN(motorC ? motorC.curva[motorC.curva.length - 1]?.saldo ?? motorE.patrimonio_neto : motorE.patrimonio_neto)}
-              </div>
-              <div className="text-[12px] text-[#8B9BB4] mt-1">Legado patrimonial proyectado</div>
-              <div className="mt-3"><Badge variant="gold">Blindaje Patrimonial</Badge></div>
-              <p className="mt-3.5 text-[12px] text-[#8B9BB4] leading-[1.7]">
-                Con el patrimonio actual y la trayectoria proyectada se estima un legado de {fmtMXN(motorE.patrimonio_neto)} al cierre de la vida financiera planificada.
-              </p>
             </div>
           </div>
         </Section>
@@ -1047,16 +979,32 @@ export function BalanceResultsScreenV2({
               ))}
             </div>
 
-            {/* Breakdown */}
+            {/* Breakdown: Disponible Activo + Disponible Pasivo */}
             <div className="flex flex-col gap-3">
               {[
-                { label: "Actividad Principal", val: flujo.ahorro, sub: `${motorA.ingresos_totales > 0 ? ((flujo.ahorro / motorA.ingresos_totales) * 100).toFixed(0) : 0}% de ingresos totales` },
-                { label: "Otras Fuentes",       val: flujo.rentas + flujo.otros, sub: "Rentas + Negocio" },
+                {
+                  label: "Disponible Activo",
+                  sub: "Actividad principal (trabajo)",
+                  val: motorA.ingreso_disponible_activo,
+                  color: "#C9A84C",
+                  pct: motorA.remanente > 0 ? motorA.ingreso_disponible_activo / motorA.remanente : 0,
+                },
+                {
+                  label: "Disponible Pasivo",
+                  sub: "Rentas + Negocio (otras fuentes)",
+                  val: motorA.ingreso_disponible_pasivo,
+                  color: "#10B981",
+                  pct: motorA.remanente > 0 ? motorA.ingreso_disponible_pasivo / motorA.remanente : 0,
+                },
               ].map((item, i) => (
                 <div key={i} className="flex-1 rounded-[12px] border px-5 py-[18px]" style={{ background: "#0C1829", borderColor: "rgba(255,255,255,0.06)" }}>
                   <div className="text-[11px] font-semibold tracking-[1px] uppercase text-[#4A5A72] mb-1.5">{item.label}</div>
-                  <div className="text-[22px] font-bold tabular-nums text-[#F0F4FA]">{fmtFull(item.val)}</div>
+                  <div className="text-[22px] font-bold tabular-nums" style={{ color: item.color }}>{fmtFull(item.val)}</div>
                   <div className="text-[11px] text-[#8B9BB4] mt-0.5">{item.sub}</div>
+                  <div className="mt-2 h-1 rounded-full overflow-hidden" style={{ background: "#112038" }}>
+                    <div className="h-full rounded-full" style={{ width: `${Math.min(100, item.pct * 100)}%`, background: item.color }} />
+                  </div>
+                  <div className="text-[10px] text-[#4A5A72] mt-1">{(item.pct * 100).toFixed(0)}% del total disponible</div>
                 </div>
               ))}
             </div>
@@ -1094,6 +1042,105 @@ export function BalanceResultsScreenV2({
               </table>
             </div>
           )}
+        </Section>
+
+        {/* ════════════════════════════════════════════════════════════════════ */}
+        {/* A — RESUMEN EJECUTIVO                                               */}
+        {/* ════════════════════════════════════════════════════════════════════ */}
+        <Section id="resumen">
+          <SectionHeader tag="A" title="Resumen Ejecutivo" subtitle="Panorama integral de la situación patrimonial y financiera" />
+
+          {/* 2 boxes: Tasa de Ahorro + Índice de Liquidez */}
+          <div className="grid gap-3 mb-3" style={{ gridTemplateColumns: "repeat(2,1fr)" }}>
+            {/* A1 Tasa de Ahorro */}
+            <div className="rounded-[14px] p-5 border relative overflow-hidden" style={{ background: "#0C1829", borderColor: "rgba(255,255,255,0.06)" }}>
+              <div className="text-[10px] font-bold tracking-[2px] uppercase text-[#4A5A72] mb-2.5">A1</div>
+              <div className="text-[13px] font-semibold text-[#8B9BB4] mb-3">Tasa de Ahorro</div>
+              <div className="text-[32px] font-extrabold leading-none tabular-nums" style={{ letterSpacing: -1, color: "#C9A84C" }}>
+                {motorA.ingresos_totales > 0 ? pct(motorA.remanente / motorA.ingresos_totales) : "—"}
+              </div>
+              <div className="text-[12px] text-[#8B9BB4] mt-1">{fmtFull(motorA.remanente)}/mes disponible</div>
+              <div className="mt-3.5">
+                <div className="flex justify-between items-baseline mb-1.5">
+                  <span className="text-[11px] text-[#8B9BB4]">del ingreso total</span>
+                  <span className="text-[16px] font-bold text-[#C9A84C]">
+                    {motorA.ingresos_totales > 0 ? pct(motorA.remanente / motorA.ingresos_totales) : "—"}
+                  </span>
+                </div>
+                <div className="h-1.5 rounded-full overflow-hidden" style={{ background: "#112038" }}>
+                  <div className="h-full rounded-full" style={{ width: `${Math.min(100, motorA.ingresos_totales > 0 ? (motorA.remanente / motorA.ingresos_totales) * 100 : 0)}%`, background: "linear-gradient(90deg,#C9A84C,#E8C872)" }} />
+                </div>
+              </div>
+            </div>
+
+            {/* A2 Índice de Liquidez — (Liquidez + Inversiones) / Total Obligaciones */}
+            <div className="rounded-[14px] p-5 border relative overflow-hidden" style={{ background: "#0C1829", borderColor: "rgba(255,255,255,0.06)" }}>
+              <div className="text-[10px] font-bold tracking-[2px] uppercase text-[#4A5A72] mb-2.5">A2</div>
+              <div className="text-[13px] font-semibold text-[#8B9BB4] mb-3">Índice de Liquidez</div>
+              <div className="text-[32px] font-extrabold leading-none tabular-nums" style={{ letterSpacing: -1, color: indice_liquidez_correcto !== null && indice_liquidez_correcto >= 1 ? "#10B981" : "#F59E0B" }}>
+                {indice_liquidez_correcto !== null ? `${indice_liquidez_correcto.toFixed(2)}x` : "—"}
+              </div>
+              <div className="text-[12px] text-[#8B9BB4] mt-1">
+                {total_obligaciones > 0 ? `(Liq + Inv) / Obligaciones totales` : "Sin obligaciones registradas"}
+              </div>
+              <div className="mt-3.5">
+                <Badge variant={indice_liquidez_correcto !== null && indice_liquidez_correcto >= 1 ? "green" : "amber"}>
+                  {indice_liquidez_correcto !== null && indice_liquidez_correcto >= 1 ? "Activos cubren deuda" : "Reforzar liquidez"}
+                </Badge>
+                {indice_liquidez_correcto !== null && (
+                  <div className="mt-2.5 text-[11px] text-[#4A5A72]">
+                    {fmtMXN(patrimonio.liquidez + patrimonio.inversiones)} vs {fmtMXN(total_obligaciones)} en obligaciones
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* A3 Estructura de Apalancamiento — layout izq (vertical) + der (desglose) */}
+          <div className="rounded-[14px] p-5 border" style={{ background: "#0C1829", borderColor: "rgba(255,255,255,0.06)" }}>
+            <div className="text-[10px] font-bold tracking-[2px] uppercase text-[#4A5A72] mb-2.5">A3</div>
+            <div className="text-[13px] font-semibold text-[#8B9BB4] mb-4">Estructura de Apalancamiento</div>
+            <div className="grid gap-6" style={{ gridTemplateColumns: "1fr 1fr" }}>
+              {/* Izquierda: Apalancamiento actual → Potencial → Excedente */}
+              <div className="flex flex-col gap-2">
+                {[
+                  { label: "Apalancamiento Actual", val: fmtMXN(motorE.apalancamiento_actual), color: "#EF4444", sub: "Deuda total vigente" },
+                  { label: "Potencial de Apalancamiento", val: fmtMXN(motorE.apalancamiento_potencial_bruto), color: "#F59E0B", sub: "Activos base × 50%" },
+                  { label: "Excedente Disponible", val: motorE.excedente_apalancamiento > 0 ? fmtMXN(motorE.excedente_apalancamiento) : "Sin margen", color: motorE.excedente_apalancamiento > 0 ? "#10B981" : "#4A5A72", sub: "Capacidad adicional de crédito" },
+                ].map((item, i) => (
+                  <div key={i} className="rounded-[10px] px-4 py-3 flex justify-between items-center" style={{ background: "#112038" }}>
+                    <div>
+                      <div className="text-[11px] text-[#4A5A72] mb-0.5">{item.label}</div>
+                      <div className="text-[12px] text-[#8B9BB4]">{item.sub}</div>
+                    </div>
+                    <div className="text-[18px] font-bold tabular-nums" style={{ color: item.color }}>{item.val}</div>
+                  </div>
+                ))}
+              </div>
+              {/* Derecha: Desglose por tipo de activo */}
+              <div className="flex flex-col gap-2">
+                <div className="text-[10px] font-semibold tracking-[1.5px] uppercase text-[#4A5A72] mb-1">Respaldo del potencial</div>
+                {[
+                  { label: "Activos Financieros", val: motorE.potencial_fin, pct: motorE.apalancamiento_potencial_bruto > 0 ? motorE.potencial_fin / motorE.apalancamiento_potencial_bruto : 0, color: "#3B82F6", sub: "Liq + Inv + Dotales × 50%" },
+                  { label: "Activos Inmobiliarios", val: motorE.potencial_nofin, pct: motorE.apalancamiento_potencial_bruto > 0 ? motorE.potencial_nofin / motorE.apalancamiento_potencial_bruto : 0, color: "#0EA5E9", sub: "Casa + Inv. + Tierra + Negocio × 50%" },
+                ].map((item, i) => (
+                  <div key={i} className="rounded-[10px] px-4 py-3" style={{ background: "#112038" }}>
+                    <div className="flex justify-between items-baseline mb-2">
+                      <div className="text-[11px] text-[#8B9BB4]">{item.label}</div>
+                      <div className="text-[16px] font-bold tabular-nums" style={{ color: item.color }}>{fmtMXN(item.val)}</div>
+                    </div>
+                    <div className="text-[10px] text-[#4A5A72] mb-1.5">{item.sub}</div>
+                    <div className="h-1 rounded-full overflow-hidden" style={{ background: "#060D1A" }}>
+                      <div className="h-full rounded-full" style={{ width: `${Math.min(100, item.pct * 100)}%`, background: item.color }} />
+                    </div>
+                  </div>
+                ))}
+                <div className="text-[11px] text-[#4A5A72] text-center mt-1">
+                  Deuda/Activos: <span className="font-bold text-[#F0F4FA]">{deuda_activos_pct.toFixed(1)}%</span>
+                </div>
+              </div>
+            </div>
+          </div>
         </Section>
 
         {/* ════════════════════════════════════════════════════════════════════ */}
