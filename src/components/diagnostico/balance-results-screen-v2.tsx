@@ -494,11 +494,10 @@ export function BalanceResultsScreenV2({
   const edadFin    = retiro?.edad_defuncion ?? 85;
   const mensDeseada = retiro?.mensualidad_deseada ?? 0;
 
-  // Pasivos breakdown (for balance grid)
-  const pat = patrimonio as unknown as Record<string, number>;
-  const hipoteca      = pat.hipoteca      ?? flujo.obligaciones ?? 0;
-  const saldo_planes  = pat.saldo_planes  ?? 0;
-  const compromisos   = pat.compromisos   ?? flujo.creditos ?? 0;
+  // Pasivos breakdown (for balance grid) — leen directo del patrimonio (paso 3)
+  const hipoteca     = patrimonio.hipoteca     ?? 0;
+  const saldo_planes = patrimonio.saldo_planes ?? 0;
+  const compromisos  = patrimonio.compromisos  ?? 0;
 
   // Donut segments
   const donutSegs: DonutSegment[] = [
@@ -879,26 +878,16 @@ export function BalanceResultsScreenV2({
                 Obligaciones
               </div>
               <div className="flex flex-col gap-px">
-                {(() => {
-                  const rows = [
-                    { label: "Hipoteca",          val: hipoteca },
-                    { label: "Planes / Seguros",  val: saldo_planes },
-                    { label: "Otros Compromisos", val: compromisos },
-                  ].filter(r => r.val > 0);
-                  if (rows.length === 0) {
-                    return (
-                      <div className="px-4 py-3 text-[12px] text-[#4A5A72] italic" style={{ background: "#0C1829" }}>
-                        Sin obligaciones registradas
-                      </div>
-                    );
-                  }
-                  return rows.map((row, i) => (
-                    <div key={i} className="flex justify-between items-center px-4 py-2.5 text-[13px]" style={{ background: "#0C1829" }}>
-                      <span className="text-[#8B9BB4]">{row.label}</span>
-                      <span className="font-semibold tabular-nums" style={{ color: "#EF4444" }}>{fmtFull(row.val)}</span>
-                    </div>
-                  ));
-                })()}
+                {[
+                  { label: "Hipoteca",          val: hipoteca },
+                  { label: "Planes / Seguros",  val: saldo_planes },
+                  { label: "Otros Compromisos", val: compromisos },
+                ].map((row, i) => (
+                  <div key={i} className="flex justify-between items-center px-4 py-2.5 text-[13px]" style={{ background: "#0C1829" }}>
+                    <span className="text-[#8B9BB4]">{row.label}</span>
+                    <span className="font-semibold tabular-nums" style={{ color: row.val > 0 ? "#EF4444" : "#4A5A72" }}>{fmtFull(row.val)}</span>
+                  </div>
+                ))}
               </div>
               <div className="flex justify-between items-center px-4 py-3 mt-px rounded-[8px] font-bold text-[14px] tabular-nums" style={{ background: "rgba(239,68,68,0.10)", color: "#EF4444" }}>
                 <span>Total Obligaciones</span><span>{fmtMXN(motorE.pasivos_total)}</span>
