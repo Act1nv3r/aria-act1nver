@@ -33,19 +33,11 @@ export interface MotorAOutput {
 }
 
 export function calcularMotorA(input: MotorAInput): MotorAOutput {
-  // ─── FIX-1: Ingresos Totales ────────────────────────────────────────────
-  // `ahorro` = capacidad de ahorro NETA ya neteada de rentas y otros.
-  // El ingreso laboral se reconstruye sustrayendo rentas y otros:
-  //   ingreso_laboral = gastos_basicos + obligaciones + creditos + ahorro − rentas − otros
-  //   ingresos_totales = ingreso_laboral + rentas + otros
-  //                    = gastos_basicos + obligaciones + creditos + ahorro
-  // Verificación Juan Pérez:
-  //   ingreso_laboral = (40K+20K+0+50K) − 10K − 0 = $100,000  ← Excel C16 ✓
-  //   ingresos_totales = 100K + 10K + 0 = $110,000              ← Excel total ✓
-  const ingreso_laboral =
-    input.gastos_basicos + input.obligaciones + input.creditos + input.ahorro
-    - input.rentas - input.otros;
-  const ingresos_totales = ingreso_laboral + input.rentas + input.otros;
+  // ─── Ingresos Totales ───────────────────────────────────────────────────
+  // Ingresos totales = gastos_basicos + obligaciones + créditos + ahorro mensual
+  // Representa todo lo que el cliente percibe y distribuye cada mes.
+  const ingresos_totales =
+    input.gastos_basicos + input.obligaciones + input.creditos + input.ahorro;
   const gastos_totales =
     input.gastos_basicos + input.obligaciones + input.creditos;
 
