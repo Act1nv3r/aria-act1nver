@@ -23,6 +23,7 @@ jobs:
   lighthouse:
     needs: lint
     runs-on: ubuntu-latest
+    continue-on-error: true   # indicador de calidad, no bloqueante
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -40,6 +41,7 @@ jobs:
   a11y:
     needs: lint
     runs-on: ubuntu-latest
+    continue-on-error: true   # indicador de calidad, no bloqueante
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4

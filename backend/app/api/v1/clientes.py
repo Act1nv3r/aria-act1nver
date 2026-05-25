@@ -1,4 +1,4 @@
-from uuid import uuid4
+from uuid import uuid4, UUID
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
@@ -116,6 +116,11 @@ async def get_cliente(
     db: AsyncSession = Depends(get_db),
     current_user: Asesor = Depends(get_current_user),
 ):
+    # Validar UUID antes de tocar la BD — evita DataError de asyncpg y devuelve 422
+    try:
+        UUID(id)
+    except ValueError:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="ID de cliente inválido")
     result = await db.execute(
         select(Cliente).where(Cliente.id == id, Cliente.asesor_id == current_user.id, Cliente.activo == True)
     )
@@ -132,6 +137,10 @@ async def update_cliente(
     db: AsyncSession = Depends(get_db),
     current_user: Asesor = Depends(get_current_user),
 ):
+    try:
+        UUID(id)
+    except ValueError:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="ID de cliente inválido")
     result = await db.execute(
         select(Cliente).where(Cliente.id == id, Cliente.asesor_id == current_user.id, Cliente.activo == True)
     )
@@ -151,6 +160,10 @@ async def delete_cliente(
     db: AsyncSession = Depends(get_db),
     current_user: Asesor = Depends(get_current_user),
 ):
+    try:
+        UUID(id)
+    except ValueError:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="ID de cliente inválido")
     result = await db.execute(
         select(Cliente).where(Cliente.id == id, Cliente.asesor_id == current_user.id)
     )
