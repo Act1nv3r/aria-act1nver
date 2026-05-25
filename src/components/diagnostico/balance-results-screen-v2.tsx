@@ -879,16 +879,26 @@ export function BalanceResultsScreenV2({
                 Obligaciones
               </div>
               <div className="flex flex-col gap-px">
-                {[
-                  { label: "Hipoteca",          val: hipoteca },
-                  { label: "Planes / Seguros",  val: saldo_planes },
-                  { label: "Otros Compromisos", val: compromisos },
-                ].map((row, i) => (
-                  <div key={i} className="flex justify-between items-center px-4 py-2.5 text-[13px]" style={{ background: "#0C1829" }}>
-                    <span className="text-[#8B9BB4]">{row.label}</span>
-                    <span className="font-semibold tabular-nums" style={{ color: row.val > 0 ? "#EF4444" : "#4A5A72" }}>{fmtFull(row.val)}</span>
-                  </div>
-                ))}
+                {(() => {
+                  const rows = [
+                    { label: "Hipoteca",          val: hipoteca },
+                    { label: "Planes / Seguros",  val: saldo_planes },
+                    { label: "Otros Compromisos", val: compromisos },
+                  ].filter(r => r.val > 0);
+                  if (rows.length === 0) {
+                    return (
+                      <div className="px-4 py-3 text-[12px] text-[#4A5A72] italic" style={{ background: "#0C1829" }}>
+                        Sin obligaciones registradas
+                      </div>
+                    );
+                  }
+                  return rows.map((row, i) => (
+                    <div key={i} className="flex justify-between items-center px-4 py-2.5 text-[13px]" style={{ background: "#0C1829" }}>
+                      <span className="text-[#8B9BB4]">{row.label}</span>
+                      <span className="font-semibold tabular-nums" style={{ color: "#EF4444" }}>{fmtFull(row.val)}</span>
+                    </div>
+                  ));
+                })()}
               </div>
               <div className="flex justify-between items-center px-4 py-3 mt-px rounded-[8px] font-bold text-[14px] tabular-nums" style={{ background: "rgba(239,68,68,0.10)", color: "#EF4444" }}>
                 <span>Total Obligaciones</span><span>{fmtMXN(motorE.pasivos_total)}</span>

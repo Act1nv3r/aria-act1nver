@@ -204,7 +204,7 @@ export function Paso3Patrimonio() {
             <CurrencyInput label="Herencia" value={w("herencia")} onChange={(v) => s("herencia", v)} />
           </div>
         </AccordionItem>
-        <AccordionItem title="Pasivos y Obligaciones" total={formatMXN(pasT)}>
+        <AccordionItem title="Pasivos y Obligaciones" total={formatMXN(pasT)} defaultOpen>
           <div className="space-y-4">
             <CurrencyInput label="Hipoteca" value={w("hipoteca")} onChange={(v) => s("hipoteca", v)} />
             <CurrencyInput label="Saldo planes" value={w("saldo_planes")} onChange={(v) => s("saldo_planes", v)} />
@@ -363,7 +363,7 @@ export function Paso3Patrimonio() {
         </div>
       </AccordionItem>
 
-      <AccordionItem title="Pasivos y Obligaciones" total={formatMXN(pasivosTotal)}>
+      <AccordionItem title="Pasivos y Obligaciones" total={formatMXN(pasivosTotal)} defaultOpen>
         <div className="space-y-4">
           <div className="flex flex-col">
             <CurrencyInput label="Hipoteca" value={watch("hipoteca")} onChange={(v) => setValue("hipoteca", v)} />
