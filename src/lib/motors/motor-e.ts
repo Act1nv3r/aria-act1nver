@@ -6,6 +6,15 @@
  *        Escala: >70% Excelente, 50-70% Alto, 30-50% Suficiente, <30% Bajo
  *
  * FIX-4: Potencial de Apalancamiento = activos_base × 0.5 − pasivos_total
+ *
+ * FIX-5: F11/F12 — Desglose del excedente de apalancamiento por tipo de activo
+ *        Paso 1: fin_base = liquidez + inversiones (sin dotales, sin esquemas retiro)
+ *                nofin_base = casa + inmuebles_renta + tierra (sin negocio, sin herencia)
+ *                totales_f = fin_base + nofin_base
+ *        Paso 2: pct_fin = fin_base / totales_f
+ *                pct_nofin = nofin_base / totales_f
+ *        Paso 3: potencial_fin   = pct_fin   × excedente_apalancamiento  (F11)
+ *                potencial_nofin = pct_nofin × excedente_apalancamiento  (F12)
  */
 
 export interface MotorEInput {
@@ -40,8 +49,11 @@ export interface MotorEOutput {
   apalancamiento_actual: number;          // lo que ya se debe (= pasivos_total)
   apalancamiento_potencial_bruto: number; // capacidad total = activos_base × 0.5
   excedente_apalancamiento: number;       // max(potencial_bruto − pasivos_total, 0)
-  potencial_fin: number;                  // F11: respaldado por activos financieros libres
-  potencial_nofin: number;               // F12: respaldado por activos no financieros (inmuebles)
+  // F11/F12: desglose del excedente por proporción de activos
+  potencial_fin: number;                  // F11: excedente × (fin_base / totales_f)
+  potencial_nofin: number;               // F12: excedente × (nofin_base / totales_f)
+  pct_fin: number;                        // proporción activos financieros (liquidez+inv)
+  pct_nofin: number;                      // proporción activos no financieros (casa+inmuebles+tierra)
   potencial_apalancamiento: number;       // @legacy: = excedente_apalancamiento (sin cambio en consumidores)
 }
 
@@ -78,7 +90,6 @@ export function calcularMotorE(input: MotorEInput): MotorEOutput {
 
   // ─── FIX-3: Índice de Solvencia (Excel) ─────────────────────────────────
   // activos_base = todos los activos EXCEPTO esquemas_retiro y herencia
-  // Verif. Juan Pérez: activos_base = 2.3M + 2.7M = 5M (sin AFORE $1M, sin herencia)
   const activos_base = financiero_libre + no_financiero_operativo;
 
   const indice_solvencia =
@@ -95,16 +106,23 @@ export function calcularMotorE(input: MotorEInput): MotorEOutput {
     clasificacion_solvencia = "Bajo";
   }
 
-  // ─── Estructura de Apalancamiento (Excel "Potencial del Balance") ────────
-  // apalancamiento_actual    = pasivos_total (lo que ya se debe hoy)
-  // potencial_bruto          = activos_base × 0.5 (capacidad máxima de endeudamiento)
-  // excedente                = max(potencial_bruto − pasivos_total, 0) — cuánto más puede endeudarse
-  // F11: respaldo financiero = financiero_libre × 0.5 (créditos de inversión / prendarios)
-  // F12: respaldo inmobiliario = no_financiero_operativo × 0.5 (hipotecas / crédito puente)
+  // ─── FIX-4: Estructura de Apalancamiento ────────────────────────────────
   const apalancamiento_potencial_bruto = activos_base * 0.5;
   const excedente_apalancamiento = Math.max(0, apalancamiento_potencial_bruto - pasivos_total);
-  const potencial_fin    = financiero_libre * 0.5;
-  const potencial_nofin  = no_financiero_operativo * 0.5;
+
+  // ─── FIX-5: F11/F12 — Desglose por proporción de activos (Excel) ────────
+  // fin_base   = liquidez + inversiones (excluye dotales, esquemas retiro)
+  // nofin_base = casa + inmuebles_renta + tierra (excluye negocio, herencia)
+  // totales_f  = fin_base + nofin_base
+  const fin_base   = input.liquidez + input.inversiones;
+  const nofin_base = input.casa + input.inmuebles_renta + input.tierra;
+  const totales_f  = fin_base + nofin_base;
+
+  const pct_fin   = totales_f > 0 ? fin_base   / totales_f : 0;
+  const pct_nofin = totales_f > 0 ? nofin_base / totales_f : 0;
+
+  const potencial_fin   = pct_fin   * excedente_apalancamiento;
+  const potencial_nofin = pct_nofin * excedente_apalancamiento;
 
   // @legacy — mantener para no romper consumidores existentes
   const potencial_apalancamiento = excedente_apalancamiento;
@@ -124,6 +142,8 @@ export function calcularMotorE(input: MotorEInput): MotorEOutput {
     excedente_apalancamiento:       Math.round(excedente_apalancamiento * 100) / 100,
     potencial_fin:                  Math.round(potencial_fin * 100) / 100,
     potencial_nofin:                Math.round(potencial_nofin * 100) / 100,
+    pct_fin:                        Math.round(pct_fin * 10000) / 10000,
+    pct_nofin:                      Math.round(pct_nofin * 10000) / 10000,
     potencial_apalancamiento:       Math.round(potencial_apalancamiento * 100) / 100,
   };
 }

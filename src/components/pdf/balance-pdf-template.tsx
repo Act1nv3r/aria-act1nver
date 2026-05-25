@@ -1477,7 +1477,7 @@ export function BalancePDFTemplate() {
     financiero: 0, no_financiero: 0, activos_base: 0, esquemas_retiro: 0,
     indice_solvencia: 0, clasificacion_solvencia: "Muy saludable", potencial_apalancamiento: 0,
     apalancamiento_actual: 0, apalancamiento_potencial_bruto: 0, excedente_apalancamiento: 0,
-    potencial_fin: 0, potencial_nofin: 0,
+    potencial_fin: 0, potencial_nofin: 0, pct_fin: 0, pct_nofin: 0,
   };
   const safeMotorF = motorF ?? {
     recomendaciones: [], suma_asegurada_vida: 0, costo_prima_vida: 0,

@@ -1121,8 +1121,8 @@ export function BalanceResultsScreenV2({
               <div className="flex flex-col gap-2">
                 <div className="text-[10px] font-semibold tracking-[1.5px] uppercase text-[#4A5A72] mb-1">Respaldo del potencial</div>
                 {[
-                  { label: "Activos Financieros", val: motorE.potencial_fin, pct: motorE.apalancamiento_potencial_bruto > 0 ? motorE.potencial_fin / motorE.apalancamiento_potencial_bruto : 0, color: "#3B82F6", sub: "Liq + Inv + Dotales × 50%" },
-                  { label: "Activos Inmobiliarios", val: motorE.potencial_nofin, pct: motorE.apalancamiento_potencial_bruto > 0 ? motorE.potencial_nofin / motorE.apalancamiento_potencial_bruto : 0, color: "#0EA5E9", sub: "Casa + Inv. + Tierra + Negocio × 50%" },
+                  { label: "Activos Financieros", val: motorE.potencial_fin, pct: motorE.pct_fin, color: "#3B82F6", sub: `Liq + Inv — ${(motorE.pct_fin * 100).toFixed(0)}% del total` },
+                  { label: "Activos Inmobiliarios", val: motorE.potencial_nofin, pct: motorE.pct_nofin, color: "#0EA5E9", sub: `Casa + Inmuebles + Tierra — ${(motorE.pct_nofin * 100).toFixed(0)}% del total` },
                 ].map((item, i) => (
                   <div key={i} className="rounded-[10px] px-4 py-3" style={{ background: "#112038" }}>
                     <div className="flex justify-between items-baseline mb-2">
